@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './App.css'
 import logo from './assets/logo.png'
 
 function App() {
 
+  const navigate = useNavigate()
 
   return (
     <div className="app-layout bg-light min-vh-100 d-flex flex-column">
@@ -25,15 +26,15 @@ function App() {
             <nav className="header-nav">
               <a href="/" className="nav-link">Trang chủ</a>
               <a href="/students" className="nav-link">Lộ trình học</a>
-              <a href="/teachers" className="nav-link">khóa học</a>
+              <a href="/teachers" className="nav-link">Khóa học</a>
               <a href="/courses" className="nav-link">Giáo viên</a>
-              <a href="/exams" className="nav-link">kiểm tra đầu vào</a>
+              <a href="/exams" className="nav-link">Kiểm tra đầu vào</a>
           </nav>
 
             {/* CTA Buttons */}
             <div className="header-actions">
-              <button className="btn-login">Đăng nhập</button>
-              <button className="btn-cta">ĐĂNG KÝ NGAY</button>
+              <button className="btn-login" onClick={() => navigate('/login?mode=login')}>Đăng nhập</button>
+              <button className="btn-cta" onClick={() => navigate('/login?mode=register')}>ĐĂNG KÝ NGAY</button>
             </div>
           </div>
         </div>
@@ -70,7 +71,7 @@ function App() {
             <div className="row align-items-center g-4">
               <div className="col-md-6">
                 <h2 className="section-title">Về Trung Tâm</h2>
-                <p className="section-desc">Môi trường học hiện đại, lộ trình cá nhân hóa theo mục tiêu TOEIC. Hệ thống theo dõi tiến độ từng tuần và kho đề cập nhật liên tục theo format mới.</p>
+                <p className="section-desc">Môi trường học hiện đại, lộ trình cá nhân hóa theo mục tiêu. Hệ thống theo dõi tiến độ từng tuần và kho đề cập nhật liên tục theo format mới.</p>
                 <ul className="intro-features mt-3">
                   <li>Khảo sát đầu vào & tư vấn lộ trình theo mục tiêu điểm</li>
                   <li>Giáo trình bám sát đề thi chính thức, cập nhật hàng quý</li>
