@@ -24,10 +24,10 @@ function App() {
             {/* Navigation */}
             <nav className="header-nav">
               <a href="/" className="nav-link">Trang chủ</a>
-              <a href="/students" className="nav-link">Học viên</a>
-              <a href="/teachers" className="nav-link">Giáo viên</a>
-              <a href="/courses" className="nav-link">Khóa học</a>
-              <a href="/exams" className="nav-link">Kỳ thi</a>
+              <a href="/students" className="nav-link">Lộ trình học</a>
+              <a href="/teachers" className="nav-link">khóa học</a>
+              <a href="/courses" className="nav-link">Giáo viên</a>
+              <a href="/exams" className="nav-link">kiểm tra đầu vào</a>
           </nav>
 
             {/* CTA Buttons */}
@@ -46,7 +46,7 @@ function App() {
           <section className="home-hero">
             <div className="hero-media">
               <video className="hero-video" autoPlay muted loop playsInline>
-                <source src="https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" type="video/mp4" />
+                <source src="/src/assets/5734765-hd_1920_1080_30fps.mp4" type="video/mp4" />
               </video>
               <div className="hero-overlay"></div>
             </div>
@@ -178,6 +178,66 @@ function App() {
             </div>
           </section>
 
+          {/* Teachers Section */}
+          <section id="teachers" className="section container py-6">
+            <div className="section-header text-center mb-4">
+              <h2 className="section-title mb-1">Đội ngũ giảng viên</h2>
+              <p className="section-subtitle mb-0">Giảng viên giàu kinh nghiệm với chứng chỉ quốc tế</p>
+            </div>
+            <div className="row g-4">
+              <div className="col-md-4">
+                <div className="teacher-card p-4 rounded border h-100">
+                  <div className="teacher-avatar mb-3">
+                    <div className="avatar-circle-large mx-auto">MS</div>
+                  </div>
+                  <h5 className="teacher-name text-center mb-2">Ms. Sarah Johnson</h5>
+                  <p className="teacher-title text-center text-muted mb-3">Chuyên gia TOEIC</p>
+                  <p className="mb-3">8 năm kinh nghiệm giảng dạy TOEIC, chứng chỉ TESOL quốc tế. Đã giúp hơn 500 học viên đạt điểm mục tiêu.</p>
+                  <div className="teacher-experience d-flex justify-content-center align-items-center mb-3">
+                    <span className="badge bg-primary me-2">8 năm kinh nghiệm</span>
+                    <span className="badge bg-success">TESOL Certified</span>
+                  </div>
+                  <div className="teacher-achievements text-center">
+                    <div className="small text-muted">500+ học viên thành công</div>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-4">
+                <div className="teacher-card p-4 rounded border h-100">
+                  <div className="teacher-avatar mb-3">
+                    <div className="avatar-circle-large mx-auto">DM</div>
+                  </div>
+                  <h5 className="teacher-name text-center mb-2">Mr. David Miller</h5>
+                  <p className="teacher-title text-center text-muted mb-3">Chuyên gia Listening</p>
+                  <p className="mb-3">10 năm kinh nghiệm, từng làm việc tại các tập đoàn đa quốc gia. Chuyên sâu về kỹ năng nghe và phát âm.</p>
+                  <div className="teacher-experience d-flex justify-content-center align-items-center mb-3">
+                    <span className="badge bg-primary me-2">10 năm kinh nghiệm</span>
+                    <span className="badge bg-info">IELTS 8.5</span>
+                  </div>
+                  <div className="teacher-achievements text-center">
+                    <div className="small text-muted">98% học viên đạt mục tiêu</div>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-4">
+                <div className="teacher-card p-4 rounded border h-100">
+                  <div className="teacher-avatar mb-3">
+                    <div className="avatar-circle-large mx-auto">AL</div>
+                  </div>
+                  <h5 className="teacher-name text-center mb-2">Ms. Anna Lee</h5>
+                  <p className="teacher-title text-center text-muted mb-3">Chuyên gia Reading</p>
+                  <p className="mb-3">6 năm kinh nghiệm, thạc sĩ Ngôn ngữ học. Phương pháp giảng dạy sáng tạo, giúp học viên cải thiện kỹ năng đọc hiểu nhanh chóng.</p>
+                  <div className="teacher-experience d-flex justify-content-center align-items-center mb-3">
+                    <span className="badge bg-primary me-2">6 năm kinh nghiệm</span>
+                    <span className="badge bg-warning">MA Linguistics</span>
+                  </div>
+                  <div className="teacher-achievements text-center">
+                    <div className="small text-muted">300+ học viên thành công</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
           {/* Chia sẻ học viên */}
           <section id="testimonials" className="section container py-6">
             <div className="section-header text-center mb-4">
@@ -188,7 +248,7 @@ function App() {
               <div className="col-md-4">
                 <div className="testimonial-card p-4 rounded border h-100">
                   <div className="quote-mark">“</div>
-                  <p className="mb-3">Tăng 200 điểm sau 8 tuần. Mentor theo sát giúp mình giữ nhịp học và biết cách phân bổ thời gian.</p>
+                  <p className="mb-3">Tăng 200 điểm sau 8 tuần. Mentor theo sát giúp mình giữ nhịp học và biết cách phân bổ thời.</p>
                   <div className="d-flex align-items-center justify-content-between">
                     <div className="d-flex align-items-center">
                       <div className="avatar-circle me-2">MK</div>
@@ -235,6 +295,8 @@ function App() {
               </div>
             </div>
           </section>
+
+          
         </main>
       </div>
 

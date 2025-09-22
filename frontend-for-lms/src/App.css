@@ -223,6 +223,104 @@
   line-height: 0.5;
   color: #d1d5db;
 }
+.testimonial-card p {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+  max-height: 3em; /* 2 lines × 1.5 line-height */
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.testimonial-card:hover p {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  max-height: none;
+  overflow: visible;
+}
+
+/* Path cards text truncation */
+.path-card p {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+  max-height: 3em; /* 2 lines × 1.5 line-height */
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.path-card:hover p {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  max-height: none;
+  overflow: visible;
+}
+
+/* Teacher cards */
+.teacher-card {
+  background: #ffffff;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.teacher-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.avatar-circle-large {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.teacher-name {
+  color: #111827;
+  font-weight: 600;
+}
+
+.teacher-title {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.teacher-card p {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+  max-height: 3em; /* 2 lines × 1.5 line-height */
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.teacher-card:hover p {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  max-height: none;
+  overflow: visible;
+}
+
+.teacher-experience .badge {
+  font-size: 11px;
+  padding: 4px 8px;
+}
 .avatar-circle {
   width: 36px;
   height: 36px;
