@@ -1,166 +1,183 @@
 from flask import Blueprint, jsonify, request
 from app.config import db
-from app.models.course_model import Course
+from app.services.course_service import CourseService
+from app.utils.response_utils import (
+    success_response,
+    error_response,
+    validation_error_response,
+    created_response,
+    not_found_response,
+)
 
 course_bp = Blueprint("courses", __name__, url_prefix="/api/courses")
+
+# Khởi tạo service
+course_service = CourseService()
 
 
 @course_bp.route("/", methods=["GET"])
 def get_courses():
-    """Lấy danh sách tất cả courses"""
+    """Lấy danh sách courses (tùy chọn lọc theo status: ACTIVE/INACTIVE/DRAFT)"""
     try:
-        courses = Course.query.all()
-        return jsonify(
-            {
-                "success": True,
-                "data": [course.to_dict() for course in courses],
-                "count": len(courses),
-            }
+        status = request.args.get("status")
+        courses = course_service.get_all(status=status)
+        return success_response(
+            data=[c.to_dict() for c in courses],
+            message="Courses retrieved successfully",
         )
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        print(f"Error fetching courses: {e}")
+        return error_response(message="Internal server error")
 
 
 @course_bp.route("/", methods=["POST"])
 def create_course():
     """Tạo course mới"""
-    try:
-        data = request.get_json()
+    data = request.get_json()
 
-        # Validation
-        if not data or not data.get("course_id") or not data.get("course_name"):
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": "course_id and course_name are required",
-                    }
-                ),
-                400,
+    if not data:
+        return validation_error_response("No data provided")
+
+    result = course_service.create(data)
+
+    if result["success"]:
+        return created_response(data=result["data"], message=result["message"])
+    else:
+        status_code = result.get("status_code", 500)
+        if "validation_errors" in result:
+            return validation_error_response(
+                message=result["error"], errors=result["validation_errors"]
             )
-
-        # Kiểm tra course_id đã tồn tại chưa
-        existing_course = Course.query.filter_by(course_id=data["course_id"]).first()
-        if existing_course:
-            return jsonify({"success": False, "error": "Course ID already exists"}), 409
-
-        course = Course(
-            course_id=data["course_id"],
-            course_name=data["course_name"],
-            course_description=data.get("course_description"),
-            course_status=data.get("course_status", "ACTIVE"),
-        )
-
-        db.session.add(course)
-        db.session.commit()
-
-        return (
-            jsonify(
-                {
-                    "success": True,
-                    "message": "Course created successfully",
-                    "data": course.to_dict(),
-                }
-            ),
-            201,
-        )
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"success": False, "error": str(e)}), 500
+        else:
+            return error_response(message=result["error"], status_code=status_code)
 
 
 @course_bp.route("/<course_id>", methods=["GET"])
 def get_course(course_id):
-    """Lấy thông tin course theo ID"""
-    try:
-        course = Course.query.get(course_id)
-        if not course:
-            return jsonify({"success": False, "error": "Course not found"}), 404
+    """Lấy course theo ID"""
+    result = course_service.get_by_id(course_id)
 
-        return jsonify({"success": True, "data": course.to_dict()})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    if result["success"]:
+        return success_response(
+            data=result["data"], message="Course retrieved successfully"
+        )
+    else:
+        status_code = result.get("status_code", 500)
+        if status_code == 404:
+            return not_found_response(
+                message="Course not found",
+                resource_type="Course",
+                resource_id=course_id,
+            )
+        else:
+            return error_response(message=result["error"], status_code=status_code)
 
 
 @course_bp.route("/<course_id>", methods=["PUT"])
 def update_course(course_id):
-    """Cập nhật thông tin course"""
-    try:
-        course = Course.query.get(course_id)
-        if not course:
-            return jsonify({"success": False, "error": "Course not found"}), 404
+    """Cập nhật course"""
+    data = request.get_json()
 
-        data = request.get_json()
-        if not data:
-            return jsonify({"success": False, "error": "No data provided"}), 400
+    if not data:
+        return validation_error_response("No data provided")
 
-        # Cập nhật các field
-        if "course_name" in data:
-            course.course_name = data["course_name"]
-        if "course_description" in data:
-            course.course_description = data["course_description"]
-        if "course_status" in data:
-            course.course_status = data["course_status"]
+    result = course_service.update(course_id, data)
 
-        db.session.commit()
-
-        return jsonify(
-            {
-                "success": True,
-                "message": "Course updated successfully",
-                "data": course.to_dict(),
-            }
-        )
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"success": False, "error": str(e)}), 500
+    if result["success"]:
+        return success_response(data=result["data"], message=result["message"])
+    else:
+        status_code = result.get("status_code", 500)
+        if "validation_errors" in result:
+            return validation_error_response(
+                message=result["error"], errors=result["validation_errors"]
+            )
+        elif status_code == 404:
+            return not_found_response(
+                message="Course not found",
+                resource_type="Course",
+                resource_id=course_id,
+            )
+        else:
+            return error_response(message=result["error"], status_code=status_code)
 
 
 @course_bp.route("/<course_id>", methods=["DELETE"])
 def delete_course(course_id):
     """Xóa course"""
-    try:
-        course = Course.query.get(course_id)
-        if not course:
-            return jsonify({"success": False, "error": "Course not found"}), 404
+    result = course_service.delete(course_id)
 
-        db.session.delete(course)
-        db.session.commit()
+    if result["success"]:
+        return success_response(message=result["message"])
+    else:
+        status_code = result.get("status_code", 500)
+        if status_code == 404:
+            return not_found_response(
+                message="Course not found",
+                resource_type="Course",
+                resource_id=course_id,
+            )
+        else:
+            return error_response(message=result["error"], status_code=status_code)
 
-        return jsonify({"success": True, "message": "Course deleted successfully"})
 
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"success": False, "error": str(e)}), 500
+@course_bp.route("/search", methods=["GET"])
+def search_courses():
+    """Tìm kiếm courses"""
+    keyword = request.args.get("q", "")
+    result = course_service.search(keyword)
+
+    if result["success"]:
+        return success_response(
+            data=result["data"],
+            message=f"Found {result['count']} courses",
+            meta={"count": result["count"], "keyword": result.get("keyword")},
+        )
+    else:
+        return error_response(
+            message=result["error"], status_code=result.get("status_code", 500)
+        )
+
+
+@course_bp.route("/<course_id>/toggle-status", methods=["PATCH"])
+def toggle_course_status(course_id):
+    """Toggle status của course"""
+    result = course_service.toggle_status(course_id)
+
+    if result["success"]:
+        return success_response(data=result["data"], message=result["message"])
+    else:
+        status_code = result.get("status_code", 500)
+        if status_code == 404:
+            return not_found_response(
+                message="Course not found",
+                resource_type="Course",
+                resource_id=course_id,
+            )
+        else:
+            return error_response(message=result["error"], status_code=status_code)
+
+
+@course_bp.route("/statistics", methods=["GET"])
+def get_course_statistics():
+    """Lấy thống kê courses"""
+    result = course_service.get_statistics()
+
+    if result["success"]:
+        return success_response(
+            data=result["data"], message="Course statistics retrieved successfully"
+        )
+    else:
+        return error_response(
+            message=result["error"], status_code=result.get("status_code", 500)
+        )
 
 
 @course_bp.route("/test", methods=["GET"])
 def test_course_db():
     """Test database connection với Course"""
-    try:
-        # Kiểm tra course đã tồn tại chưa
-        existing_course = Course.query.filter_by(course_id="TEST001").first()
-
-        if not existing_course:
-            course = Course(
-                course_id="TEST001",
-                course_name="Test Course",
-                course_description="This is a test course",
-                course_status="ACTIVE",
-            )
-            db.session.add(course)
-            db.session.commit()
-
-        courses = Course.query.all()
-        return jsonify(
-            {
-                "success": True,
-                "message": "Course database connection successful!",
-                "courses_count": len(courses),
-            }
-        )
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"success": False, "error": str(e)}), 500
+    result = course_service.create_test_course()
+    return (
+        success_response(data=result)
+        if result["success"]
+        else error_response(message=result["error"])
+    )
