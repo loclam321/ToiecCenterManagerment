@@ -23,6 +23,9 @@ class Student(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
     
+    # Chỉ cần một trường xác thực email
+    is_email_verified = db.Column(db.Boolean, default=False, nullable=False)
+    
     def __repr__(self):
         return f"<Student {self.user_id}: {self.user_name}>"
     

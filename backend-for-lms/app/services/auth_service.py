@@ -27,6 +27,7 @@ class AuthService:
         # Kiểm tra teacher
         teacher = self.db.session.query(Teacher).filter_by(user_email=email).first()
         if teacher and teacher.check_password(password):
+            # Với teacher, có thể không cần xác minh email
             access_token = self._create_token(teacher.user_id, "teacher")
             return {
                 "success": True,
@@ -38,6 +39,14 @@ class AuthService:
         # Kiểm tra student
         student = self.db.session.query(Student).filter_by(user_email=email).first()
         if student and student.check_password(password):
+            # Kiểm tra xem email đã được xác minh chưa
+            if not student.is_email_verified:
+                return {
+                    "success": False,
+                    "error": "Email not verified. Please check your inbox and verify your email before logging in."
+                }
+            
+            # Chỉ cho đăng nhập nếu email đã xác minh
             access_token = self._create_token(student.user_id, "student")
             return {
                 "success": True,
