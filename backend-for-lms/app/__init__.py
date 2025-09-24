@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from app.config import db, migrate, jwt, config
 
 
@@ -7,6 +8,9 @@ def create_app(config_name="default"):
 
     # Load configuration
     app.config.from_object(config[config_name])
+
+    # Initialize CORS
+    CORS(app, origins=["http://localhost:5173"], supports_credentials=True)
 
     # Initialize extensions with app
     db.init_app(app)
@@ -18,7 +22,9 @@ def create_app(config_name="default"):
 
     # Register blueprints
     from .routes import main
+    from .teacher_route import teacher_bp
 
     app.register_blueprint(main)
+    app.register_blueprint(teacher_bp)
 
     return app

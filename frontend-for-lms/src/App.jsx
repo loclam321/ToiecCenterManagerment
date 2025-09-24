@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './App.css'
 import logo from './assets/logo.png'
@@ -14,21 +14,21 @@ function App() {
         <div className="container">
           <div className="header-content">
             {/* Logo + Brand */}
-            <a href="/" className="brand">
+            <Link to="/" className="brand">
               <img src={logo} alt="TOEIC Center" className="brand-logo" />
               <div className="brand-text">
                 <span className="brand-title">Hệ Thống Quản Lý</span>
                 <span className="brand-subtitle">Trung Tâm TOEIC</span>
               </div>
-            </a>
+            </Link>
 
             {/* Navigation */}
             <nav className="header-nav">
-              <a href="/" className="nav-link">Trang chủ</a>
-              <a href="/students" className="nav-link">Lộ trình học</a>
-              <a href="/teachers" className="nav-link">Khóa học</a>
-              <a href="/courses" className="nav-link">Giáo viên</a>
-              <a href="/exams" className="nav-link">Kiểm tra đầu vào</a>
+              <Link to="/" className="nav-link">Trang chủ</Link>
+              <Link to="/students" className="nav-link">Lộ trình học</Link>
+              <Link to="/teachers" className="nav-link">Giáo viên</Link>
+              <Link to="/courses" className="nav-link">Khóa học</Link>
+              <Link to="/exams" className="nav-link">Kiểm tra đầu vào</Link>
           </nav>
 
             {/* CTA Buttons */}
@@ -59,9 +59,9 @@ function App() {
                 <span className="badge-item">Lịch học linh hoạt</span>
                 <span className="badge-item">Giáo viên 8+ năm</span>
               </div>
-              <div class="d-flex justify-content-center">
-                <a href="#paths" class="btn btn-primary me-2">Xem lộ trình</a>
-                <a href="#intro" class="btn btn-outline-primary">Tìm hiểu thêm</a>
+              <div className="d-flex justify-content-center">
+                <a href="#paths" className="btn btn-primary me-2">Xem lộ trình</a>
+                <a href="#intro" className="btn btn-outline-primary">Tìm hiểu thêm</a>
               </div>
             </div>
           </section>

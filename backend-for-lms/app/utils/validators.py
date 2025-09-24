@@ -237,3 +237,59 @@ class Validator:
             "page": page,
             "per_page": per_page,
         }
+
+    @staticmethod
+    def validate_phone(phone: str) -> bool:
+        """Validate phone number format"""
+        if not phone:
+            return False
+        
+        # Vietnamese phone number pattern
+        pattern = r"^(0[3|5|7|8|9])[0-9]{8}$"
+        return bool(re.match(pattern, phone.strip()))
+
+    @staticmethod
+    def validate_teacher_data(data: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate teacher data comprehensively"""
+        errors = {}
+
+        # Required fields validation
+        required_validation = Validator.validate_required_fields(
+            data, ["user_name", "user_email", "user_password"]
+        )
+        if not required_validation["valid"]:
+            errors.update(required_validation["errors"])
+
+        # Email validation
+        if "user_email" in data and data["user_email"]:
+            email_validation = Validator.validate_email(data["user_email"])
+            if not email_validation["valid"]:
+                errors["user_email"] = email_validation["error"]
+
+        # Phone validation
+        if "user_telephone" in data and data["user_telephone"]:
+            if not Validator.validate_phone(data["user_telephone"]):
+                errors["user_telephone"] = "Invalid phone number format"
+
+        # Name validation
+        if "user_name" in data and data["user_name"]:
+            name_validation = Validator.validate_string_length(
+                data["user_name"], "user_name", min_length=2, max_length=100
+            )
+            if not name_validation["valid"]:
+                errors["user_name"] = name_validation["error"]
+
+        # Password validation
+        if "user_password" in data and data["user_password"]:
+            password_validation = Validator.validate_string_length(
+                data["user_password"], "user_password", min_length=6, max_length=50
+            )
+            if not password_validation["valid"]:
+                errors["user_password"] = password_validation["error"]
+
+        # Gender validation
+        if "user_gender" in data and data["user_gender"]:
+            if data["user_gender"] not in ["M", "F"]:
+                errors["user_gender"] = "Gender must be M or F"
+
+        return {"valid": len(errors) == 0, "errors": errors}
