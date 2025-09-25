@@ -2,6 +2,7 @@ import jwt
 from datetime import datetime, timedelta
 from flask import current_app, render_template
 from flask_mail import Message
+from app.config import mail
 
 
 def generate_email_verification_token(user_id):
@@ -55,24 +56,43 @@ def verify_email_token(token):
         return None
 
 
-def send_verification_email(mail, to_email, user_id):
-    """Gửi email xác minh cho người dùng mới"""
-    # Tạo JWT token
-    token = generate_email_verification_token(user_id)
+def send_email(to, subject, template, **kwargs):
+    """
+    Gửi email sử dụng template
 
-    # URL xác minh với token
+    Args:
+        to: Email người nhận
+        subject: Tiêu đề email
+        template: Tên file template html
+        kwargs: Các biến truyền vào template
+    """
+    msg = Message(subject=subject, recipients=[to])
+    msg.html = render_template(template, **kwargs)
+    mail.send(msg)
+
+
+def send_verification_email(to_email, token):
+    """Gửi email xác minh cho người dùng mới"""
+    from flask import current_app
+
     verification_url = f"{current_app.config.get('BASE_URL', 'http://localhost:5000')}/api/auth/verify-email/{token}"
 
     subject = "Xác minh tài khoản LMS của bạn"
 
-    html_body = f"""
-    <h2>Xác minh tài khoản của bạn</h2>
-    <p>Cảm ơn bạn đã đăng ký tài khoản trên hệ thống LMS.</p>
-    <p>Vui lòng nhấn vào <a href="{verification_url}">liên kết này</a> để xác minh tài khoản.</p>
-    <p>Liên kết này sẽ hết hạn sau 24 giờ.</p>
-    <p>Nếu bạn không yêu cầu đăng ký này, vui lòng bỏ qua email này.</p>
-    """
+    # Nếu bạn có template
+    # return send_email(to_email, subject, 'emails/verify_email.html', verification_url=verification_url)
 
-    msg = Message(subject=subject, recipients=[to_email], html=html_body)
+    # Hoặc gửi trực tiếp
+    msg = Message(
+        subject=subject,
+        recipients=[to_email],
+        html=f"""
+        <h2>Xác minh tài khoản của bạn</h2>
+        <p>Cảm ơn bạn đã đăng ký tài khoản trên hệ thống LMS.</p>
+        <p>Vui lòng nhấn vào <a href="{verification_url}">liên kết này</a> để xác minh tài khoản.</p>
+        <p>Liên kết này sẽ hết hạn sau 24 giờ.</p>
+        <p>Nếu bạn không yêu cầu đăng ký này, vui lòng bỏ qua email này.</p>
+        """,
+    )
 
     mail.send(msg)

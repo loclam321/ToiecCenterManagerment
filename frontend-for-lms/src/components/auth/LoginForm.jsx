@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import './css/LoginForm.css';
 
-function LoginForm({ onSubmit, onForgotPassword }) {
+function LoginForm({ onSubmit, onForgotPassword, isLoading = false }) {
   const [formValues, setFormValues] = useState({
     email: '',
     password: '',
@@ -34,10 +35,11 @@ function LoginForm({ onSubmit, onForgotPassword }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
-      <div className="form-group">
-        <label htmlFor="email">Email</label>
+    <form className="login-form" onSubmit={handleSubmit} noValidate>
+      <div className="form-group mb-3">
+        <label className="form-label text-dark fw-medium" htmlFor="email">Email</label>
         <input
+          className="form-control"
           id="email"
           name="email"
           type="email"
@@ -45,12 +47,13 @@ function LoginForm({ onSubmit, onForgotPassword }) {
           value={formValues.email}
           onChange={handleChange}
         />
-        {errors.email && <div className="error-text">{errors.email}</div>}
+        {errors.email && <div className="error-text text-danger small">{errors.email}</div>}
       </div>
 
-      <div className="form-group">
-        <label htmlFor="password">Mật khẩu</label>
+      <div className="form-group mb-4">
+        <label className="form-label text-dark fw-medium" htmlFor="password">Mật khẩu</label>
         <input
+          className="form-control"
           id="password"
           name="password"
           type="password"
@@ -58,19 +61,29 @@ function LoginForm({ onSubmit, onForgotPassword }) {
           value={formValues.password}
           onChange={handleChange}
         />
-        {errors.password && <div className="error-text">{errors.password}</div>}
-        <div className="help-text">Mật khẩu tối thiểu 6 ký tự.</div>
+        {errors.password && <div className="error-text text-danger small">{errors.password}</div>}
+        <div className="help-text text-muted small mt-1">Mật khẩu tối thiểu 6 ký tự.</div>
       </div>
 
-      <div className="form-actions-row">
-        <button type="button" className="forgot-link" onClick={onForgotPassword}>
+      <div className="form-actions-row d-flex justify-content-end mb-3">
+        <button
+          type="button"
+          className="forgot-link btn btn-link text-primary p-0"
+          onClick={onForgotPassword}
+        >
           Bạn quên mật khẩu?
         </button>
       </div>
 
-      <button type="submit" className="submit-btn">
-        Đăng nhập
-      </button>
+      <div className="d-grid">
+        <button
+          type="submit"
+          className="btn btn-primary py-2"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+        </button>
+      </div>
     </form>
   );
 }

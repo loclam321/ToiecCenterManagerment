@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import './css/AuthForms.css';
 
-function ForgotPasswordForm({ onSubmit }) {
+function ForgotPasswordForm({ onSubmit, isLoading = false }) {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
 
@@ -25,10 +26,11 @@ function ForgotPasswordForm({ onSubmit }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
-      <div className="form-group">
-        <label htmlFor="email">Email</label>
+    <form className="auth-form" onSubmit={handleSubmit} noValidate>
+      <div className="form-group mb-4">
+        <label className="form-label text-dark fw-medium" htmlFor="email">Email</label>
         <input
+          className="form-control"
           id="email"
           name="email"
           type="email"
@@ -36,12 +38,21 @@ function ForgotPasswordForm({ onSubmit }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        {error && <div className="error-text">{error}</div>}
+        {error && <div className="error-text text-danger small mt-1">{error}</div>}
+        <div className="help-text text-muted small mt-1">
+          Nhập email bạn đã dùng để đăng ký tài khoản. Chúng tôi sẽ gửi link đặt lại mật khẩu qua email này.
+        </div>
       </div>
 
-      <button type="submit" className="submit-btn">
-        Gửi link đặt lại
-      </button>
+      <div className="d-grid">
+        <button
+          type="submit"
+          className="btn btn-primary py-2"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Đang gửi...' : 'Gửi link đặt lại mật khẩu'}
+        </button>
+      </div>
     </form>
   );
 }

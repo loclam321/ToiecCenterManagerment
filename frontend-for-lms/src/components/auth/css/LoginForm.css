@@ -1,0 +1,65 @@
+.login-form {
+  max-width: 100%;
+}
+
+.login-form .form-label {
+  color: #333333;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.login-form .form-control {
+  height: 45px;
+  padding: 10px 15px;
+  border-radius: 6px;
+  color: #212529;
+  background-color: #fff;
+  border: 1px solid #ced4da;
+}
+
+.login-form .form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.error-text {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.help-text {
+  color: #6c757d;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.forgot-link {
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.forgot-link:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary:hover {
+  background-color: #0069d9;
+  border-color: #0062cc;
+}
+
+.btn-primary:disabled {
+  background-color: #007bff;
+  border-color: #007bff;
+  opacity: 0.65;
+}

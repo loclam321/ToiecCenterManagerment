@@ -39,7 +39,7 @@
 
 /* Đẩy nội dung xuống để không bị header che mất */
 .app-layout {
-  padding-top: 72px; /* Khoảng cách = chiều cao header */
+  padding-top: 1px; /* Khoảng cách = chiều cao header */
 }
 
 /* ===== 3. HOMEPAGE SECTIONS ===== */

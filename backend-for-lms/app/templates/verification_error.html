@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Email Verification Failed</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin-top: 50px;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .error {
+        color: #dc3545;
+        font-size: 24px;
+      }
+      .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="error">✗ Xác minh thất bại</h1>
+      <p>{{ message }}</p>
+      <p>
+        Có lỗi xảy ra khi xác minh email của bạn. Link có thể đã hết hạn hoặc
+        không hợp lệ.
+      </p>
+      <a href="/resend-verification" class="btn">Gửi lại email xác minh</a>
+    </div>
+  </body>
+</html>

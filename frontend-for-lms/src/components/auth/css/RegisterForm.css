@@ -1,0 +1,72 @@
+.registration-form {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.registration-form .form-control {
+  height: 45px;
+  padding: 10px 15px;
+  border-radius: 6px;
+}
+
+.registration-form .form-label {
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.gender-options {
+  padding: 5px 0;
+}
+
+/* Sửa lại kích thước và hình dạng của radio buttons */
+.gender-options .form-check-input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin-top: 4px;
+  border-radius: 50%; /* Đảm bảo hình dạng tròn */
+  border: 1px solid #adb5bd;
+}
+
+.gender-options .form-check-input[type="radio"]:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  background-image: none;
+}
+
+.gender-options .form-check-label {
+  margin-left: 5px;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 24px;
+}
+
+/* Cân chỉnh layout cho radio buttons */
+.gender-options .form-check {
+  display: flex;
+  align-items: center;
+  margin-right: 15px;
+}
+
+.btn-primary {
+  padding: 12px 24px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Điều chỉnh khoảng cách trên mobile */
+@media (max-width: 768px) {
+  .gender-options {
+    flex-direction: column;
+  }
+  
+  .gender-options .form-check {
+    margin-bottom: 10px;
+  }
+}

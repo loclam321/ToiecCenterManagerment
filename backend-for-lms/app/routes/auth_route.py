@@ -103,14 +103,15 @@ def change_password():
 @auth_bp.route("/verify-email/<token>", methods=["GET"])
 def verify_email(token):
     """Xác minh email khi người dùng click vào link trong email"""
-    register_service = RegisterService()
-    result = register_service.verify_email(token)
+    auth_service = AuthService()
+    result = auth_service.verify_email(token)
 
-    # Đây là route hiển thị HTML, giữ nguyên
     if result["success"]:
+        # Thay đổi tên template
         return render_template("verification_success.html", message=result["message"])
     else:
-        return render_template("verification_error.html", message=result["message"])
+        # Thay đổi tên template
+        return render_template("verification_failed.html", message=result["message"])
 
 
 # Thêm route để gửi lại email xác nhận
@@ -144,3 +145,32 @@ def resend_verification():
     return success_response(
         message="If your email exists in our system, a verification email has been sent."
     )
+@auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    data = request.get_json()
+    email = data.get("email")
+
+    if not email:
+        return validation_error_response("Email is required")
+
+    result = auth_service.forgot_password(email)
+    if result["success"]:
+        return success_response(
+            message="a password reset link has been sent."
+        )
+    else:
+        return error_response(message=result.get("error", "Failed to initiate reset"))
+
+@auth_bp.route("/reset-password/<token>", methods=["POST"])
+def reset_password(token):
+    data = request.get_json()
+    new_password = data.get("new_password")
+
+    if not new_password:
+        return validation_error_response("New password is required")
+
+    result = auth_service.reset_password(token, new_password)
+    if result["success"]:
+        return success_response(message="Password has been reset successfully")
+    else:
+        return error_response(message=result.get("error", "Failed to reset password"))

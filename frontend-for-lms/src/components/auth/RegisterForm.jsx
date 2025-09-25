@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './css/RegisterForm.css'; // Tạo file CSS riêng nếu cần
 
 function RegisterForm({ onSubmit }) {
     const [formValues, setFormValues] = useState({
@@ -50,125 +51,164 @@ function RegisterForm({ onSubmit }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} noValidate>
-            <div className="form-group">
-                <label htmlFor="fullName">Họ và tên</label>
-                <input
-                    id="fullName"
-                    name="fullName"
-                    type="text"
-                    placeholder="VD: Nguyễn Văn A"
-                    value={formValues.fullName}
-                    onChange={handleChange}
-                />
-                {errors.fullName && <div className="error-text">{errors.fullName}</div>}
-            </div>
-
-            <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={formValues.email}
-                    onChange={handleChange}
-                />
-                {errors.email && <div className="error-text">{errors.email}</div>}
-            </div>
-
-            <div className="form-group">
-                <label htmlFor="dateOfBirth">Ngày sinh</label>
-                <input
-                    id="dateOfBirth"
-                    name="dateOfBirth"
-                    type="date"
-                    value={formValues.dateOfBirth}
-                    onChange={handleChange}
-                />
-                {errors.dateOfBirth && <div className="error-text">{errors.dateOfBirth}</div>}
-            </div>
-
-            <div className="form-group">
-                <label>Giới tính</label>
-                <div className="gender-options">
-                    <label className="radio-label">
+        <form className="registration-form" onSubmit={handleSubmit} noValidate>
+            <div className="row">
+                <div className="col-md-12">
+                    <div className="form-group mb-3">
+                        <label className="form-label" htmlFor="fullName">Họ và tên</label>
                         <input
-                            type="radio"
-                            name="gender"
-                            value="male"
-                            checked={formValues.gender === 'male'}
+                            className="form-control"
+                            id="fullName"
+                            name="fullName"
+                            type="text"
+                            placeholder="VD: Nguyễn Văn A"
+                            value={formValues.fullName}
                             onChange={handleChange}
                         />
-                        Nam
-                    </label>
-                    <label className="radio-label">
-                        <input
-                            type="radio"
-                            name="gender"
-                            value="female"
-                            checked={formValues.gender === 'female'}
-                            onChange={handleChange}
-                        />
-                        Nữ
-                    </label>
-                    <label className="radio-label">
-                        <input
-                            type="radio"
-                            name="gender"
-                            value="other"
-                            checked={formValues.gender === 'other'}
-                            onChange={handleChange}
-                        />
-                        Khác
-                    </label>
+                        {errors.fullName && <div className="error-text text-danger small">{errors.fullName}</div>}
+                    </div>
                 </div>
-                {errors.gender && <div className="error-text">{errors.gender}</div>}
             </div>
 
-            <div className="form-group">
-                <label htmlFor="phone">Số điện thoại</label>
-                <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    placeholder="VD: 0912345678"
-                    value={formValues.phone}
-                    onChange={handleChange}
-                />
-                {errors.phone && <div className="error-text">{errors.phone}</div>}
-                <div className="help-text">Nhập số điện thoại Việt Nam (10 số)</div>
+            <div className="row">
+                <div className="col-md-6">
+                    <div className="form-group mb-3">
+                        <label className="form-label" htmlFor="email">Email</label>
+                        <input
+                            className="form-control"
+                            id="email"
+                            name="email"
+                            type="email"
+                            placeholder="you@example.com"
+                            value={formValues.email}
+                            onChange={handleChange}
+                        />
+                        {errors.email && <div className="error-text text-danger small">{errors.email}</div>}
+                    </div>
+                </div>
+                <div className="col-md-6">
+                    <div className="form-group mb-3">
+                        <label className="form-label" htmlFor="phone">Số điện thoại</label>
+                        <input
+                            className="form-control"
+                            id="phone"
+                            name="phone"
+                            type="tel"
+                            placeholder="VD: 0912345678"
+                            value={formValues.phone}
+                            onChange={handleChange}
+                        />
+                        {errors.phone && <div className="error-text text-danger small">{errors.phone}</div>}
+                        <div className="help-text text-muted small">Nhập số điện thoại Việt Nam (10 số)</div>
+                    </div>
+                </div>
             </div>
 
-            <div className="form-group">
-                <label htmlFor="password">Mật khẩu</label>
-                <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••"
-                    value={formValues.password}
-                    onChange={handleChange}
-                />
-                {errors.password && <div className="error-text">{errors.password}</div>}
+            <div className="row">
+                <div className="col-md-6">
+                    <div className="form-group mb-3">
+                        <label className="form-label" htmlFor="dateOfBirth">Ngày sinh</label>
+                        <input
+                            className="form-control"
+                            id="dateOfBirth"
+                            name="dateOfBirth"
+                            type="date"
+                            value={formValues.dateOfBirth}
+                            onChange={handleChange}
+                        />
+                        {errors.dateOfBirth && <div className="error-text text-danger small">{errors.dateOfBirth}</div>}
+                    </div>
+                </div>
+                <div className="col-md-6">
+                    <div className="form-group mb-3">
+                        <label className="form-label d-block">Giới tính</label>
+                        <div className="gender-options d-flex gap-4 mt-2">
+                            <div className="form-check">
+                                <input
+                                    className="form-check-input"
+                                    type="radio"
+                                    id="genderMale"
+                                    name="gender"
+                                    value="male"
+                                    checked={formValues.gender === 'male'}
+                                    onChange={handleChange}
+                                />
+                                <label className="form-check-label" htmlFor="genderMale">
+                                    Nam
+                                </label>
+                            </div>
+                            <div className="form-check">
+                                <input
+                                    className="form-check-input"
+                                    type="radio"
+                                    id="genderFemale"
+                                    name="gender"
+                                    value="female"
+                                    checked={formValues.gender === 'female'}
+                                    onChange={handleChange}
+                                />
+                                <label className="form-check-label" htmlFor="genderFemale">
+                                    Nữ
+                                </label>
+                            </div>
+                            <div className="form-check">
+                                <input
+                                    className="form-check-input"
+                                    type="radio"
+                                    id="genderOther"
+                                    name="gender"
+                                    value="other"
+                                    checked={formValues.gender === 'other'}
+                                    onChange={handleChange}
+                                />
+                                <label className="form-check-label" htmlFor="genderOther">
+                                    Khác
+                                </label>
+                            </div>
+                        </div>
+                        {errors.gender && <div className="error-text text-danger small">{errors.gender}</div>}
+                    </div>
+                </div>
             </div>
 
-            <div className="form-group">
-                <label htmlFor="confirmPassword">Xác nhận mật khẩu</label>
-                <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="Nhập lại mật khẩu"
-                    value={formValues.confirmPassword}
-                    onChange={handleChange}
-                />
-                {errors.confirmPassword && <div className="error-text">{errors.confirmPassword}</div>}
+            <div className="row">
+                <div className="col-md-6">
+                    <div className="form-group mb-3">
+                        <label className="form-label" htmlFor="password">Mật khẩu</label>
+                        <input
+                            className="form-control"
+                            id="password"
+                            name="password"
+                            type="password"
+                            placeholder="••••••"
+                            value={formValues.password}
+                            onChange={handleChange}
+                        />
+                        {errors.password && <div className="error-text text-danger small">{errors.password}</div>}
+                    </div>
+                </div>
+                <div className="col-md-6">
+                    <div className="form-group mb-3">
+                        <label className="form-label" htmlFor="confirmPassword">Xác nhận mật khẩu</label>
+                        <input
+                            className="form-control"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            type="password"
+                            placeholder="Nhập lại mật khẩu"
+                            value={formValues.confirmPassword}
+                            onChange={handleChange}
+                        />
+                        {errors.confirmPassword && <div className="error-text text-danger small">{errors.confirmPassword}</div>}
+                    </div>
+                </div>
             </div>
 
-            <button type="submit" className="submit-btn">
-                Đăng ký
-            </button>
+            <div className="d-grid mt-4">
+                <button type="submit" className="btn btn-primary btn-lg">
+                    Đăng ký
+                </button>
+            </div>
         </form>
     );
 }
