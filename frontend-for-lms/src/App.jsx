@@ -1,17 +1,54 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
 // Import layout components
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
+import { fetchLearningPathsWithCourse, toggleCourseStatus } from './services/courseService';
 
 // Import pages
 import AuthPage from './pages/AuthPage';
 
 // Giữ HomePage content trong App nhưng chỉ hiển thị nó ở route "/"
 function HomeContent() {
+  const [showDropOverlay, setShowDropOverlay] = useState(false);
+  const [learningPaths, setLearningPaths] = useState([]);
+  const [lpLoading, setLpLoading] = useState(false);
+  const [lpError, setLpError] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
+
+  const loadLearningPaths = useCallback(async () => {
+    try {
+      setLpLoading(true);
+      setLpError(null);
+      const list = await fetchLearningPathsWithCourse();
+      setLearningPaths(list);
+    } catch (e) {
+      setLpError(e.message || 'Không thể tải lộ trình');
+    } finally {
+      setLpLoading(false);
+    }
+  }, []);
+
+  const handleToggle = async (lp) => {
+    try {
+      setTogglingId(lp.lp_id);
+      const updated = await toggleCourseStatus(lp.course_id);
+      setLearningPaths((prev) => prev.map((x) => x.lp_id === lp.lp_id ? { ...x, course_status: updated.course_status } : x));
+    } catch (e) {
+      alert(e.message || 'Không thể đổi trạng thái');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (showDropOverlay) {
+      loadLearningPaths();
+    }
+  }, [showDropOverlay, loadLearningPaths]);
   return (
     <>
       {/* Banner (Video) */}
@@ -82,12 +119,64 @@ function HomeContent() {
       </section>
 
       {/* Lộ trình học */}
-      <section id="paths" className="section bg-light py-6">
+      <section
+        id="paths"
+        className="section bg-light py-6"
+        onDragOver={(e) => e.preventDefault()}
+        onDragEnter={() => setShowDropOverlay(true)}
+        onDragLeave={() => setShowDropOverlay(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setShowDropOverlay(false);
+        }}
+      >
         <div className="container">
           <div className="section-header text-center mb-4">
             <h2 className="section-title mb-1">Lộ trình học</h2>
             <p className="section-subtitle mb-0">Chọn lộ trình phù hợp mục tiêu điểm và thời gian của bạn</p>
           </div>
+          {showDropOverlay && (
+            <div className="lp-drop-overlay">
+              <div className="lp-drop-panel">
+                <div className="lp-drop-header">
+                  <div className="lp-drop-title">Lộ trình & Trạng thái khóa học</div>
+                  <button className="lp-drop-close" onClick={() => setShowDropOverlay(false)}>✕</button>
+                </div>
+                <div className="lp-drop-content">
+                  {lpLoading ? (
+                    <div className="lp-loading">Đang tải lộ trình...</div>
+                  ) : lpError ? (
+                    <div className="lp-error">{lpError}</div>
+                  ) : learningPaths.length === 0 ? (
+                    <div className="lp-empty">Chưa có lộ trình</div>
+                  ) : (
+                    <ul className="lp-list">
+                      {learningPaths.map((lp) => (
+                        <li key={lp.lp_id} className="lp-item">
+                          <div className="lp-meta">
+                            <div className="lp-name">{lp.lp_name || `LP #${lp.lp_id}`}</div>
+                            <div className="lp-course">{lp.course_name || lp.course_id}</div>
+                          </div>
+                          <div className="lp-actions">
+                            <span className={`status-pill ${lp.course_status === 'ACTIVE' ? 'active' : 'inactive'}`}>
+                              {lp.course_status === 'ACTIVE' ? 'active' : 'inactive'}
+                            </span>
+                            <button
+                              className="btn-toggle"
+                              onClick={() => handleToggle(lp)}
+                              disabled={togglingId === lp.lp_id}
+                            >
+                              {togglingId === lp.lp_id ? 'Đang đổi...' : 'Đổi trạng thái'}
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           <div className="row g-4">
             <div className="col-md-4">
               <div className="path-card h-100 p-4 rounded border position-relative">

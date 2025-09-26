@@ -1,13 +1,25 @@
 /* Teacher Introduction Page Styles */
-.teacher-intro-container {
+.teacher-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #f8f9fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Đồng bộ với App.css layout */
+.teacher-page .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+.teacher-intro-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: calc(100vh - 80px); /* Trừ đi chiều cao header */
 }
 
 /* Hero Section */
 .teacher-hero {
-    padding: 80px 20px;
+    padding: 60px 20px;
     text-align: center;
     color: white;
     position: relative;
@@ -64,7 +76,7 @@
 
 /* Statistics Section */
 .teacher-stats-section {
-    padding: 60px 20px;
+    padding: 40px 20px;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
 }
@@ -78,8 +90,8 @@
     font-size: 2.5rem;
     font-weight: 700;
     text-align: center;
-    margin: 0 0 50px 0;
-    color: #2c3e50;
+    margin: 0 0 30px 0;
+    color: #111827;
     position: relative;
 }
 
@@ -139,8 +151,8 @@
 
 /* Teachers Showcase */
 .teachers-showcase {
-    padding: 80px 20px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 40px 20px;
+    background: #ffffff;
 }
 
 .teachers-showcase .container {
@@ -150,12 +162,12 @@
 
 .showcase-header {
     text-align: center;
-    margin-bottom: 60px;
+    margin-bottom: 40px;
 }
 
 .section-subtitle {
     font-size: 1.2rem;
-    color: #7f8c8d;
+    color: #6b7280;
     margin: 20px 0 0 0;
     font-weight: 400;
 }
@@ -386,8 +398,8 @@
 
 /* Why Choose Section */
 .why-choose-section {
-    padding: 80px 20px;
-    background: white;
+    padding: 40px 20px;
+    background: #f8f9fa;
 }
 
 .why-choose-section .container {
@@ -438,7 +450,7 @@
 
 /* CTA Section */
 .cta-section {
-    padding: 80px 20px;
+    padding: 40px 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     text-align: center;
@@ -559,25 +571,25 @@
     }
     
     .teacher-hero {
-        padding: 60px 20px;
+        padding: 40px 20px;
     }
     
     .teacher-stats-section,
     .teachers-showcase,
     .why-choose-section,
     .cta-section {
-        padding: 60px 20px;
+        padding: 30px 20px;
     }
     
     .stats-grid,
     .teachers-grid,
     .reasons-grid {
         grid-template-columns: 1fr;
-        gap: 25px;
+        gap: 20px;
     }
     
     .teacher-card {
-        padding: 25px;
+        padding: 20px;
     }
     
     .cta-buttons {
