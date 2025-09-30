@@ -15,7 +15,7 @@ export const getCourses = async (options = {}) => {
   try {
     const { page = 1, perPage = 10, search = '', sortBy = '', sortOrder = '', status = '', level = '', mode = '' } = options;
     
-    let url = `${BASE_URL}?page=${page}&per_page=${perPage}`;
+    let url = `${BASE_URL}/page?page=${page}&per_page=${perPage}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (sortBy) url += `&sort_by=${sortBy}`;
     if (sortOrder) url += `&sort_order=${sortOrder}`;
@@ -169,4 +169,55 @@ export const formatDate = (dateString) => {
     console.error('Error formatting date:', error);
     return 'N/A';
   }
+};
+
+export const fetchLearningPathsWithCourse = async () => {
+  const res = await fetch(`${BASE_URL}/learning-paths`);
+  const data = await res.json();
+  if (!res.ok || data.success !== true) {
+    throw new Error(data.message || 'Không thể tải lộ trình');
+  }
+  return data.data.learning_paths || [];
+};
+
+export const setCourseStatus = async (courseId, status) => {
+  const res = await fetch(`${BASE_URL}/${courseId}/status`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ course_status: status })
+  });
+  const data = await res.json();
+  if (!res.ok || data.success !== true) {
+    throw new Error(data.message || 'Không thể cập nhật trạng thái khoá học');
+  }
+  return data.data.course;
+};
+
+export const toggleCourseStatus = async (courseId) => {
+  const res = await fetch(`${BASE_URL}/${courseId}/toggle`, {
+    method: 'PATCH'
+  });
+  const data = await res.json();
+  if (!res.ok || data.success !== true) {
+    throw new Error(data.message || 'Không thể đổi trạng thái khoá học');
+  }
+  return data.data.course;
+};
+
+export const fetchCoursesSummary = async () => {
+  const res = await fetch(`${BASE_URL}/summary`);
+  const data = await res.json();
+  if (!res.ok || data.success !== true) {
+    throw new Error(data.message || 'Không thể tải danh sách khóa học');
+  }
+  return data.data.courses || [];
+};
+
+export const fetchLearningPathsByCourse = async (courseId) => {
+  const res = await fetch(`${BASE_URL}/${courseId}/learning-paths`);
+  const data = await res.json();
+  if (!res.ok || data.success !== true) {
+    throw new Error(data.message || 'Không thể tải lộ trình của khóa học');
+  }
+  return data.data;
 };

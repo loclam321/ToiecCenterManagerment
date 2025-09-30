@@ -3,9 +3,9 @@ import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { useParams } from 'react-router-dom';
 import { fetchLearningPathsByCourse } from '../../services/courseService';
-import './css/CourseDetail.css';
+import './css/CourseIntroduction.css';
 
-const CourseDetail = () => {
+const CourseIntroduction = () => {
   const { courseId } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -340,6 +340,6 @@ const CourseDetail = () => {
   );
 };
 
-export default CourseDetail;
+export default CourseIntroduction;
 
 

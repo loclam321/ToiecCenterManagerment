@@ -4,7 +4,7 @@ import Footer from '../../components/layout/Footer';
 import '../../App.css';
 import './css/teacher.css';
 
-const Teacher = () => {
+const TeacherIntroduction = () => {
     const [teachers, setTeachers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -295,4 +295,4 @@ const Teacher = () => {
     );
 };
 
-export default Teacher;
+export default TeacherIntroduction;

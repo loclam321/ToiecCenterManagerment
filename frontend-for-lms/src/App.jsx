@@ -1,101 +1,77 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { useEffect } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "./App.css";
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState, useCallback } from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './App.css';
+import TestPage from './pages/test/test';
+
 
 // Import layout components
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
-import { fetchCoursesSummary } from './services/courseService';
-import Header from "./components/layout/Header";
-import Footer from "./components/layout/Footer";
+import { fetchLearningPathsWithCourse, toggleCourseStatus } from './services/courseService';
 
 // Import pages
 import AuthPage from './pages/AuthPage';
-import TestPage from './pages/test/test';
-import AuthPage from "./pages/AuthPage";
-import AdminPage from "./pages/Admin/Adminpage";
-import Dashboard from "./pages/Admin/Dashboard";
-import TeacherManagement from "./pages/Admin/TeacherManagement";
-import TeacherDetail from "./pages/Admin/TeacherDetail";
-import TeacherForm from "./pages/Admin/TeacherForm";
-import StudentManagement from "./pages/Admin/StudentManagement";
-import StudentDetail from "./pages/Admin/StudentDetail";
-import StudentForm from "./pages/Admin/StudentForm";
-import CourseManagement from "./pages/Admin/CourseManagement";
 
 // Giữ HomePage content trong App nhưng chỉ hiển thị nó ở route "/"
 function HomeContent() {
   const [showDropOverlay, setShowDropOverlay] = useState(false);
-  const [courses, setCourses] = useState([]);
+  const [learningPaths, setLearningPaths] = useState([]);
   const [lpLoading, setLpLoading] = useState(false);
   const [lpError, setLpError] = useState(null);
-  const dropdownRef = useRef(null);
+  const [togglingId, setTogglingId] = useState(null);
 
-  const loadCourses = useCallback(async () => {
+  const loadLearningPaths = useCallback(async () => {
     try {
       setLpLoading(true);
       setLpError(null);
-      const list = await fetchCoursesSummary();
-      setCourses(list);
+      const list = await fetchLearningPathsWithCourse();
+      setLearningPaths(list);
     } catch (e) {
-      setLpError(e.message || 'Không thể tải danh sách khoá học');
+      setLpError(e.message || 'Không thể tải lộ trình');
     } finally {
       setLpLoading(false);
     }
   }, []);
 
+  const handleToggle = async (lp) => {
+    try {
+      setTogglingId(lp.lp_id);
+      const updated = await toggleCourseStatus(lp.course_id);
+      setLearningPaths((prev) => prev.map((x) => x.lp_id === lp.lp_id ? { ...x, course_status: updated.course_status } : x));
+    } catch (e) {
+      alert(e.message || 'Không thể đổi trạng thái');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   useEffect(() => {
     if (showDropOverlay) {
-      loadCourses();
+      loadLearningPaths();
     }
-  }, [showDropOverlay, loadCourses]);
-
-  // Load courses for rendering path cards
-  useEffect(() => {
-    loadCourses();
-  }, [loadCourses]);
-
-  useEffect(() => {
-    const handleOutside = (e) => {
-      if (showDropOverlay && dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setShowDropOverlay(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
-  }, [showDropOverlay]);
+  }, [showDropOverlay, loadLearningPaths]);
   return (
     <>
       {/* Banner (Video) */}
       <section className="home-hero">
         <div className="hero-media">
           <video className="hero-video" autoPlay muted loop playsInline>
-            <source src="/src/assets/video/5734765-hd_1920_1080_30fps.mp4" type="video/mp4" />
-            <source
-              src="/src/assets/5734765-hd_1920_1080_30fps.mp4"
-              type="video/mp4"
-            />
+            <source src="/src/assets/5734765-hd_1920_1080_30fps.mp4" type="video/mp4" />
           </video>
           <div className="hero-overlay"></div>
         </div>
         <div className="container hero-content text-start">
           <h1 className="display-6 fw-bold mb-2">Nâng tầm điểm TOEIC của bạn</h1>
-          <p className="lead mb-3">
-            Lộ trình cá nhân hóa, giáo trình cập nhật, giảng viên giàu kinh nghiệm.
-          </p>
+          <p className="lead mb-3">Lộ trình cá nhân hóa, giáo trình cập nhật, giảng viên giàu kinh nghiệm.</p>
           <div className="hero-badges mb-3">
             <span className="badge-item">Cam kết 650+ đầu ra</span>
             <span className="badge-item">Lịch học linh hoạt</span>
             <span className="badge-item">Giáo viên 8+ năm</span>
           </div>
           <div className="d-flex justify-content-center">
-            <a href="#paths" className="btn btn-primary me-2">
-              Xem lộ trình
-            </a>
-            <a href="#intro" className="btn btn-outline-primary">
-              Tìm hiểu thêm
-            </a>
+            <a href="#paths" className="btn btn-primary me-2">Xem lộ trình</a>
+            <a href="#intro" className="btn btn-outline-primary">Tìm hiểu thêm</a>
           </div>
         </div>
       </section>
@@ -105,10 +81,7 @@ function HomeContent() {
         <div className="row align-items-center g-4">
           <div className="col-md-6">
             <h2 className="section-title">Về Trung Tâm</h2>
-            <p className="section-desc">
-              Môi trường học hiện đại, lộ trình cá nhân hóa theo mục tiêu. Hệ thống
-              theo dõi tiến độ từng tuần và kho đề cập nhật liên tục theo format mới.
-            </p>
+            <p className="section-desc">Môi trường học hiện đại, lộ trình cá nhân hóa theo mục tiêu. Hệ thống theo dõi tiến độ từng tuần và kho đề cập nhật liên tục theo format mới.</p>
             <ul className="intro-features mt-3">
               <li>Khảo sát đầu vào & tư vấn lộ trình theo mục tiêu điểm</li>
               <li>Giáo trình bám sát đề thi chính thức, cập nhật hàng quý</li>
@@ -141,158 +114,138 @@ function HomeContent() {
                 <li>Ôn lại miễn phí hoặc hoàn phí theo điều kiện</li>
                 <li>Thi thử định kỳ, báo cáo tiến bộ 2 tuần/lần</li>
               </ul>
-              <a
-                href="#paths"
-                className="btn btn-outline-primary btn-sm"
-              >
-                Xem thêm thông tin về lộ trình
-              </a>
+              <a href="#paths" className="btn btn-outline-primary btn-sm">Xem thêm thông tin về lộ trình</a>
             </div>
           </div>
         </div>
       </section>
 
       {/* Lộ trình học */}
-      <section id="paths" className="section bg-light py-6">
+      <section
+        id="paths"
+        className="section bg-light py-6"
+        onDragOver={(e) => e.preventDefault()}
+        onDragEnter={() => setShowDropOverlay(true)}
+        onDragLeave={() => setShowDropOverlay(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setShowDropOverlay(false);
+        }}
+      >
         <div className="container">
           <div className="section-header text-center mb-4">
             <h2 className="section-title mb-1">Lộ trình học</h2>
-            <p className="section-subtitle mb-0">
-              Chọn lộ trình phù hợp mục tiêu điểm và thời gian của bạn
-            </p>
+            <p className="section-subtitle mb-0">Chọn lộ trình phù hợp mục tiêu điểm và thời gian của bạn</p>
           </div>
+          {showDropOverlay && (
+            <div className="lp-drop-overlay">
+              <div className="lp-drop-panel">
+                <div className="lp-drop-header">
+                  <div className="lp-drop-title">Lộ trình & Trạng thái khóa học</div>
+                  <button className="lp-drop-close" onClick={() => setShowDropOverlay(false)}>✕</button>
+                </div>
+                <div className="lp-drop-content">
+                  {lpLoading ? (
+                    <div className="lp-loading">Đang tải lộ trình...</div>
+                  ) : lpError ? (
+                    <div className="lp-error">{lpError}</div>
+                  ) : learningPaths.length === 0 ? (
+                    <div className="lp-empty">Chưa có lộ trình</div>
+                  ) : (
+                    <ul className="lp-list">
+                      {learningPaths.map((lp) => (
+                        <li key={lp.lp_id} className="lp-item">
+                          <div className="lp-meta">
+                            <div className="lp-name">{lp.lp_name || `LP #${lp.lp_id}`}</div>
+                            <div className="lp-course">{lp.course_name || lp.course_id}</div>
+                          </div>
+                          <div className="lp-actions">
+                            <span className={`status-pill ${lp.course_status === 'ACTIVE' ? 'active' : 'inactive'}`}>
+                              {lp.course_status === 'ACTIVE' ? 'active' : 'inactive'}
+                            </span>
+                            <button
+                              className="btn-toggle"
+                              onClick={() => handleToggle(lp)}
+                              disabled={togglingId === lp.lp_id}
+                            >
+                              {togglingId === lp.lp_id ? 'Đang đổi...' : 'Đổi trạng thái'}
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           <div className="row g-4">
             <div className="col-md-4">
               <div className="path-card h-100 p-4 rounded border position-relative">
                 <div className="d-flex align-items-center mb-3">
                   <div className="path-icon me-3">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M4 6h16M4 12h10M4 18h16"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16M4 12h10M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                   </div>
                   <div>
                     <h5 className="mb-1">Foundation (0-450)</h5>
-                    <div className="text-muted small">
-                      4–8 tuần • 2–3 buổi/tuần
-                    </div>
+                    <div className="text-muted small">4–8 tuần • 2–3 buổi/tuần</div>
                   </div>
                 </div>
-                <p className="mb-3">
-                  Củng cố phát âm, từ vựng, ngữ pháp nền tảng. Làm quen format đề
-                  và chiến thuật cơ bản.
-                </p>
+                <p className="mb-3">Củng cố phát âm, từ vựng, ngữ pháp nền tảng. Làm quen format đề và chiến thuật cơ bản.</p>
                 <ul className="feature-list small mb-3">
                   <li>Làm bài tập ngắn mỗi ngày</li>
                   <li>Mini test hàng tuần</li>
                 </ul>
-                <a href="#" className="path-link">
-                  Khám phá lộ trình
-                </a>
+                <a href="#" className="path-link">Khám phá lộ trình</a>
               </div>
             </div>
             <div className="col-md-4">
               <div className="path-card h-100 p-4 rounded border position-relative">
                 <div className="d-flex align-items-center mb-3">
                   <div className="path-icon me-3">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M13 3l-1 9h8l-9 9 1-9H4l9-9z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 3l-1 9h8l-9 9 1-9H4l9-9z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </div>
                   <div>
                     <h5 className="mb-1">Accelerate (450-650)</h5>
-                    <div className="text-muted small">
-                      6–10 tuần • 3 buổi/tuần
-                    </div>
+                    <div className="text-muted small">6–10 tuần • 3 buổi/tuần</div>
                   </div>
                 </div>
-                <p className="mb-3">
-                  Tăng tốc kỹ năng nghe–đọc, luyện chiến thuật theo từng Part, tập
-                  trung tối ưu điểm.
-                </p>
+                <p className="mb-3">Tăng tốc kỹ năng nghe–đọc, luyện chiến thuật theo từng Part, tập trung tối ưu điểm.</p>
                 <ul className="feature-list small mb-3">
                   <li>Chữa đề chi tiết theo lỗi</li>
                   <li>Đánh giá tiến bộ 2 tuần/lần</li>
                 </ul>
-                <a href="#" className="path-link">
-                  Khám phá lộ trình
-                </a>
+                <a href="#" className="path-link">Khám phá lộ trình</a>
               </div>
             </div>
             <div className="col-md-4">
               <div className="path-card h-100 p-4 rounded border position-relative">
                 <div className="d-flex align-items-center mb-3">
                   <div className="path-icon me-3">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12 2l3 7h7l-5.5 4.1L18 21l-6-4-6 4 1.5-7.9L2 9h7l3-7z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3 7h7l-5.5 4.1L18 21l-6-4-6 4 1.5-7.9L2 9h7l3-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </div>
                   <div>
                     <h5 className="mb-1">Master (650-800+)</h5>
-                    <div className="text-muted small">
-                      8–12 tuần • 3–4 buổi/tuần
-                    </div>
+                    <div className="text-muted small">8–12 tuần • 3–4 buổi/tuần</div>
                   </div>
                 </div>
-                <p className="mb-3">
-                  Luyện đề cường độ cao, phân tích lỗi theo chủ đề, tối ưu tốc độ
-                  và độ chính xác.
-                </p>
+                <p className="mb-3">Luyện đề cường độ cao, phân tích lỗi theo chủ đề, tối ưu tốc độ và độ chính xác.</p>
                 <ul className="feature-list small mb-3">
                   <li>Full test mô phỏng mỗi tuần</li>
                   <li>Coaching chiến lược cá nhân</li>
                 </ul>
-                <a href="#" className="path-link">
-                  Khám phá lộ trình
-                </a>
+                <a href="#" className="path-link">Khám phá lộ trình</a>
               </div>
             </div>
           </div>
         </div>
       </section>
-      {/* Lộ trình học - đã bỏ showcase theo yêu cầu */}
 
       {/* Teachers Section */}
       <section id="teachers" className="section container py-6">
         <div className="section-header text-center mb-4">
           <h2 className="section-title mb-1">Đội ngũ giảng viên</h2>
-          <p className="section-subtitle mb-0">
-            Giảng viên giàu kinh nghiệm với chứng chỉ quốc tế
-          </p>
+          <p className="section-subtitle mb-0">Giảng viên giàu kinh nghiệm với chứng chỉ quốc tế</p>
         </div>
         <div className="row g-4">
           <div className="col-md-4">
@@ -301,13 +254,8 @@ function HomeContent() {
                 <div className="avatar-circle-large mx-auto">MS</div>
               </div>
               <h5 className="teacher-name text-center mb-2">Ms. Sarah Johnson</h5>
-              <p className="teacher-title text-center text-muted mb-3">
-                Chuyên gia TOEIC
-              </p>
-              <p className="mb-3">
-                8 năm kinh nghiệm giảng dạy TOEIC, chứng chỉ TESOL quốc tế. Đã giúp
-                hơn 500 học viên đạt điểm mục tiêu.
-              </p>
+              <p className="teacher-title text-center text-muted mb-3">Chuyên gia TOEIC</p>
+              <p className="mb-3">8 năm kinh nghiệm giảng dạy TOEIC, chứng chỉ TESOL quốc tế. Đã giúp hơn 500 học viên đạt điểm mục tiêu.</p>
               <div className="teacher-experience d-flex justify-content-center align-items-center mb-3">
                 <span className="badge bg-primary me-2">8 năm kinh nghiệm</span>
                 <span className="badge bg-success">TESOL Certified</span>
@@ -323,13 +271,8 @@ function HomeContent() {
                 <div className="avatar-circle-large mx-auto">DM</div>
               </div>
               <h5 className="teacher-name text-center mb-2">Mr. David Miller</h5>
-              <p className="teacher-title text-center text-muted mb-3">
-                Chuyên gia Listening
-              </p>
-              <p className="mb-3">
-                10 năm kinh nghiệm, từng làm việc tại các tập đoàn đa quốc gia.
-                Chuyên sâu về kỹ năng nghe và phát âm.
-              </p>
+              <p className="teacher-title text-center text-muted mb-3">Chuyên gia Listening</p>
+              <p className="mb-3">10 năm kinh nghiệm, từng làm việc tại các tập đoàn đa quốc gia. Chuyên sâu về kỹ năng nghe và phát âm.</p>
               <div className="teacher-experience d-flex justify-content-center align-items-center mb-3">
                 <span className="badge bg-primary me-2">10 năm kinh nghiệm</span>
                 <span className="badge bg-info">IELTS 8.5</span>
@@ -345,13 +288,8 @@ function HomeContent() {
                 <div className="avatar-circle-large mx-auto">AL</div>
               </div>
               <h5 className="teacher-name text-center mb-2">Ms. Anna Lee</h5>
-              <p className="teacher-title text-center text-muted mb-3">
-                Chuyên gia Reading
-              </p>
-              <p className="mb-3">
-                6 năm kinh nghiệm, thạc sĩ Ngôn ngữ học. Phương pháp giảng dạy
-                sáng tạo, giúp học viên cải thiện kỹ năng đọc hiểu nhanh chóng.
-              </p>
+              <p className="teacher-title text-center text-muted mb-3">Chuyên gia Reading</p>
+              <p className="mb-3">6 năm kinh nghiệm, thạc sĩ Ngôn ngữ học. Phương pháp giảng dạy sáng tạo, giúp học viên cải thiện kỹ năng đọc hiểu nhanh chóng.</p>
               <div className="teacher-experience d-flex justify-content-center align-items-center mb-3">
                 <span className="badge bg-primary me-2">6 năm kinh nghiệm</span>
                 <span className="badge bg-warning">MA Linguistics</span>
@@ -374,10 +312,7 @@ function HomeContent() {
           <div className="col-md-4">
             <div className="testimonial-card p-4 rounded border h-100">
               <div className="quote-mark">"</div>
-              <p className="mb-3">
-                Tăng 200 điểm sau 8 tuần. Mentor theo sát giúp mình giữ nhịp học
-                và biết cách phân bổ thời.
-              </p>
+              <p className="mb-3">Tăng 200 điểm sau 8 tuần. Mentor theo sát giúp mình giữ nhịp học và biết cách phân bổ thời.</p>
               <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex align-items-center">
                   <div className="avatar-circle me-2">MK</div>
@@ -386,19 +321,14 @@ function HomeContent() {
                     <div className="small text-muted">TOEIC 745</div>
                   </div>
                 </div>
-                <div className="rating" aria-label="5 stars">
-                  ★★★★★
-                </div>
+                <div className="rating" aria-label="5 stars">★★★★★</div>
               </div>
             </div>
           </div>
           <div className="col-md-4">
             <div className="testimonial-card p-4 rounded border h-100">
               <div className="quote-mark">"</div>
-              <p className="mb-3">
-                Kho đề và chữa chi tiết rất chất lượng, chỉ ra điểm yếu cụ thể để
-                cải thiện nhanh.
-              </p>
+              <p className="mb-3">Kho đề và chữa chi tiết rất chất lượng, chỉ ra điểm yếu cụ thể để cải thiện nhanh.</p>
               <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex align-items-center">
                   <div className="avatar-circle me-2">TH</div>
@@ -407,19 +337,14 @@ function HomeContent() {
                     <div className="small text-muted">TOEIC 805</div>
                   </div>
                 </div>
-                <div className="rating" aria-label="5 stars">
-                  ★★★★★
-                </div>
+                <div className="rating" aria-label="5 stars">★★★★★</div>
               </div>
             </div>
           </div>
           <div className="col-md-4">
             <div className="testimonial-card p-4 rounded border h-100">
               <div className="quote-mark">"</div>
-              <p className="mb-3">
-                Lịch học linh hoạt, giáo viên hỗ trợ ngoài giờ qua nhóm riêng, rất
-                yên tâm.
-              </p>
+              <p className="mb-3">Lịch học linh hoạt, giáo viên hỗ trợ ngoài giờ qua nhóm riêng, rất yên tâm.</p>
               <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex align-items-center">
                   <div className="avatar-circle me-2">QN</div>
@@ -428,9 +353,7 @@ function HomeContent() {
                     <div className="small text-muted">TOEIC 650</div>
                   </div>
                 </div>
-                <div className="rating" aria-label="5 stars">
-                  ★★★★★
-                </div>
+                <div className="rating" aria-label="5 stars">★★★★★</div>
               </div>
             </div>
           </div>
@@ -445,6 +368,7 @@ function App() {
     <div className="app-layout bg-light min-vh-100 d-flex flex-column">
       <Header />
 
+
         <main className="content bg-white border rounded p-0">
           <Routes>
             <Route path="/" element={<HomeContent />} />
@@ -455,17 +379,6 @@ function App() {
           </Routes>
         </main>
     
-      <main className="content bg-white border rounded p-0">
-        <Routes>
-          {/* Route mặc định chuyển hướng đến trang admin */}
-          <Route path="/" element={<Navigate to="/admin" replace />} />
-
-          {/* Route admin với Adminpage làm layout chung */}
-
-
-          {/* Các route khác không liên quan đến admin */}
-        </Routes>
-      </main>
 
       <Footer />
     </div>

@@ -20,22 +20,94 @@ class CourseService:
             return "C0000001"
         return f"C{int(last_id[1:]) + 1:07d}"
 
-    def get_all_courses(self, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
-        pagination = Course.query.paginate(
-            page=page, per_page=per_page, error_out=False
-        )
-        return {
-            "success": True,
-            "data": [course.to_dict() for course in pagination.items],
-            "pagination": {
-                "total": pagination.total,
-                "pages": pagination.pages,
-                "page": page,
-                "per_page": per_page,
-                "has_next": pagination.has_next,
-                "has_prev": pagination.has_prev,
-            },
-        }
+    def get_all_courses(
+        self, page: int = 1, per_page: int = 10, filters: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """
+        Lấy danh sách khóa học với phân trang, lọc và sắp xếp
+
+        Args:
+            page: Trang hiện tại
+            per_page: Số lượng bản ghi trên mỗi trang
+            filters: Dict chứa các tham số lọc và sắp xếp
+        """
+        try:
+            query = Course.query.filter_by(is_deleted=0)
+
+            # Xử lý các filter nếu có
+            if filters:
+                # Filter theo level
+                if filters.get("level"):
+                    query = query.filter(Course.level == filters["level"])
+
+                # Filter theo mode
+                if filters.get("mode"):
+                    query = query.filter(Course.mode == filters["mode"])
+
+                # Filter theo status
+                if filters.get("status"):
+                    query = query.filter(Course.status == filters["status"])
+
+                # Filter theo teacher
+                if filters.get("teacher_id"):
+                    query = query.filter(Course.teacher_id == filters["teacher_id"])
+
+                # Filter theo tên (tìm kiếm)
+                if filters.get("search"):
+                    search_term = f"%{filters['search']}%"
+                    query = query.filter(Course.course_name.like(search_term))
+
+                # Xử lý sắp xếp
+                sort_by = filters.get("sort_by", "created_at")
+                sort_order = filters.get("sort_order", "desc")
+
+                # Đảm bảo sort_by là tên cột hợp lệ trong Course model
+                valid_sort_columns = [
+                    "course_id",
+                    "course_code",
+                    "course_name",
+                    "level",
+                    "mode",
+                    "start_date",
+                    "end_date",
+                    "tuition_fee",
+                    "capacity",
+                    "status",
+                    "created_at",
+                    "updated_at",
+                ]
+
+                if sort_by in valid_sort_columns:
+                    column = getattr(Course, sort_by)
+                    if sort_order.lower() == "desc":
+                        query = query.order_by(column.desc())
+                    else:
+                        query = query.order_by(column.asc())
+                else:
+                    # Sắp xếp mặc định nếu sort_by không hợp lệ
+                    query = query.order_by(Course.created_at.desc())
+            else:
+                # Sắp xếp mặc định
+                query = query.order_by(Course.created_at.desc())
+
+            # Phân trang
+            pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+            return {
+                "success": True,
+                "data": [course.to_dict() for course in pagination.items],
+                "pagination": {
+                    "total": pagination.total,
+                    "pages": pagination.pages,
+                    "page": page,
+                    "per_page": per_page,
+                    "has_next": pagination.has_next,
+                    "has_prev": pagination.has_prev,
+                },
+            }
+        except Exception as e:
+            current_app.logger.error(f"Error in get_all_courses: {str(e)}")
+            return {"success": False, "error": f"Error retrieving courses: {str(e)}"}
 
     def get_course_by_id(self, course_id: str) -> Dict[str, Any]:
         course = Course.query.get(course_id)

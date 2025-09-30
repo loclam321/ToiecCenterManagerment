@@ -6,7 +6,6 @@ import './index.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import AuthPage from './pages/AuthPage';
-import Teacher from './pages/teacher';
 import AdminDashboard from './pages/Admin/Dashboard';
 import StudentManagement from './pages/Admin/StudentManagement';
 import StudentDetail from './pages/Admin/StudentDetail';
@@ -16,8 +15,8 @@ import TeacherDetail from './pages/Admin/TeacherDetail';
 import TeacherForm from './pages/Admin/TeacherForm';
 import CourseManagement from './pages/Admin/CourseManagement';
 import CourseDetail from './pages/Admin/CourseDetail';
-import Teacher from './pages/Teacher/teacher';
-import CourseDetail from './pages/Courses/CourseDetail';
+import TeacherIntroduction from './pages/Teacher/TeacherIntroduction';  
+import CourseIntroduction from './pages/Courses/CourseIntroduction';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -25,7 +24,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Routes>
         <Route path="/*" element={<App />} />
         <Route path="/login" element={<AuthPage />} />
-        <Route path="/teachers" element={<Teacher />} />
+        <Route path="/teachers" element={<TeacherIntroduction />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/students" element={<StudentManagement />} />
         <Route path="/admin/students/:id" element={<StudentDetail />} />
@@ -37,8 +36,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/admin/teachers/:id/edit" element={<TeacherForm />} />
         <Route path="/admin/courses" element={<CourseManagement />} />
         <Route path="/admin/courses/:id" element={<CourseDetail />} />
-
-        <Route path="/courses/:courseId" element={<CourseDetail />} />
+  
+        <Route path="/courses/:courseId" element={<CourseIntroduction />} />
         {/* Thêm các route khác ở đây */}
       </Routes>
     </BrowserRouter>
