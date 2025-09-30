@@ -1,0 +1,52 @@
+/* Reset CSS cho trang admin */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+  width: 100%;
+  height: 100vh;
+}
+
+/* Layout Admin */
+.admin-layout {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg);
+}
+
+.admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  transition: margin-left 0.25s ease;
+  width: calc(100% - 260px);
+}
+
+.admin-main.expanded {
+  width: calc(100% - 70px);
+}
+
+.admin-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .admin-main {
+    width: 100%;
+  }
+}

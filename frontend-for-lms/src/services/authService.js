@@ -15,6 +15,10 @@ const saveAuthData = (authData) => {
   }
 };
 
+export const getToken = () => {
+  return localStorage.getItem('token');
+};
+
 /**
  * Xóa thông tin xác thực người dùng (logout)
  */

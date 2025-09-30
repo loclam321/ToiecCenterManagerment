@@ -1,6 +1,10 @@
 from flask import Flask
 from app.config import db, migrate, jwt, mail, config
 from .routes.auth_route import auth_bp
+from .routes.teacher_route import teacher_bp
+from .routes.student_route import student_bp
+from .routes.course_route import course_bp
+from .routes.class_route import class_bp
 from flask_cors import CORS
 
 
@@ -39,5 +43,9 @@ def create_app(config_name="default"):
     from app.models.course_model import Course
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(teacher_bp)
+    app.register_blueprint(student_bp)
+    app.register_blueprint(course_bp)
+    app.register_blueprint(class_bp)
 
     return app

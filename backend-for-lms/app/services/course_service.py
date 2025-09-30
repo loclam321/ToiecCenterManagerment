@@ -1,8 +1,11 @@
+from typing import Dict, Any, Optional
+from datetime import datetime, date
+from flask import current_app
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
+
 from app.config import db
 from app.models.course_model import Course
-from sqlalchemy.exc import IntegrityError
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 
 
 class CourseService:
@@ -11,218 +14,138 @@ class CourseService:
     def __init__(self, database=None):
         self.db = database or db
 
-    # --------- READ ----------
-    def get_all(self, status: Optional[str] = None) -> List[Course]:
-        """Lấy tất cả courses, có thể lọc theo status"""
-        try:
-            query = self.db.session.query(Course)
-            if status:
-                query = query.filter(Course.course_status == status)
-            return query.all()
-        except Exception as e:
-            print(f"Lỗi khi lấy danh sách courses: {str(e)}")
-            return []
-
-    def get_by_id(self, course_id: str) -> Optional[Course]:
-        """Lấy course theo ID"""
-        try:
-            return self.db.session.query(Course).filter(Course.course_id == course_id).first()
-        except Exception as e:
-            print(f"Lỗi khi lấy course theo ID: {str(e)}")
-            return None
-
-    def get_by_status(self, status: str) -> List[Course]:
-        """Lấy danh sách courses theo status"""
-        try:
-            return self.db.session.query(Course).filter(Course.course_status == status).all()
-        except Exception as e:
-            print(f"Lỗi khi lấy courses theo status: {str(e)}")
-            return []
-
-    def search(self, keyword: str) -> List[Course]:
-        """Tìm kiếm courses theo keyword"""
-        try:
-            if not keyword or len(keyword.strip()) < 2:
-                return []
-            keyword = keyword.strip()
-            return (
-                self.db.session.query(Course)
-                .filter(
-                    Course.course_name.like(f"%{keyword}%")
-                    | Course.course_description.like(f"%{keyword}%")
-                )
-                .all()
-            )
-        except Exception as e:
-            print(f"Lỗi khi tìm kiếm courses: {str(e)}")
-            return []
-
-    def get_paginated(self, offset: int = 0, limit: int = 10, status: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Lấy danh sách courses phân trang + tổng số dòng.
-        Trả về dict: {"data": [to_dict...], "total": int}
-        """
-        try:
-            query = self.db.session.query(Course)
-            if status:
-                query = query.filter(Course.course_status == status)
-            total = query.count()
-            items = query.offset(offset).limit(limit).all()
-            data = [c.to_dict() for c in items if hasattr(c, "to_dict")]
-            return {"data": data, "total": total}
-        except Exception as e:
-            print(f"Lỗi khi phân trang courses: {str(e)}")
-            return {"data": [], "total": 0}
-
-    def get_statistics(self) -> Dict[str, int]:
-        """Thống kê số lượng theo status"""
-        try:
-            total = self.db.session.query(Course).count()
-            active = self.db.session.query(Course).filter_by(course_status="ACTIVE").count()
-            inactive = self.db.session.query(Course).filter_by(course_status="INACTIVE").count()
-            draft = self.db.session.query(Course).filter_by(course_status="DRAFT").count()
-            return {
-                "total_courses": total,
-                "active_courses": active,
-                "inactive_courses": inactive,
-                "draft_courses": draft,
-            }
-        except Exception as e:
-            print(f"Lỗi khi thống kê courses: {str(e)}")
-            return {"total_courses": 0, "active_courses": 0, "inactive_courses": 0, "draft_courses": 0}
-
-    # --------- WRITE ----------
-    def create(self, data: Dict[str, Any]) -> Optional[Course]:
-        """Tạo course mới, trả về Course hoặc None"""
-        try:
-            # Tự tạo ID nếu không có
-            if not data.get("course_id"):
-                data["course_id"] = self._generate_course_id()
-
-            # Kiểm tra trùng khóa
-            exists = (
-                self.db.session.query(Course)
-                .filter(Course.course_id == data["course_id"])
-                .first()
-            )
-            if exists:
-                print("Course ID already exists")
-                return None
-
-            course = Course(
-                course_id=data["course_id"],
-                course_name=data["course_name"],
-                course_description=data.get("course_description"),
-                course_status=data.get("course_status", "ACTIVE"),
-            )
-            self.db.session.add(course)
-            self.db.session.commit()
-            return course
-        except IntegrityError:
-            self.db.session.rollback()
-            print("IntegrityError: Duplicate course_id")
-            return None
-        except Exception as e:
-            self.db.session.rollback()
-            print(f"Lỗi khi tạo course: {str(e)}")
-            return None
-
-    def update(self, course_id: str, data: Dict[str, Any]) -> Optional[Course]:
-        """Cập nhật course, trả về Course cập nhật hoặc None"""
-        try:
-            course = self.get_by_id(course_id)
-            if not course:
-                return None
-
-            for key, value in data.items():
-                if hasattr(course, key) and key != "course_id":
-                    setattr(course, key, value)
-
-            self.db.session.commit()
-            return course
-        except Exception as e:
-            self.db.session.rollback()
-            print(f"Lỗi khi cập nhật course: {str(e)}")
-            return None
-
-    def delete(self, course_id: str) -> bool:
-        """Xóa course, trả về True/False"""
-        try:
-            course = self.get_by_id(course_id)
-            if not course:
-                return False
-
-            if not self._can_delete_course(course):
-                return False
-
-            self.db.session.delete(course)
-            self.db.session.commit()
-            return True
-        except Exception as e:
-            self.db.session.rollback()
-            print(f"Lỗi khi xóa course: {str(e)}")
-            return False
-
-    def toggle_status(self, course_id: str) -> Optional[Course]:
-        """Đổi status ACTIVE <-> INACTIVE, trả về Course hoặc None"""
-        try:
-            course = self.get_by_id(course_id)
-            if not course:
-                return None
-
-            status = course.course_status or "ACTIVE"
-            if status == "ACTIVE":
-                course.course_status = "INACTIVE"
-            else:
-                course.course_status = "ACTIVE"
-
-            self.db.session.commit()
-            return course
-        except Exception as e:
-            self.db.session.rollback()
-            print(f"Lỗi khi toggle status: {str(e)}")
-            return None
-
-    def create_test_course(self) -> Optional[Course]:
-        """Tạo course test nếu chưa có, trả về Course"""
-        try:
-            existing = self.db.session.query(Course).filter_by(course_id="TEST001").first()
-            if existing:
-                return existing
-            course = Course(
-                course_id="TEST001",
-                course_name="Test Course",
-                course_description="This is a test course",
-                course_status="ACTIVE",
-            )
-            self.db.session.add(course)
-            self.db.session.commit()
-            return course
-        except Exception as e:
-            self.db.session.rollback()
-            print(f"Lỗi khi tạo test course: {str(e)}")
-            return None
-
-    # --------- Helpers ----------
     def _generate_course_id(self) -> str:
-        """Sinh course_id định dạng CS000001, CS000002,..."""
-        try:
-            last = self.db.session.query(Course).order_by(Course.course_id.desc()).first()
-            if not last:
-                return "CS000001"
-            if last.course_id.startswith("CS") and len(last.course_id) == 8:
-                try:
-                    num = int(last.course_id[2:])
-                    return f"CS{num + 1:06d}"
-                except ValueError:
-                    pass
-            total = self.db.session.query(Course).count()
-            return f"CS{total + 1:06d}"
-        except Exception as e:
-            print(f"Lỗi khi generate course_id: {str(e)}")
-            return f"CS{datetime.now().strftime('%H%M%S')}"
+        last_id = self.db.session.query(func.max(Course.course_id)).scalar()
+        if not last_id:
+            return "C0000001"
+        return f"C{int(last_id[1:]) + 1:07d}"
 
-    def _can_delete_course(self, course: Course) -> bool:
-        """Business rule trước khi xóa (tạm thời luôn True)"""
-        # TODO: kiểm tra enrollments liên quan
-        return True
+    def get_all_courses(self, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
+        pagination = Course.query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        return {
+            "success": True,
+            "data": [course.to_dict() for course in pagination.items],
+            "pagination": {
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            },
+        }
+
+    def get_course_by_id(self, course_id: str) -> Dict[str, Any]:
+        course = Course.query.get(course_id)
+        if not course:
+            return {"success": False, "error": "Course not found"}
+        return {"success": True, "data": course.to_dict()}
+
+    def create_course(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            course = Course(
+                course_id=self._generate_course_id(),
+                course_code=payload.get("course_code"),
+                course_name=payload["course_name"],
+                course_description=payload.get("course_description"),
+                target_score=payload.get("target_score"),
+                level=payload.get("level"),
+                mode=payload.get("mode", "OFFLINE"),
+                schedule_text=payload.get("schedule_text"),
+                start_date=self._parse_date(payload.get("start_date")),
+                end_date=self._parse_date(payload.get("end_date")),
+                session_count=payload.get("session_count"),
+                total_hours=payload.get("total_hours"),
+                tuition_fee=payload.get("tuition_fee"),
+                capacity=payload.get("capacity"),
+                status=payload.get("status", "OPEN"),
+                is_deleted=0,
+                teacher_id=payload.get("teacher_id"),
+                learning_path_id=payload.get("learning_path_id"),
+                campus_id=payload.get("campus_id"),
+            )
+            self.db.session.add(course)
+            self.db.session.commit()
+            return {"success": True, "data": course.to_dict()}
+        except IntegrityError as exc:
+            self.db.session.rollback()
+            current_app.logger.error(f"Integrity error creating course: {exc}")
+            return {"success": False, "error": "Duplicate course code or ID"}
+        except KeyError as exc:
+            self.db.session.rollback()
+            return {"success": False, "error": f"Missing field: {exc.args[0]}"}
+        except Exception as exc:
+            self.db.session.rollback()
+            current_app.logger.exception("Unexpected error creating course")
+            return {"success": False, "error": str(exc)}
+
+    def update_course(self, course_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        course = Course.query.get(course_id)
+        if not course:
+            return {"success": False, "error": "Course not found"}
+
+        try:
+            for field in [
+                "course_code",
+                "course_name",
+                "course_description",
+                "target_score",
+                "level",
+                "mode",
+                "schedule_text",
+                "session_count",
+                "total_hours",
+                "tuition_fee",
+                "capacity",
+                "status",
+                "teacher_id",
+                "learning_path_id",
+                "campus_id",
+            ]:
+                if field in payload:
+                    setattr(course, field, payload[field])
+
+            if "start_date" in payload:
+                course.start_date = self._parse_date(payload["start_date"])
+            if "end_date" in payload:
+                course.end_date = self._parse_date(payload["end_date"])
+
+            course.updated_at = datetime.utcnow()
+            self.db.session.commit()
+            return {"success": True, "data": course.to_dict()}
+        except IntegrityError as exc:
+            self.db.session.rollback()
+            current_app.logger.error(f"Integrity error updating course: {exc}")
+            return {"success": False, "error": "Duplicate course code"}
+        except Exception as exc:
+            self.db.session.rollback()
+            current_app.logger.exception("Unexpected error updating course")
+            return {"success": False, "error": str(exc)}
+
+    def delete_course(self, course_id: str, soft_delete: bool = True) -> Dict[str, Any]:
+        course = Course.query.get(course_id)
+        if not course:
+            return {"success": False, "error": "Course not found"}
+
+        try:
+            if soft_delete:
+                course.is_deleted = 1
+                course.updated_at = datetime.utcnow()
+            else:
+                self.db.session.delete(course)
+            self.db.session.commit()
+            return {"success": True}
+        except Exception as exc:
+            self.db.session.rollback()
+            current_app.logger.exception("Unexpected error deleting course")
+            return {"success": False, "error": str(exc)}
+
+    @staticmethod
+    def _parse_date(value: Optional[str]) -> Optional[date]:
+        if not value:
+            return None
+        if isinstance(value, date):
+            return value
+        return datetime.strptime(value, "%Y-%m-%d").date()

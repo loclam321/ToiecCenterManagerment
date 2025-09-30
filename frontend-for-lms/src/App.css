@@ -15,11 +15,7 @@
   5. Responsive breakpoints
 */
 /* ===== 1. ROOT CONTAINER & LAYOUT ===== */
-#root {
-  max-width: 1280px; /* Giới hạn chiều rộng tối đa */
-  margin: 0 auto; /* Căn giữa container */
-  text-align: center; /* Căn giữa nội dung mặc định */
-}
+
 
 /* ===== 2. HEADER SYSTEM ===== */
 /* Header chính - Fixed position, full-width background */

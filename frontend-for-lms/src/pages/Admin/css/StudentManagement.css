@@ -1,0 +1,51 @@
+.student-management {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  color: var(--color-text);
+}
+
+.content-header,
+.content-filters,
+.content-table {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(191, 47, 204, 0.25);
+  border-radius: 18px;
+  box-shadow:
+    0 12px 30px rgba(92, 11, 99, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(22px);
+  padding: 1.25rem 1.5rem;
+}
+
+.content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(120deg, rgba(191, 47, 204, 0.22), rgba(92, 11, 99, 0.35));
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  letter-spacing: 0.4px;
+}
+
+.btn.btn-primary {
+  background: linear-gradient(135deg, #bf2fcc, #5c0b63);
+  border: none;
+  color: #fff;
+  border-radius: 12px;
+  padding: 0.65rem 1.25rem;
+  font-weight: 600;
+  box-shadow: 0 8px 18px rgba(92, 11, 99, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(92, 11, 99, 0.45);
+}
