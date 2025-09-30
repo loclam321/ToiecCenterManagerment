@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 # Database configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-    "DATABASE_URL", "mysql+pymysql://root:@localhost:3306/lms_db"
+    "DATABASE_URL", "mysql+pymysql://TestAPI:123456@26.8.189.11:3306/lms_db"
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {

@@ -16,9 +16,7 @@ mail = Mail()  # Khởi tạo Flask-Mail
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL", "mysql+pymysql://root:@localhost:3306/lms_db"
-    )
+    SQLALCHEMY_DATABASE_URI = "mysql+pymysql://TestAPI:123456@26.8.189.11:3306/lms_db"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
