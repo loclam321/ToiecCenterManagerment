@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import Header from '../../components/layout/Header';
+import Footer from '../../components/layout/Footer';
+import '../../App.css';
 import './css/teacher.css';
 
 const Teacher = () => {
@@ -78,17 +81,26 @@ const Teacher = () => {
 
     if (loading) {
         return (
-            <div className="teacher-intro-container">
-                <div className="loading-spinner">
-                    <div className="spinner"></div>
-                    <p>Đang tải thông tin giáo viên...</p>
-                </div>
+            <div className="app-layout bg-light min-vh-100 d-flex flex-column">
+                <Header />
+                <main className="content bg-white border rounded p-0">
+                    <div className="teacher-intro-container">
+                        <div className="loading-spinner">
+                            <div className="spinner"></div>
+                            <p>Đang tải thông tin giáo viên...</p>
+                        </div>
+                    </div>
+                </main>
+                <Footer />
             </div>
         );
     }
 
     return (
-        <div className="teacher-intro-container">
+        <div className="app-layout bg-light min-vh-100 d-flex flex-column">
+            <Header />
+            <main className="content bg-white border rounded p-0">
+                <div className="teacher-intro-container">
             {/* Hero Section */}
             <div className="teacher-hero">
                 <div className="hero-content">
@@ -276,6 +288,9 @@ const Teacher = () => {
                     </div>
                 </div>
             </div>
+                </div>
+            </main>
+            <Footer />
         </div>
     );
 };

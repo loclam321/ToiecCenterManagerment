@@ -1,118 +1,231 @@
 .header {
-  background-color: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 15px 0;
-  position: sticky;
+  background-color: #ffffff; /* Nền trắng sạch */
+  color: #111827; /* Màu chữ tối */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Bóng nhẹ */
+  position: fixed; /* Cố định khi cuộn */
   top: 0;
-  z-index: 1000;
+  left: 0;
+  right: 0;
+  width: 100%; /* Phủ toàn bộ chiều rộng */
+  z-index: 1050; /* Luôn nằm trên các element khác */
+  box-sizing: border-box;
+  padding: 12px 0; /* Padding dọc */
 }
 
 .header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex; /* Flexbox layout */
+  align-items: center; /* Căn giữa theo chiều dọc */
+  justify-content: space-between; /* Phân bố đều 3 cột */
+  min-height: 48px; /* Chiều cao tối thiểu */
 }
 
 .brand {
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: #333;
+  display: flex; /* Logo và text cùng hàng */
+  align-items: center; /* Căn giữa dọc */
+  gap: 12px; /* Khoảng cách giữa logo và text */
+  text-decoration: none; /* Bỏ gạch chân link */
+  color: inherit; /* Kế thừa màu chữ */
 }
 
 .brand-logo {
   height: 40px;
-  margin-right: 12px;
+  width: auto;
+  object-fit: contain;
 }
 
 .brand-text {
   display: flex;
   flex-direction: column;
+  line-height: 1.2;
 }
 
 .brand-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  line-height: 1.2;
+  color: #111827;
+  font-weight: 700;
+  font-size: 16px;
+  margin: 0;
 }
 
 .brand-subtitle {
+  color: #6b7280;
+  font-weight: 500;
   font-size: 14px;
-  color: #666;
-  line-height: 1.2;
+  margin: 0;
 }
 
+/* Cột 2: Navigation menu (giữa) */
 .header-nav {
   display: flex;
-  gap: 5px;
+  align-items: center;
+  gap: 32px;
+  flex: 1;
+  justify-content: center;
 }
 
 .nav-link {
-  color: #555;
+  color: #374151;
   text-decoration: none;
   font-weight: 500;
-  padding: 8px 12px;
-  border-radius: 4px;
-  transition: all 0.2s;
+  font-size: 15px;
+  padding: 8px 0;
+  position: relative;
+  transition: color 0.2s ease;
 }
 
 .nav-link:hover {
-  background-color: #f1f5f9;
-  color: #333;
+  color: #d32f2f;
 }
 
+.nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #d32f2f;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+  transform: scaleX(1);
+}
+
+/* Highlight nav trigger when open */
+.nav-dropdown.open { color: #d32f2f; }
+.nav-dropdown.open::after { transform: scaleX(1); }
+
+/* Dropdown under Lộ trình học */
+.nav-dropdown { position: relative; cursor: pointer; }
+
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 360px;
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 75%, #fff7f7 100%);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+  padding: 8px;
+  z-index: 1100;
+  border-top: 3px solid #d32f2f;
+}
+
+.dropdown-body { max-height: 320px; overflow: auto; }
+.dropdown-loading, .dropdown-error, .dropdown-empty { padding: 10px; color: #374151; }
+
+.dropdown-list { list-style: none; margin: 0; padding: 0; }
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.dropdown-item:hover { background: #fff1f2; }
+.course-name { font-weight: 600; color: #111827; }
+/* Removed status/count pills for simplified dropdown */
+
+/* Cột 3: CTA Buttons (phải) */
 .header-actions {
   display: flex;
-  gap: 10px;
   align-items: center;
+  gap: 12px;
 }
 
 .btn-login {
-  background: none;
-  border: none;
+  background: transparent;
+  color: #374151;
+  border: 1px solid #d1d5db;
   padding: 8px 16px;
+  border-radius: 6px;
   font-weight: 500;
+  font-size: 14px;
   cursor: pointer;
-  color: #333;
+  transition: all 0.2s ease;
+}
+
+.btn-login:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
 }
 
 .btn-cta {
-  background-color: #1a73e8;
+  background: #1f2937;
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
+  padding: 10px 20px;
+  border-radius: 6px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
+  font-size: 14px;
+  text-transform: uppercase;
   letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
 .btn-cta:hover {
-  background-color: #1765d0;
+  background: #374151;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Responsive */
-@media (max-width: 991px) {
-  .header-nav {
-    display: none; /* Hide on smaller screens, would need a mobile menu */
-  }
+.btn-cta:active {
+  transform: translateY(0);
 }
 
+/* Ngăn tràn ngang nếu dùng 100vw cho header */
+html, body {
+  overflow-x: hidden;
+}
+
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+/* Mobile-first responsive design */
 @media (max-width: 768px) {
-  .brand-title {
-    font-size: 16px;
+  .header-content {
+    flex-wrap: wrap;
+    gap: 16px;
   }
-  
+
+  .header-nav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .brand-logo {
+    height: 32px;
+  }
+
+  .brand-title {
+    font-size: 14px;
+  }
+
   .brand-subtitle {
     font-size: 12px;
   }
-  
-  .btn-login, .btn-cta {
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .btn-login {
     padding: 6px 12px;
-    font-size: 14px;
+    font-size: 12px;
+  }
+
+  .btn-cta {
+    padding: 8px 16px;
+    font-size: 12px;
   }
 }

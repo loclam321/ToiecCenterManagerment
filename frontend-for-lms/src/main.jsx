@@ -16,12 +16,14 @@ import TeacherDetail from './pages/Admin/TeacherDetail';
 import TeacherForm from './pages/Admin/TeacherForm';
 import CourseManagement from './pages/Admin/CourseManagement';
 import CourseDetail from './pages/Admin/CourseDetail';
+import Teacher from './pages/Teacher/teacher';
+import CourseDetail from './pages/Courses/CourseDetail';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<App />} />
+        <Route path="/*" element={<App />} />
         <Route path="/login" element={<AuthPage />} />
         <Route path="/teachers" element={<Teacher />} />
         <Route path="/admin" element={<AdminDashboard />} />
@@ -36,6 +38,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/admin/courses" element={<CourseManagement />} />
         <Route path="/admin/courses/:id" element={<CourseDetail />} />
 
+        <Route path="/courses/:courseId" element={<CourseDetail />} />
+        {/* Thêm các route khác ở đây */}
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

@@ -4,10 +4,15 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
 // Import layout components
+import Header from './components/layout/Header';
+import Footer from './components/layout/Footer';
+import { fetchCoursesSummary } from './services/courseService';
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 
 // Import pages
+import AuthPage from './pages/AuthPage';
+import TestPage from './pages/test/test';
 import AuthPage from "./pages/AuthPage";
 import AdminPage from "./pages/Admin/Adminpage";
 import Dashboard from "./pages/Admin/Dashboard";
@@ -21,12 +26,52 @@ import CourseManagement from "./pages/Admin/CourseManagement";
 
 // Giữ HomePage content trong App nhưng chỉ hiển thị nó ở route "/"
 function HomeContent() {
+  const [showDropOverlay, setShowDropOverlay] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [lpLoading, setLpLoading] = useState(false);
+  const [lpError, setLpError] = useState(null);
+  const dropdownRef = useRef(null);
+
+  const loadCourses = useCallback(async () => {
+    try {
+      setLpLoading(true);
+      setLpError(null);
+      const list = await fetchCoursesSummary();
+      setCourses(list);
+    } catch (e) {
+      setLpError(e.message || 'Không thể tải danh sách khoá học');
+    } finally {
+      setLpLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showDropOverlay) {
+      loadCourses();
+    }
+  }, [showDropOverlay, loadCourses]);
+
+  // Load courses for rendering path cards
+  useEffect(() => {
+    loadCourses();
+  }, [loadCourses]);
+
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (showDropOverlay && dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropOverlay(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [showDropOverlay]);
   return (
     <>
       {/* Banner (Video) */}
       <section className="home-hero">
         <div className="hero-media">
           <video className="hero-video" autoPlay muted loop playsInline>
+            <source src="/src/assets/video/5734765-hd_1920_1080_30fps.mp4" type="video/mp4" />
             <source
               src="/src/assets/5734765-hd_1920_1080_30fps.mp4"
               type="video/mp4"
@@ -239,6 +284,7 @@ function HomeContent() {
           </div>
         </div>
       </section>
+      {/* Lộ trình học - đã bỏ showcase theo yêu cầu */}
 
       {/* Teachers Section */}
       <section id="teachers" className="section container py-6">
@@ -399,6 +445,16 @@ function App() {
     <div className="app-layout bg-light min-vh-100 d-flex flex-column">
       <Header />
 
+        <main className="content bg-white border rounded p-0">
+          <Routes>
+            <Route path="/" element={<HomeContent />} />
+            <Route path="/login" element={<AuthPage />} />
+            <Route path="/test" element={<TestPage />} />
+            <Route path="/test/:testId" element={<TestPage />} />
+            {/* Thêm các routes khác ở đây */}
+          </Routes>
+        </main>
+    
       <main className="content bg-white border rounded p-0">
         <Routes>
           {/* Route mặc định chuyển hướng đến trang admin */}

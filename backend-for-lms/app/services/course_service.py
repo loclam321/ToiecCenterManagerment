@@ -45,6 +45,106 @@ class CourseService:
 
     def create_course(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         try:
+    # --------- READ ----------
+    def get_all(self, status: Optional[str] = None) -> List[Course]:
+        """Lấy tất cả courses, có thể lọc theo status"""
+        try:
+            query = self.db.session.query(Course)
+            if status:
+                # accept both new 'status' and legacy values
+                query = query.filter(Course.status == status)
+            return query.all()
+        except Exception as e:
+            print(f"Lỗi khi lấy danh sách courses: {str(e)}")
+            return []
+
+    def get_by_id(self, course_id: str) -> Optional[Course]:
+        """Lấy course theo ID"""
+        try:
+            return self.db.session.query(Course).filter(Course.course_id == course_id).first()
+        except Exception as e:
+            print(f"Lỗi khi lấy course theo ID: {str(e)}")
+            return None
+
+    def get_by_status(self, status: str) -> List[Course]:
+        """Lấy danh sách courses theo status"""
+        try:
+            return self.db.session.query(Course).filter(Course.status == status).all()
+        except Exception as e:
+            print(f"Lỗi khi lấy courses theo status: {str(e)}")
+            return []
+
+    def search(self, keyword: str) -> List[Course]:
+        """Tìm kiếm courses theo keyword"""
+        try:
+            if not keyword or len(keyword.strip()) < 2:
+                return []
+            keyword = keyword.strip()
+            return (
+                self.db.session.query(Course)
+                .filter(
+                    Course.course_name.like(f"%{keyword}%")
+                    | Course.course_description.like(f"%{keyword}%")
+                )
+                .all()
+            )
+        except Exception as e:
+            print(f"Lỗi khi tìm kiếm courses: {str(e)}")
+            return []
+
+    def get_paginated(self, offset: int = 0, limit: int = 10, status: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Lấy danh sách courses phân trang + tổng số dòng.
+        Trả về dict: {"data": [to_dict...], "total": int}
+        """
+        try:
+            query = self.db.session.query(Course)
+            if status:
+                query = query.filter(Course.status == status)
+            total = query.count()
+            items = query.offset(offset).limit(limit).all()
+            data = [c.to_dict() for c in items if hasattr(c, "to_dict")]
+            return {"data": data, "total": total}
+        except Exception as e:
+            print(f"Lỗi khi phân trang courses: {str(e)}")
+            return {"data": [], "total": 0}
+
+    def get_statistics(self) -> Dict[str, int]:
+        """Thống kê số lượng theo status"""
+        try:
+            total = self.db.session.query(Course).count()
+            # Map legacy ACTIVE/INACTIVE/DRAFT to new statuses: treat OPEN as ACTIVE, CLOSED as INACTIVE
+            active = self.db.session.query(Course).filter(Course.status.in_(["OPEN", "RUNNING"])) .count()
+            inactive = self.db.session.query(Course).filter(Course.status.in_(["CLOSED", "ARCHIVED"])) .count()
+            draft = self.db.session.query(Course).filter_by(status="DRAFT").count()
+            return {
+                "total_courses": total,
+                "active_courses": active,
+                "inactive_courses": inactive,
+                "draft_courses": draft,
+            }
+        except Exception as e:
+            print(f"Lỗi khi thống kê courses: {str(e)}")
+            return {"total_courses": 0, "active_courses": 0, "inactive_courses": 0, "draft_courses": 0}
+
+    # --------- WRITE ----------
+    def create(self, data: Dict[str, Any]) -> Optional[Course]:
+        """Tạo course mới, trả về Course hoặc None"""
+        try:
+            # Tự tạo ID nếu không có
+            if not data.get("course_id"):
+                data["course_id"] = self._generate_course_id()
+
+            # Kiểm tra trùng khóa
+            exists = (
+                self.db.session.query(Course)
+                .filter(Course.course_id == data["course_id"])
+                .first()
+            )
+            if exists:
+                print("Course ID already exists")
+                return None
+
             course = Course(
                 course_id=self._generate_course_id(),
                 course_code=payload.get("course_code"),
@@ -65,6 +165,10 @@ class CourseService:
                 teacher_id=payload.get("teacher_id"),
                 learning_path_id=payload.get("learning_path_id"),
                 campus_id=payload.get("campus_id"),
+                course_id=data["course_id"],
+                course_name=data["course_name"],
+                course_description=data.get("course_description"),
+                status=data.get("status") or ("OPEN" if data.get("course_status", "ACTIVE") == "ACTIVE" else "CLOSED"),
             )
             self.db.session.add(course)
             self.db.session.commit()
@@ -120,6 +224,25 @@ class CourseService:
             current_app.logger.error(f"Integrity error updating course: {exc}")
             return {"success": False, "error": "Duplicate course code"}
         except Exception as exc:
+            print(f"Lỗi khi xóa course: {str(e)}")
+            return False
+
+    def toggle_status(self, course_id: str) -> Optional[Course]:
+        """Toggle status between OPEN <-> CLOSED (back-compat with ACTIVE/INACTIVE)."""
+        try:
+            course = self.get_by_id(course_id)
+            if not course:
+                return None
+
+            status = (course.status or "OPEN").upper()
+            if status in ("OPEN", "RUNNING"):
+                course.status = "CLOSED"
+            else:
+                course.status = "OPEN"
+
+            self.db.session.commit()
+            return course
+        except Exception as e:
             self.db.session.rollback()
             current_app.logger.exception("Unexpected error updating course")
             return {"success": False, "error": str(exc)}
