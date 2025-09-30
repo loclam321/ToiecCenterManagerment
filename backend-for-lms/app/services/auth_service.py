@@ -7,7 +7,7 @@ from flask import current_app
 from app.config import db
 from app.models.student_model import Student
 from app.models.teacher_model import Teacher
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import check_password_hash
 from app.config import mail
 from flask_mail import Message
 
@@ -30,7 +30,7 @@ class AuthService:
         """
         # Kiểm tra teacher
         teacher = self.db.session.query(Teacher).filter_by(user_email=email).first()
-        if teacher and teacher.check_password(password):
+        if teacher is not None and teacher.check_password(password):
             # Với teacher, có thể không cần xác minh email
             access_token = self._create_token(teacher.user_id, "teacher")
             return {
@@ -42,13 +42,9 @@ class AuthService:
 
         # Kiểm tra student
         student = self.db.session.query(Student).filter_by(user_email=email).first()
-        print("Student found:", student.user_id)
-        print("Student email:", student.user_email)
-        print("Password:", password)
-        print("password hash:", generate_password_hash(password))
-        print("Student stored password hash:", student.user_password)
-        print("Student password check:", student.check_password(password))
-        if student and student.check_password(password):
+
+        # Ensure we do not access attributes on None and avoid leaking sensitive data
+        if student is not None and student.check_password(password):
 
             # Kiểm tra xem email đã được xác minh chưa
             if not student.is_email_verified:

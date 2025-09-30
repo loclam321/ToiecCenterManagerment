@@ -1,61 +1,65 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
 // Import layout components
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
-import { fetchLearningPathsWithCourse, toggleCourseStatus } from './services/courseService';
+import { fetchCoursesSummary } from './services/courseService';
 
 // Import pages
 import AuthPage from './pages/AuthPage';
+import TestPage from './pages/test/test';
 
 // Giữ HomePage content trong App nhưng chỉ hiển thị nó ở route "/"
 function HomeContent() {
   const [showDropOverlay, setShowDropOverlay] = useState(false);
-  const [learningPaths, setLearningPaths] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [lpLoading, setLpLoading] = useState(false);
   const [lpError, setLpError] = useState(null);
-  const [togglingId, setTogglingId] = useState(null);
+  const dropdownRef = useRef(null);
 
-  const loadLearningPaths = useCallback(async () => {
+  const loadCourses = useCallback(async () => {
     try {
       setLpLoading(true);
       setLpError(null);
-      const list = await fetchLearningPathsWithCourse();
-      setLearningPaths(list);
+      const list = await fetchCoursesSummary();
+      setCourses(list);
     } catch (e) {
-      setLpError(e.message || 'Không thể tải lộ trình');
+      setLpError(e.message || 'Không thể tải danh sách khoá học');
     } finally {
       setLpLoading(false);
     }
   }, []);
 
-  const handleToggle = async (lp) => {
-    try {
-      setTogglingId(lp.lp_id);
-      const updated = await toggleCourseStatus(lp.course_id);
-      setLearningPaths((prev) => prev.map((x) => x.lp_id === lp.lp_id ? { ...x, course_status: updated.course_status } : x));
-    } catch (e) {
-      alert(e.message || 'Không thể đổi trạng thái');
-    } finally {
-      setTogglingId(null);
-    }
-  };
-
   useEffect(() => {
     if (showDropOverlay) {
-      loadLearningPaths();
+      loadCourses();
     }
-  }, [showDropOverlay, loadLearningPaths]);
+  }, [showDropOverlay, loadCourses]);
+
+  // Load courses for rendering path cards
+  useEffect(() => {
+    loadCourses();
+  }, [loadCourses]);
+
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (showDropOverlay && dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropOverlay(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [showDropOverlay]);
   return (
     <>
       {/* Banner (Video) */}
       <section className="home-hero">
         <div className="hero-media">
           <video className="hero-video" autoPlay muted loop playsInline>
-            <source src="/src/assets/5734765-hd_1920_1080_30fps.mp4" type="video/mp4" />
+            <source src="/src/assets/video/5734765-hd_1920_1080_30fps.mp4" type="video/mp4" />
           </video>
           <div className="hero-overlay"></div>
         </div>
@@ -118,126 +122,7 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* Lộ trình học */}
-      <section
-        id="paths"
-        className="section bg-light py-6"
-        onDragOver={(e) => e.preventDefault()}
-        onDragEnter={() => setShowDropOverlay(true)}
-        onDragLeave={() => setShowDropOverlay(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setShowDropOverlay(false);
-        }}
-      >
-        <div className="container">
-          <div className="section-header text-center mb-4">
-            <h2 className="section-title mb-1">Lộ trình học</h2>
-            <p className="section-subtitle mb-0">Chọn lộ trình phù hợp mục tiêu điểm và thời gian của bạn</p>
-          </div>
-          {showDropOverlay && (
-            <div className="lp-drop-overlay">
-              <div className="lp-drop-panel">
-                <div className="lp-drop-header">
-                  <div className="lp-drop-title">Lộ trình & Trạng thái khóa học</div>
-                  <button className="lp-drop-close" onClick={() => setShowDropOverlay(false)}>✕</button>
-                </div>
-                <div className="lp-drop-content">
-                  {lpLoading ? (
-                    <div className="lp-loading">Đang tải lộ trình...</div>
-                  ) : lpError ? (
-                    <div className="lp-error">{lpError}</div>
-                  ) : learningPaths.length === 0 ? (
-                    <div className="lp-empty">Chưa có lộ trình</div>
-                  ) : (
-                    <ul className="lp-list">
-                      {learningPaths.map((lp) => (
-                        <li key={lp.lp_id} className="lp-item">
-                          <div className="lp-meta">
-                            <div className="lp-name">{lp.lp_name || `LP #${lp.lp_id}`}</div>
-                            <div className="lp-course">{lp.course_name || lp.course_id}</div>
-                          </div>
-                          <div className="lp-actions">
-                            <span className={`status-pill ${lp.course_status === 'ACTIVE' ? 'active' : 'inactive'}`}>
-                              {lp.course_status === 'ACTIVE' ? 'active' : 'inactive'}
-                            </span>
-                            <button
-                              className="btn-toggle"
-                              onClick={() => handleToggle(lp)}
-                              disabled={togglingId === lp.lp_id}
-                            >
-                              {togglingId === lp.lp_id ? 'Đang đổi...' : 'Đổi trạng thái'}
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          <div className="row g-4">
-            <div className="col-md-4">
-              <div className="path-card h-100 p-4 rounded border position-relative">
-                <div className="d-flex align-items-center mb-3">
-                  <div className="path-icon me-3">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16M4 12h10M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                  </div>
-                  <div>
-                    <h5 className="mb-1">Foundation (0-450)</h5>
-                    <div className="text-muted small">4–8 tuần • 2–3 buổi/tuần</div>
-                  </div>
-                </div>
-                <p className="mb-3">Củng cố phát âm, từ vựng, ngữ pháp nền tảng. Làm quen format đề và chiến thuật cơ bản.</p>
-                <ul className="feature-list small mb-3">
-                  <li>Làm bài tập ngắn mỗi ngày</li>
-                  <li>Mini test hàng tuần</li>
-                </ul>
-                <a href="#" className="path-link">Khám phá lộ trình</a>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="path-card h-100 p-4 rounded border position-relative">
-                <div className="d-flex align-items-center mb-3">
-                  <div className="path-icon me-3">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 3l-1 9h8l-9 9 1-9H4l9-9z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  </div>
-                  <div>
-                    <h5 className="mb-1">Accelerate (450-650)</h5>
-                    <div className="text-muted small">6–10 tuần • 3 buổi/tuần</div>
-                  </div>
-                </div>
-                <p className="mb-3">Tăng tốc kỹ năng nghe–đọc, luyện chiến thuật theo từng Part, tập trung tối ưu điểm.</p>
-                <ul className="feature-list small mb-3">
-                  <li>Chữa đề chi tiết theo lỗi</li>
-                  <li>Đánh giá tiến bộ 2 tuần/lần</li>
-                </ul>
-                <a href="#" className="path-link">Khám phá lộ trình</a>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="path-card h-100 p-4 rounded border position-relative">
-                <div className="d-flex align-items-center mb-3">
-                  <div className="path-icon me-3">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3 7h7l-5.5 4.1L18 21l-6-4-6 4 1.5-7.9L2 9h7l3-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  </div>
-                  <div>
-                    <h5 className="mb-1">Master (650-800+)</h5>
-                    <div className="text-muted small">8–12 tuần • 3–4 buổi/tuần</div>
-                  </div>
-                </div>
-                <p className="mb-3">Luyện đề cường độ cao, phân tích lỗi theo chủ đề, tối ưu tốc độ và độ chính xác.</p>
-                <ul className="feature-list small mb-3">
-                  <li>Full test mô phỏng mỗi tuần</li>
-                  <li>Coaching chiến lược cá nhân</li>
-                </ul>
-                <a href="#" className="path-link">Khám phá lộ trình</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Lộ trình học - đã bỏ showcase theo yêu cầu */}
 
       {/* Teachers Section */}
       <section id="teachers" className="section container py-6">
@@ -371,6 +256,8 @@ function App() {
           <Routes>
             <Route path="/" element={<HomeContent />} />
             <Route path="/login" element={<AuthPage />} />
+            <Route path="/test" element={<TestPage />} />
+            <Route path="/test/:testId" element={<TestPage />} />
             {/* Thêm các routes khác ở đây */}
           </Routes>
         </main>

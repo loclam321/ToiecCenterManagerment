@@ -5,6 +5,8 @@ from app.utils.validators import Validator
 from app.config import db
 from app.models.learning_path_model import LearningPath
 from app.models.course_model import Course
+from sqlalchemy import literal_column
+from sqlalchemy.exc import OperationalError
 
 
 course_bp = Blueprint("course", __name__, url_prefix="/api/courses")
@@ -37,12 +39,15 @@ def toggle_course_status(course_id):
 def set_course_status(course_id):
     try:
         body = request.get_json() or {}
-        status = body.get("course_status")
-        valid = Validator.validate_status(status, ["ACTIVE", "INACTIVE", "DRAFT"]) if status else {"valid": False, "error": "course_status is required"}
-        if not valid["valid"]:
-            return validation_error_response("Dữ liệu không hợp lệ", {"course_status": valid.get("error")})
+        status = body.get("status") or body.get("course_status")
+        if not status:
+            return validation_error_response("Dữ liệu không hợp lệ", {"status": "status is required"})
 
-        updated = course_service.update(course_id, {"course_status": status})
+        # Map legacy ACTIVE/INACTIVE/DRAFT to new statuses
+        legacy_map = {"ACTIVE": "OPEN", "INACTIVE": "CLOSED", "DRAFT": "DRAFT"}
+        normalized = legacy_map.get(status.upper(), status)
+
+        updated = course_service.update(course_id, {"status": normalized})
         if not updated:
             return not_found_response("Không tìm thấy khóa học hoặc không thể cập nhật", "Course", course_id)
         return success_response({"course": updated.to_dict()}, "Đã cập nhật trạng thái khóa học")
@@ -53,18 +58,33 @@ def set_course_status(course_id):
 @course_bp.route("/learning-paths", methods=["GET"]) 
 def list_learning_paths_with_course():
     try:
-        # Join LearningPath với Course để trả về cả trạng thái khóa học
-        results = (
-            db.session.query(LearningPath, Course)
-            .join(Course, LearningPath.course_id == Course.course_id)
-            .all()
-        )
+        # Try with new column name first
+        try:
+            results = (
+                db.session.query(
+                    LearningPath,
+                    Course,
+                    literal_column("courses.status").label("status_col"),
+                )
+                .join(Course, LearningPath.course_id == Course.course_id)
+                .all()
+            )
+        except OperationalError:
+            results = (
+                db.session.query(
+                    LearningPath,
+                    Course,
+                    literal_column("courses.course_status").label("status_col"),
+                )
+                .join(Course, LearningPath.course_id == Course.course_id)
+                .all()
+            )
 
         data = []
-        for lp, course in results:
+        for lp, course, status_col in results:
             item = lp.to_dict() if hasattr(lp, "to_dict") else {}
             item.update({
-                "course_status": course.course_status,
+                "course_status": status_col,
                 "course_name": course.course_name,
             })
             data.append(item)
@@ -77,14 +97,33 @@ def list_learning_paths_with_course():
 @course_bp.route("/summary", methods=["GET"]) 
 def courses_summary():
     try:
-        # Đếm số learning paths theo course
-        results = (
-            db.session.query(Course.course_id, Course.course_name, Course.course_status, db.func.count(LearningPath.lp_id))
-            .outerjoin(LearningPath, LearningPath.course_id == Course.course_id)
-            .group_by(Course.course_id, Course.course_name, Course.course_status)
-            .order_by(Course.course_id)
-            .all()
-        )
+        # Đếm số learning paths theo course - try new column then fallback to legacy
+        try:
+            results = (
+                db.session.query(
+                    Course.course_id,
+                    Course.course_name,
+                    literal_column("courses.status"),
+                    db.func.count(LearningPath.lp_id),
+                )
+                .outerjoin(LearningPath, LearningPath.course_id == Course.course_id)
+                .group_by(Course.course_id, Course.course_name, literal_column("courses.status"))
+                .order_by(Course.course_id)
+                .all()
+            )
+        except OperationalError:
+            results = (
+                db.session.query(
+                    Course.course_id,
+                    Course.course_name,
+                    literal_column("courses.course_status"),
+                    db.func.count(LearningPath.lp_id),
+                )
+                .outerjoin(LearningPath, LearningPath.course_id == Course.course_id)
+                .group_by(Course.course_id, Course.course_name, literal_column("courses.course_status"))
+                .order_by(Course.course_id)
+                .all()
+            )
         data = [
             {
                 "course_id": r[0],

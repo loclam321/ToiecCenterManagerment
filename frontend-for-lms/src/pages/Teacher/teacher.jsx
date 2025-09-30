@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../components/layout/Header';
-import Footer from '../components/layout/Footer';
-import '../App.css';
+import Header from '../../components/layout/Header';
+import Footer from '../../components/layout/Footer';
+import '../../App.css';
 import './css/teacher.css';
 
 const Teacher = () => {
@@ -16,11 +16,11 @@ const Teacher = () => {
     const fetchTeachers = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_BASE_URL}/?page=1&per_page=12`);
+            const response = await fetch(`${API_BASE_URL}/senior`);
             const data = await response.json();
 
             if (data.success) {
-                setTeachers((data.data && data.data.teachers) || []);
+                setTeachers(data.data.senior_teachers || []);
             } else {
                 setError(data.message || 'Có lỗi xảy ra');
             }

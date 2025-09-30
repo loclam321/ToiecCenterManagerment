@@ -17,7 +17,8 @@ class CourseService:
         try:
             query = self.db.session.query(Course)
             if status:
-                query = query.filter(Course.course_status == status)
+                # accept both new 'status' and legacy values
+                query = query.filter(Course.status == status)
             return query.all()
         except Exception as e:
             print(f"Lỗi khi lấy danh sách courses: {str(e)}")
@@ -34,7 +35,7 @@ class CourseService:
     def get_by_status(self, status: str) -> List[Course]:
         """Lấy danh sách courses theo status"""
         try:
-            return self.db.session.query(Course).filter(Course.course_status == status).all()
+            return self.db.session.query(Course).filter(Course.status == status).all()
         except Exception as e:
             print(f"Lỗi khi lấy courses theo status: {str(e)}")
             return []
@@ -65,7 +66,7 @@ class CourseService:
         try:
             query = self.db.session.query(Course)
             if status:
-                query = query.filter(Course.course_status == status)
+                query = query.filter(Course.status == status)
             total = query.count()
             items = query.offset(offset).limit(limit).all()
             data = [c.to_dict() for c in items if hasattr(c, "to_dict")]
@@ -78,9 +79,10 @@ class CourseService:
         """Thống kê số lượng theo status"""
         try:
             total = self.db.session.query(Course).count()
-            active = self.db.session.query(Course).filter_by(course_status="ACTIVE").count()
-            inactive = self.db.session.query(Course).filter_by(course_status="INACTIVE").count()
-            draft = self.db.session.query(Course).filter_by(course_status="DRAFT").count()
+            # Map legacy ACTIVE/INACTIVE/DRAFT to new statuses: treat OPEN as ACTIVE, CLOSED as INACTIVE
+            active = self.db.session.query(Course).filter(Course.status.in_(["OPEN", "RUNNING"])) .count()
+            inactive = self.db.session.query(Course).filter(Course.status.in_(["CLOSED", "ARCHIVED"])) .count()
+            draft = self.db.session.query(Course).filter_by(status="DRAFT").count()
             return {
                 "total_courses": total,
                 "active_courses": active,
@@ -113,7 +115,7 @@ class CourseService:
                 course_id=data["course_id"],
                 course_name=data["course_name"],
                 course_description=data.get("course_description"),
-                course_status=data.get("course_status", "ACTIVE"),
+                status=data.get("status") or ("OPEN" if data.get("course_status", "ACTIVE") == "ACTIVE" else "CLOSED"),
             )
             self.db.session.add(course)
             self.db.session.commit()
@@ -164,17 +166,17 @@ class CourseService:
             return False
 
     def toggle_status(self, course_id: str) -> Optional[Course]:
-        """Đổi status ACTIVE <-> INACTIVE, trả về Course hoặc None"""
+        """Toggle status between OPEN <-> CLOSED (back-compat with ACTIVE/INACTIVE)."""
         try:
             course = self.get_by_id(course_id)
             if not course:
                 return None
 
-            status = course.course_status or "ACTIVE"
-            if status == "ACTIVE":
-                course.course_status = "INACTIVE"
+            status = (course.status or "OPEN").upper()
+            if status in ("OPEN", "RUNNING"):
+                course.status = "CLOSED"
             else:
-                course.course_status = "ACTIVE"
+                course.status = "OPEN"
 
             self.db.session.commit()
             return course

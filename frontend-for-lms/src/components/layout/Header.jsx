@@ -90,7 +90,7 @@ function Header() {
             </div>
             <a href="/teachers" className="nav-link">Giảng viên</a>
             <a href="/courses" className="nav-link">Khóa học</a>
-            <a href="/exams" className="nav-link">Kiểm tra đầu vào</a>
+            <a href="/test" className="nav-link">Kiểm tra đầu vào</a>
           </nav>
 
           {/* CTA Buttons or User Menu */}
