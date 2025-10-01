@@ -15,8 +15,13 @@ import TeacherDetail from './pages/Admin/TeacherDetail';
 import TeacherForm from './pages/Admin/TeacherForm';
 import CourseManagement from './pages/Admin/CourseManagement';
 import CourseDetail from './pages/Admin/CourseDetail';
-import TeacherIntroduction from './pages/Teacher/TeacherIntroduction';  
+import TeacherIntroduction from './pages/Teacher/TeacherIntroduction';
 import CourseIntroduction from './pages/Courses/CourseIntroduction';
+import AddClassForm from './pages/Admin/AddClassForm';
+import ClassDetail from './pages/Admin/ClassDetail'; // Thêm import
+import AddStudentToClass from './pages/Admin/AddStudentToClass';
+
+
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -36,9 +41,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/admin/teachers/:id/edit" element={<TeacherForm />} />
         <Route path="/admin/courses" element={<CourseManagement />} />
         <Route path="/admin/courses/:id" element={<CourseDetail />} />
-  
+        <Route path="/admin/courses/:courseId/add-class" element={<AddClassForm />} />
         <Route path="/courses/:courseId" element={<CourseIntroduction />} />
-        {/* Thêm các route khác ở đây */}
+        <Route path="/admin/classes/:id" element={<ClassDetail />} />
+        <Route path="/admin/classes/:id/add-students" element={<AddStudentToClass />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

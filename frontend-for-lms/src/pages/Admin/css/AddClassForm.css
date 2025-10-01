@@ -1,0 +1,231 @@
+.class-form-container {
+    max-width: 900px; /* Giới hạn chiều rộng tối đa */
+    margin: 0 auto 2rem; /* Căn giữa container */
+    background: #fff;
+    border-radius: 8px; /* Giảm bán kính bo tròn */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.form-header {
+    padding: 0.75rem 1rem; /* Giảm padding */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.course-info-banner {
+    background: #f9f9f9;
+    padding: 1rem 1.25rem; /* Giảm padding */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.course-title {
+    font-size: 1.1rem; /* Giảm kích thước font */
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.course-code {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0.25rem 0 0;
+}
+
+.class-form {
+    padding: 1.25rem; /* Giảm padding */
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Chia thành 3 cột cố định */
+    gap: 1rem; /* Giảm khoảng cách giữa các ô */
+    margin-bottom: 1.5rem; /* Giảm margin */
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem; /* Giảm khoảng cách */
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #333;
+    font-size: 0.9rem; /* Giảm kích thước font */
+}
+
+.required {
+    color: #e53935;
+    margin-left: 0.25rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 0.6rem; /* Giảm padding */
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px; /* Giảm bo tròn */
+    font-size: 0.9rem; /* Giảm kích thước font */
+    color: #333;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #9c27b0;
+    box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.15);
+}
+
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+    border-color: #e53935;
+    background-color: rgba(229, 57, 53, 0.03);
+}
+
+.error-message {
+    color: #e53935;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+.form-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem; /* Giảm khoảng cách */
+    padding-top: 1rem; /* Giảm padding */
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.btn {
+    padding: 0.6rem 1rem; /* Giảm padding */
+    border: none;
+    border-radius: 4px; /* Giảm bo tròn */
+    font-weight: 500;
+    font-size: 0.9rem; /* Giảm kích thước font */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem; /* Giảm khoảng cách */
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: #9c27b0;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #7b1fa2;
+}
+
+.btn-secondary {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.spinner-border {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 0.15em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive điều chỉnh cho màn hình nhỏ */
+@media (max-width: 900px) {
+    .form-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 cột trên màn hình vừa */
+    }
+}
+
+@media (max-width: 600px) {
+    .form-grid {
+        grid-template-columns: 1fr; /* 1 cột trên màn hình nhỏ */
+    }
+}
+
+/* Thêm vào cuối file CSS hiện tại */
+
+/* Cho các fields cần chiếm nhiều không gian */
+.full-width {
+    grid-column: span 3; /* Chiếm đủ 3 cột */
+}
+
+@media (max-width: 900px) {
+    .full-width {
+        grid-column: span 2; /* Chiếm đủ 2 cột trên màn hình vừa */
+    }
+}
+
+@media (max-width: 600px) {
+    .full-width {
+        grid-column: span 1; /* Chiếm 1 cột trên màn hình nhỏ */
+    }
+}
+
+/* Căn chỉnh thẻ course-info */
+.course-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Spinner nhỏ hơn khi đang submit */
+.spinner-border-sm {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-width: 0.1em;
+}
+
+/* Padding cho ms-2 */
+.ms-2 {
+    margin-left: 0.4rem;
+}
+
+/* Tạo không gian cho loading container */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 0;
+}

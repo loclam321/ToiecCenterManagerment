@@ -72,6 +72,47 @@ export const getStudents = async (options = {}) => {
   }
 };
 
+
+
+// Lấy danh sách học viên với các tùy chọn lọc và phân trang
+export const getStudentsforEnrollment = async (filters = {}, page = 1, limit = 20) => {
+  try {
+    // Xây dựng query string từ các tùy chọn lọc
+    const queryParams = new URLSearchParams();
+    
+    // Thêm các tham số lọc
+    if (filters.name) queryParams.append('name', filters.name);
+    if (filters.email) queryParams.append('email', filters.email);
+    if (filters.status) queryParams.append('status', filters.status);
+    
+    // Thêm tham số phân trang
+    queryParams.append('page', page);
+    queryParams.append('limit', limit);
+    
+    const response = await fetch(`${BASE_URL}?${queryParams.toString()}`, {
+      headers: getHeaders()
+    });
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message || 'Không thể tải danh sách học viên');
+    }
+
+    return {
+      students: result.data,
+      pagination: result.pagination || {
+        currentPage: page,
+        totalPages: Math.ceil((result.total || 0) / limit),
+        totalItems: result.total || 0,
+        itemsPerPage: limit
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching filtered students:', error);
+    throw error;
+  }
+};
+
 /**
  * Lấy thông tin chi tiết của học viên
  * @param {string} id - ID học viên
@@ -93,6 +134,85 @@ export const getStudentById = async (id) => {
   } catch (error) {
     console.error(`Error fetching student ${id}:`, error);
     throw error;
+  }
+};
+// Thêm học viên vào lớp học - Xử lý trường hợp học viên đã đăng ký
+export const enrollStudentsToClass = async (classId, studentIds) => {
+  try {
+    // Mảng lưu các kết quả
+    const results = {
+      success: [], // Học viên đăng ký thành công
+      alreadyEnrolled: [], // Học viên đã đăng ký trước đó
+      failed: [] // Lỗi khác
+    };
+
+    // Xử lý tuần tự từng học viên
+    for (const studentId of studentIds) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/classes/${classId}/enroll`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({ student_id: studentId })
+        });
+        
+        const result = await response.json();
+
+        if (result.success) {
+          // Đăng ký thành công
+          results.success.push(studentId);
+        } else if (result.message && result.message.includes("already enrolled")) {
+          // Học viên đã đăng ký trước đó
+          results.alreadyEnrolled.push(studentId);
+        } else {
+          // Lỗi khác
+          results.failed.push({
+            id: studentId,
+            message: result.message || 'Lỗi không xác định'
+          });
+        }
+      } catch (error) {
+        results.failed.push({
+          id: studentId,
+          message: error.message || 'Lỗi kết nối'
+        });
+      }
+    }
+
+    // Tạo thông báo kết quả
+    const message = [];
+    if (results.success.length > 0) {
+      message.push(`Đã thêm ${results.success.length} học viên vào lớp thành công.`);
+    }
+    if (results.alreadyEnrolled.length > 0) {
+      message.push(`${results.alreadyEnrolled.length} học viên đã đăng ký lớp học này trước đó.`);
+    }
+    if (results.failed.length > 0) {
+      message.push(`${results.failed.length} học viên không thể thêm vào lớp do lỗi.`);
+    }
+
+    // Luôn trả về một đối tượng kết quả thay vì ném lỗi
+    return {
+      message: message.join(' '),
+      results,
+      // Thêm thông tin về trạng thái chung
+      status: results.success.length > 0 ? 'success' : 
+              results.alreadyEnrolled.length > 0 ? 'alreadyEnrolled' : 'failed',
+      isFullSuccess: results.success.length === studentIds.length,
+      isAllAlreadyEnrolled: results.alreadyEnrolled.length === studentIds.length && results.success.length === 0,
+      isAllFailed: results.failed.length === studentIds.length && results.success.length === 0
+    };
+  } catch (error) {
+    console.error('Error enrolling students:', error);
+    // Trả về đối tượng lỗi thay vì ném ngoại lệ
+    return {
+      message: error.message || 'Không thể thêm học viên vào lớp học.',
+      results: {
+        success: [],
+        alreadyEnrolled: [],
+        failed: studentIds.map(id => ({ id, message: error.message || 'Lỗi kết nối' }))
+      },
+      status: 'error'
+    };
   }
 };
 

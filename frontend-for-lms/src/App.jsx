@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import TestPage from './pages/test/test';
-
+import AddClassForm from './pages/Admin/AddClassForm';
 
 // Import layout components
 import Header from './components/layout/Header';
@@ -369,16 +369,20 @@ function App() {
       <Header />
 
 
-        <main className="content bg-white border rounded p-0">
-          <Routes>
-            <Route path="/" element={<HomeContent />} />
-            <Route path="/login" element={<AuthPage />} />
-            <Route path="/test" element={<TestPage />} />
-            <Route path="/test/:testId" element={<TestPage />} />
-            {/* Thêm các routes khác ở đây */}
-          </Routes>
-        </main>
-    
+      <main className="content bg-white border rounded p-0">
+        <Routes>
+          <Route path="/" element={<HomeContent />} />
+          <Route path="/login" element={<AuthPage />} />
+          <Route path="/test" element={<TestPage />} />
+          <Route path="/test/:testId" element={<TestPage />} />
+          <Route path="/admin" element={<AdminPage />}>
+            <Route path="courses/:id" element={<CourseDetail />} />
+            <Route path="courses/:courseId/add-class" element={<AddClassForm />} />
+          </Route>
+          {/* Thêm các routes khác ở đây */}
+        </Routes>
+      </main>
+
 
       <Footer />
     </div>
