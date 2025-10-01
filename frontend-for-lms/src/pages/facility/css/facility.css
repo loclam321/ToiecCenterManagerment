@@ -1,0 +1,249 @@
+.facility-page {
+  display: block;
+}
+
+.facility-hero {
+  position: relative;
+  height: 56vw;
+  max-height: 520px;
+  overflow: hidden;
+}
+
+.facility-hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.facility-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.45) 70%);
+}
+
+.facility-hero-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 24px;
+  color: #fff;
+}
+
+.facility-hero-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 12px 0;
+}
+
+.facility-hero-cta {
+  background: #1e66f5;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.facility-section {
+  padding: 32px 16px;
+}
+
+.facility-intro {
+  padding: 0;
+  margin: 0;
+}
+
+.facility-intro-container {
+  position: relative;
+  display: flex;
+  min-height: 500px;
+}
+
+.facility-intro-text-panel {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 40px 32px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+.facility-intro-text-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: -1;
+  border-radius: 0 20px 20px 0;
+}
+
+.facility-intro-text-panel h2 {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 16px 0;
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.facility-intro-text-panel p {
+  margin: 0 0 16px 0;
+  color: #fff;
+  line-height: 1.6;
+  font-size: 16px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.facility-cta {
+  background: #ff8a00;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.facility-intro-gallery {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 8px;
+  padding: 20px;
+}
+
+.facility-thumb {
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.facility-thumb:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.facility-thumb:nth-child(2) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.facility-thumb:nth-child(3) {
+  grid-column: 1 / 3;
+  grid-row: 2;
+}
+
+.facility-equipment {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.facility-equipment-media {
+  height: 280px;
+  border-radius: 16px;
+  background-size: cover;
+  background-position: center;
+}
+
+.facility-equipment-content h2 {
+  font-size: 24px;
+  margin: 0 0 8px 0;
+}
+
+@media (min-width: 768px) {
+  .facility-intro-container {
+    min-height: 600px;
+  }
+  
+  .facility-intro-text-panel {
+    padding: 60px 48px;
+  }
+  
+  .facility-intro-text-panel h2 {
+    font-size: 32px;
+  }
+  
+  .facility-intro-text-panel p {
+    font-size: 18px;
+  }
+  
+  .facility-intro-gallery {
+    width: 55%;
+    gap: 12px;
+    padding: 30px;
+  }
+}
+
+@media (min-width: 992px) {
+  .facility-hero-title { font-size: 36px; }
+  .facility-section { padding: 48px 24px; }
+  .facility-intro-container {
+    min-height: 700px;
+  }
+  
+  .facility-intro-text-panel {
+    padding: 80px 64px;
+  }
+  
+  .facility-intro-text-panel h2 {
+    font-size: 36px;
+  }
+  
+  .facility-intro-text-panel p {
+    font-size: 20px;
+  }
+  
+  .facility-intro-gallery {
+    width: 50%;
+    gap: 16px;
+    padding: 40px;
+  }
+  
+  .facility-equipment { grid-template-columns: 1.3fr 1fr; align-items: center; }
+}
+
+@media (max-width: 767px) {
+  .facility-intro-container {
+    flex-direction: column;
+    min-height: auto;
+  }
+  
+  .facility-intro-text-panel {
+    padding: 32px 24px;
+    order: 2;
+  }
+  
+  .facility-intro-gallery {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    order: 1;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 1fr;
+    padding: 16px;
+  }
+  
+  .facility-thumb:nth-child(1),
+  .facility-thumb:nth-child(2),
+  .facility-thumb:nth-child(3) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+

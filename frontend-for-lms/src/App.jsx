@@ -12,6 +12,7 @@ import { fetchLearningPathsWithCourse, toggleCourseStatus } from './services/cou
 
 // Import pages
 import AuthPage from './pages/AuthPage';
+import FacilityPage from './pages/facility/facility';
 
 // Giữ HomePage content trong App nhưng chỉ hiển thị nó ở route "/"
 function HomeContent() {
@@ -375,6 +376,7 @@ function App() {
             <Route path="/login" element={<AuthPage />} />
             <Route path="/test" element={<TestPage />} />
             <Route path="/test/:testId" element={<TestPage />} />
+            <Route path="/facility" element={<FacilityPage />} />
             {/* Thêm các routes khác ở đây */}
           </Routes>
         </main>

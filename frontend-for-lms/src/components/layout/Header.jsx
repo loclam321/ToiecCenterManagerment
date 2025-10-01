@@ -89,7 +89,7 @@ function Header() {
               )}
             </div>
             <a href="/teachers" className="nav-link">Giảng viên</a>
-            <a href="/courses" className="nav-link">Khóa học</a>
+            <a href="/facility" className="nav-link">Cơ sở vật chất</a>
             <a href="/test" className="nav-link">Kiểm tra đầu vào</a>
           </nav>
 
