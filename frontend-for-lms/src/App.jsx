@@ -1,9 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import TestPage from './pages/test/test';
-
+import AddClassForm from './pages/Admin/AddClassForm';
 
 // Import layout components
 import Header from './components/layout/Header';

@@ -7,7 +7,6 @@ class_bp = Blueprint("classes", __name__, url_prefix="/api/classes")
 class_service = ClassService()
 
 @class_bp.route("", methods=["GET"])
-@jwt_required()
 def get_classes():
     """Lấy danh sách lớp học với phân trang và lọc"""
     try:
@@ -55,7 +54,6 @@ def get_classes():
         return error_response(message=f"Error retrieving classes: {str(e)}", status_code=500)
 
 @class_bp.route("/<int:class_id>", methods=["GET"])
-@jwt_required()
 def get_class(class_id):
     """Lấy thông tin lớp học theo ID"""
     try:
@@ -126,7 +124,6 @@ def delete_class(class_id):
         return error_response(message=f"Error deleting class: {str(e)}", status_code=500)
 
 @class_bp.route("/<int:class_id>/enroll", methods=["POST"])
-@jwt_required()
 def enroll_student(class_id):
     """Ghi danh sinh viên vào lớp học"""
     try:
@@ -179,7 +176,6 @@ def get_class_metrics(class_id):
 
 # Route bổ sung: Lấy lớp học theo khóa học
 @class_bp.route("/by-course/<course_id>", methods=["GET"])
-@jwt_required()
 def get_classes_by_course(course_id):
     """Lấy danh sách lớp học theo khóa học"""
     try:
@@ -191,3 +187,44 @@ def get_classes_by_course(course_id):
     
     except Exception as e:
         return error_response(message=f"Error retrieving classes: {str(e)}", status_code=500)
+
+@class_bp.route("/<int:class_id>/students", methods=["GET"])
+def get_class_students(class_id):
+    """Lấy danh sách học viên đã đăng ký vào lớp học"""
+    try:
+        page = request.args.get("page", default=1, type=int)
+        per_page = request.args.get("per_page", default=10, type=int)
+        
+        result = class_service.get_class_students(class_id, page, per_page)
+        
+        if result["success"]:
+            return success_response(
+                data=result["data"],
+                meta=result.get("pagination"),
+                status_code=200
+            )
+        return error_response(message=result["error"], status_code=404)
+    
+    except Exception as e:
+        return error_response(message=f"Error retrieving students: {str(e)}", status_code=500)
+
+@class_bp.route("/<int:class_id>/enrollments", methods=["GET"])
+def get_class_enrollments(class_id):
+    """Lấy danh sách ghi danh kèm thông tin học viên"""
+    try:
+        page = request.args.get("page", default=1, type=int)
+        per_page = request.args.get("per_page", default=10, type=int)
+        status = request.args.get("status")
+        
+        result = class_service.get_class_enrollments_with_students(class_id, page, per_page, status)
+        
+        if result["success"]:
+            return success_response(
+                data=result["data"],
+                meta=result.get("pagination"),
+                status_code=200
+            )
+        return error_response(message=result["error"], status_code=404)
+    
+    except Exception as e:
+        return error_response(message=f"Error retrieving enrollments: {str(e)}", status_code=500)

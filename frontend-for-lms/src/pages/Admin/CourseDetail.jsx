@@ -2,13 +2,16 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import AdminSidebar from '../../components/admin/Adminsidebar';
-import AdminPageHeader from '../../components/admin/AdminPageHeader';
+import PageDetailHeader from '../../components/common/PageDetailHeader';
+import ClassList from '../../components/admin/ClassList'; // Import component mới
 import { getCourseById, deleteCourse, getStatusBadgeClass, getStatusText, getLevelText, formatCurrency, formatDate } from '../../services/courseService';
+import { getClassesByCourseId } from '../../services/classService'; // Import service
 import './css/CourseDetail.css';
 
 function CourseDetail() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [classesLoading, setClassesLoading] = useState(false);
     const [course, setCourse] = useState(null);
     const [activeTab, setActiveTab] = useState('info');
     const [classes, setClasses] = useState([]);
@@ -19,60 +22,60 @@ function CourseDetail() {
         fetchCourseDetails();
     }, [id]);
 
+    // Khi chuyển sang tab classes, chúng ta sẽ fetch dữ liệu lớp học nếu chưa có
+    useEffect(() => {
+        if (activeTab === 'classes' && classes.length === 0 && !classesLoading && course) {
+            fetchClassesForCourse();
+        }
+    }, [activeTab, course]);
+
     const fetchCourseDetails = async () => {
         setLoading(true);
         try {
             const response = await getCourseById(id);
             setCourse(response);
             console.log("Dữ liệu khóa học:", response);
-
-            // Mock data cho các lớp học thuộc khóa học này
-            setClasses([
-                {
-                    id: 'L001',
-                    className: 'TOEIC300-01-SG',
-                    teacher: 'Nguyễn Văn Giảng',
-                    teacherId: 'GV001',
-                    schedule: 'T2-4-6 18:00-20:00',
-                    location: 'Cơ sở 1 - Phòng 305',
-                    startDate: '2025-02-15',
-                    endDate: '2025-05-15',
-                    enrolledCount: 25,
-                    capacity: 30,
-                    status: 'active'
-                },
-                {
-                    id: 'L002',
-                    className: 'TOEIC300-02-HN',
-                    teacher: 'Trần Thị Hướng',
-                    teacherId: 'GV005',
-                    schedule: 'T3-5-7 19:00-21:00',
-                    location: 'Cơ sở 2 - Phòng 210',
-                    startDate: '2025-02-20',
-                    endDate: '2025-05-20',
-                    enrolledCount: 18,
-                    capacity: 30,
-                    status: 'active'
-                },
-                {
-                    id: 'L003',
-                    className: 'TOEIC300-03-ONLINE',
-                    teacher: 'Phạm Văn Dạy',
-                    teacherId: 'GV008',
-                    schedule: 'CN 9:00-11:30',
-                    location: 'Online (Zoom)',
-                    startDate: '2025-03-01',
-                    endDate: '2025-06-01',
-                    enrolledCount: 0,
-                    capacity: 40,
-                    status: 'upcoming'
-                },
-            ]);
         } catch (error) {
             console.error('Error fetching course details:', error);
             toast.error('Không thể tải thông tin khóa học');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Thay thế hàm fetchClassesForCourse hiện tại
+    const fetchClassesForCourse = async () => {
+        setClassesLoading(true);
+        try {
+            // Gọi API thực tế
+            const classesData = await getClassesByCourseId(id);
+            console.log('Dữ liệu lớp học nhận được từ API:', classesData);
+            // Map dữ liệu API sang cấu trúc mà component ClassList đang sử dụng
+            const formattedClasses = classesData.classes.map(cls => ({
+                id: cls.class_id,
+                className: cls.class_name,
+                courseId: cls.course_id,
+                courseName: cls.course_name,
+                startDate: cls.class_startdate,
+                endDate: cls.class_enddate,
+                capacity: cls.class_maxstudents,
+                enrolledCount: cls.class_currentenrollment,
+                status: cls.class_status.toLowerCase(),
+                createdAt: cls.created_at,
+                updatedAt: cls.updated_at,
+                // Các trường có thể không có trong API, sử dụng giá trị mặc định
+                teacher: 'Chưa phân công',
+                teacherId: null,
+                location: 'Đang cập nhật',
+                schedule: 'Đang cập nhật'
+            }));
+
+            setClasses(formattedClasses);
+        } catch (error) {
+            console.error('Error fetching classes:', error);
+            toast.error('Không thể tải danh sách lớp học');
+        } finally {
+            setClassesLoading(false);
         }
     };
 
@@ -93,47 +96,23 @@ function CourseDetail() {
         setSidebarCollapsed(!sidebarCollapsed);
     };
 
-    const renderClassStatus = (status) => {
-        switch (status) {
-            case 'active':
-                return <span className="badge-success">Đang diễn ra</span>;
-            case 'upcoming':
-                return <span className="badge-warning">Sắp khai giảng</span>;
-            case 'completed':
-                return <span className="badge-secondary">Đã kết thúc</span>;
-            case 'cancelled':
-                return <span className="badge-danger">Đã hủy</span>;
-            default:
-                return <span className="badge-secondary">Không xác định</span>;
-        }
-    };
-
     return (
         <div className="admin-layout">
             <AdminSidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
 
             <div className={`admin-main ${sidebarCollapsed ? 'expanded' : ''}`}>
-                <AdminPageHeader
-                    title="CHI TIẾT KHÓA HỌC"
-                    notificationCount={3}
+                <PageDetailHeader
+                    entityCode={course?.course_code}
+                    title={course?.course_name}
+                    description={course?.course_description}
+                    status={course?.course_status}
+                    statusBadgeClass={getStatusBadgeClass(course?.course_status)}
+                    statusText={getStatusText(course?.course_status)}
+                    type="course"
                 />
 
                 <div className="admin-content">
                     <div className="course-detail">
-                        <div className="content-header">
-                            <Link to="/admin/courses" className="btn btn-light">
-                                <i className="bi bi-arrow-left"></i> Quay lại
-                            </Link>
-
-                            <div className="action-buttons">
-                                <Link to={`/admin/courses/${id}/edit`} className="btn btn-primary">
-                                    <i className="bi bi-pencil"></i> Chỉnh sửa
-                                </Link>
-                                <button onClick={handleDelete} className="btn btn-danger">
-                                    <i className="bi bi-trash"></i> Xóa
-                                </button>
-                            </div>
-                        </div>
 
                         {loading ? (
                             <div className="loading-container">
@@ -142,20 +121,6 @@ function CourseDetail() {
                             </div>
                         ) : course ? (
                             <>
-                                <div className="course-header">
-                                    <div className="course-title-section">
-                                        <div className="course-code">{course.course_code}</div>
-                                        <h1 className="course-title">{course.course_name}</h1>
-                                        <p className="course-description">{course.course_description}</p>
-                                    </div>
-
-                                    <div className="course-status">
-                                        <span className={`status-badge ${getStatusBadgeClass(course.course_status)}`}>
-                                            {getStatusText(course.course_status)}
-                                        </span>
-                                    </div>
-                                </div>
-
                                 <div className="detail-tabs">
                                     <button
                                         className={`tab-button ${activeTab === 'info' ? 'active' : ''}`}
@@ -179,7 +144,7 @@ function CourseDetail() {
 
                                 {activeTab === 'info' && (
                                     <div className="detail-content">
-                                        {/* Giữ nguyên nội dung tab info */}
+                                        {/* Tab thông tin chung không thay đổi */}
                                         <div className="detail-cards">
                                             <div className="detail-card">
                                                 <h3 className="card-title">
@@ -302,96 +267,17 @@ function CourseDetail() {
                                 )}
 
                                 {activeTab === 'classes' && (
-                                    <div className="detail-content">
-                                        <div className="content-header">
-                                            <h3 className="section-title">Danh sách lớp học thuộc khóa học</h3>
-                                            <div className="actions">
-                                                <button className="btn btn-outline-primary">
-                                                    <i className="bi bi-file-earmark-excel"></i> Xuất Excel
-                                                </button>
-                                                <button className="btn btn-primary">
-                                                    <i className="bi bi-plus"></i> Thêm lớp học mới
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {classes.length > 0 ? (
-                                            <div className="table-responsive">
-                                                <table className="data-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Mã lớp</th>
-                                                            <th>Tên lớp</th>
-                                                            <th>Giáo viên</th>
-                                                            <th>Lịch học</th>
-                                                            <th>Địa điểm</th>
-                                                            <th>Thời gian</th>
-                                                            <th>Sĩ số</th>
-                                                            <th>Trạng thái</th>
-                                                            <th>Thao tác</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {classes.map(classItem => (
-                                                            <tr key={classItem.id}>
-                                                                <td>{classItem.id}</td>
-                                                                <td>{classItem.className}</td>
-                                                                <td>
-                                                                    <Link to={`/admin/teachers/${classItem.teacherId}`} className="link-text">
-                                                                        {classItem.teacher}
-                                                                    </Link>
-                                                                </td>
-                                                                <td>{classItem.schedule}</td>
-                                                                <td>{classItem.location}</td>
-                                                                <td>
-                                                                    <div className="date-range">
-                                                                        <div>{formatDate(classItem.startDate)}</div>
-                                                                        <div>→</div>
-                                                                        <div>{formatDate(classItem.endDate)}</div>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <span className="enrollment-count">
-                                                                        {classItem.enrolledCount}/{classItem.capacity}
-                                                                    </span>
-                                                                </td>
-                                                                <td>{renderClassStatus(classItem.status)}</td>
-                                                                <td>
-                                                                    <div className="action-buttons">
-                                                                        <Link to={`/admin/classes/${classItem.id}`} className="btn-icon" title="Xem chi tiết">
-                                                                            <i className="bi bi-eye"></i>
-                                                                        </Link>
-                                                                        <Link to={`/admin/classes/${classItem.id}/edit`} className="btn-icon" title="Chỉnh sửa">
-                                                                            <i className="bi bi-pencil"></i>
-                                                                        </Link>
-                                                                        <button className="btn-icon text-danger" title="Xóa lớp">
-                                                                            <i className="bi bi-trash"></i>
-                                                                        </button>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        ) : (
-                                            <div className="empty-state">
-                                                <div className="empty-icon">
-                                                    <i className="bi bi-grid-3x3-gap"></i>
-                                                </div>
-                                                <h3>Chưa có lớp học nào</h3>
-                                                <p>Khóa học này chưa có lớp học nào được tạo.</p>
-                                                <button className="btn btn-primary">
-                                                    <i className="bi bi-plus"></i> Thêm lớp học mới
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
+                                    // Sử dụng component ClassList mới
+                                    <ClassList
+                                        classes={classes}
+                                        loading={classesLoading}
+                                        courseId={id}
+                                    />
                                 )}
 
                                 {activeTab === 'schedule' && (
                                     <div className="detail-content">
-                                        {/* Giữ nguyên nội dung tab schedule */}
+                                        {/* Tab lịch học không thay đổi */}
                                         <div className="content-header">
                                             <h3 className="section-title">Lịch học chi tiết</h3>
                                         </div>
