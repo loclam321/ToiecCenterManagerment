@@ -5,6 +5,7 @@ from .routes.teacher_route import teacher_bp
 from .routes.student_route import student_bp
 from .routes.course_route import course_bp
 from .routes.class_route import class_bp
+from .routes.schedule_route import schedule_bp
 from flask_cors import CORS
 from .routes.teacher_route import teacher_bp
 from .routes.course_route import course_bp
@@ -76,5 +77,6 @@ def create_app(config_name="default"):
     app.register_blueprint(student_bp)
     app.register_blueprint(course_bp)
     app.register_blueprint(class_bp)
+    app.register_blueprint(schedule_bp)
 
     return app

@@ -375,10 +375,7 @@ function App() {
           <Route path="/login" element={<AuthPage />} />
           <Route path="/test" element={<TestPage />} />
           <Route path="/test/:testId" element={<TestPage />} />
-          <Route path="/admin" element={<AdminPage />}>
-            <Route path="courses/:id" element={<CourseDetail />} />
-            <Route path="courses/:courseId/add-class" element={<AddClassForm />} />
-          </Route>
+
           {/* Thêm các routes khác ở đây */}
         </Routes>
       </main>

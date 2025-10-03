@@ -7,12 +7,33 @@
     overflow: hidden;
 }
 
+.add-class-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page-actions {
+  margin-bottom: var(--spacing-lg);
+}
+
+.add-class-form {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-xl);
+}
+
 .form-header {
     padding: 0.75rem 1rem; /* Giảm padding */
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-primary);
 }
 
 .btn-back {
@@ -54,11 +75,54 @@
     padding: 1.25rem; /* Giảm padding */
 }
 
+.form-title {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.form-description {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.form-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.section-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.section-title i {
+  color: var(--primary-500);
+}
+
 .form-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr); /* Chia thành 3 cột cố định */
     gap: 1rem; /* Giảm khoảng cách giữa các ô */
     margin-bottom: 1.5rem; /* Giảm margin */
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 
 .form-group {
@@ -68,53 +132,69 @@
 }
 
 .form-group label {
-    font-weight: 500;
-    color: #333;
-    font-size: 0.9rem; /* Giảm kích thước font */
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-primary);
+    font-weight: var(--font-medium);
+    font-size: var(--text-sm);
 }
 
 .required {
-    color: #e53935;
-    margin-left: 0.25rem;
+    color: var(--error-500);
+    margin-left: var(--spacing-xs);
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
-    padding: 0.6rem; /* Giảm padding */
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 4px; /* Giảm bo tròn */
-    font-size: 0.9rem; /* Giảm kích thước font */
-    color: #333;
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    font-family: inherit;
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #9c27b0;
-    box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.15);
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px var(--primary-50);
 }
 
 .form-group input.error,
 .form-group select.error,
 .form-group textarea.error {
-    border-color: #e53935;
-    background-color: rgba(229, 57, 53, 0.03);
+    border-color: var(--error-500);
+    box-shadow: 0 0 0 3px var(--error-50);
 }
 
 .error-message {
-    color: #e53935;
-    font-size: 0.85rem;
-    margin-top: 0.25rem;
+    display: block;
+    margin-top: var(--spacing-xs);
+    color: var(--error-500);
+    font-size: var(--text-xs);
 }
 
-.form-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem; /* Giảm khoảng cách */
-    padding-top: 1rem; /* Giảm padding */
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+.form-help {
+  margin-top: var(--spacing-xs);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-primary);
 }
 
 .btn {
@@ -129,15 +209,45 @@
     gap: 0.4rem; /* Giảm khoảng cách */
     transition: all 0.2s;
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-light {
+  background: var(--gray-100);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+}
+
+.btn-outline-secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
 }
 
 .btn-primary {
     background: #9c27b0;
     color: white;
+    background: var(--gradient-primary);
+    color: var(--bg-primary);
+    box-shadow: var(--shadow-md);
 }
 
 .btn-primary:hover:not(:disabled) {
     background: #7b1fa2;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
@@ -164,10 +274,23 @@
     animation: spinner-border 0.75s linear infinite;
 }
 
+.spinner-sm {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--bg-primary);
+  border-top-color: transparent;
+  border-radius: var(--radius-full);
+  animation: spin 1s linear infinite;
+}
+
 @keyframes spinner-border {
     to {
         transform: rotate(360deg);
     }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Responsive điều chỉnh cho màn hình nhỏ */
@@ -227,5 +350,20 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 2rem 0;
+    padding: 4rem 0;
+}
+
+.alert {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.alert-error {
+  background: var(--error-50);
+  border: 1px solid var(--error-200);
+  color: var(--error-700);
 }

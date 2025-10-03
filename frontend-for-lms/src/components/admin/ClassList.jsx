@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDate } from '../../services/courseService';
 import PropTypes from 'prop-types';
+import './css/ClassList.css';
 
 function ClassList({ classes, loading, courseId }) {
     const renderClassStatus = (status) => {
@@ -27,7 +27,6 @@ function ClassList({ classes, loading, courseId }) {
                     <span>Danh sách lớp học ({classes.length})</span>
                 </div>
                 <div className="header-actions">
-                  
                     <Link to={`/admin/courses/${courseId}/add-class`} className="btn-sm btn-primary">
                         <i className="bi bi-plus"></i> Thêm lớp
                     </Link>

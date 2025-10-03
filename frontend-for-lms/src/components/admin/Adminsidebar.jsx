@@ -2,87 +2,106 @@ import { Link, useLocation } from 'react-router-dom';
 import { getCurrentUser } from '../../services/authService';
 import './css/Adminsidebar.css';
 
-function AdminSidebar({ collapsed, toggleSidebar }) {
+function AdminSidebar() {
     const location = useLocation();
     const currentUser = getCurrentUser();
 
     const isActive = (path) => {
-        return location.pathname === path;
+        if (path === '/admin' && location.pathname === '/admin') {
+            return true;
+        }
+        if (path !== '/admin' && location.pathname.startsWith(path)) {
+            return true;
+        }
+        return false;
     };
 
+    const menuItems = [
+        {
+            path: '/admin',
+            icon: 'bi bi-grid-1x2',
+            label: 'Dashboard'
+        },
+        {
+            path: '/admin/schedule',
+            icon: 'bi bi-calendar3',
+            label: 'Thời khóa biểu'
+        },
+        {
+            path: '/admin/classes',
+            icon: 'bi bi-people',
+            label: 'Lớp học'
+        },
+        {
+            path: '/admin/courses',
+            icon: 'bi bi-book',
+            label: 'Khóa học'
+        },
+        {
+            path: '/admin/students',
+            icon: 'bi bi-person-badge',
+            label: 'Học viên'
+        },
+        {
+            path: '/admin/teachers',
+            icon: 'bi bi-person-workspace',
+            label: 'Giáo viên'
+        },
+        {
+            path: '/admin/downloads',
+            icon: 'bi bi-file-earmark-text',
+            label: 'Tài liệu'
+        },
+        {
+            path: '/admin/settings',
+            icon: 'bi bi-gear',
+            label: 'Cài đặt'
+        }
+    ];
+
     return (
-        <div className={`admin-sidebar ${collapsed ? 'collapsed' : ''}`}>
-            <div className="sidebar-profile">
+        <aside className="admin-sidebar">
+
+            {/* User Info */}
+            <div className="user-section">
                 <div className="user-avatar">
-                    {currentUser?.avatar ? (
-                        <img src={currentUser.avatar} alt={currentUser.user_name || 'Admin'} />
-                    ) : (
-                        <img src="https://ui-avatars.com/api/?name=Admin&background=8A77FB&color=fff" alt="Admin" />
-                    )}
+                    <img
+                        src={currentUser?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.user_name || 'Admin')}&background=667eea&color=fff`}
+                        alt="User"
+                    />
+                    <span className="status-dot"></span>
                 </div>
-                {!collapsed && (
-                    <div className="user-info">
-                        <div className="user-name">{currentUser?.user_name || 'Admin'}</div>
-                    </div>
-                )}
+                <div className="user-details">
+                    <p className="user-name">{currentUser?.user_name || 'Admin'}</p>
+                    <p className="user-role">Administrator</p>
+                </div>
             </div>
 
+            {/* Navigation */}
             <nav className="sidebar-nav">
-                <ul className="nav-list">
-                    <li className={`nav-item ${isActive('/admin') ? 'active' : ''}`}>
-                        <Link to="/admin" className="nav-link">
-                            <i className="bi bi-grid-1x2"></i>
-                            {!collapsed && <span>Dashboard</span>}
-                        </Link>
-                    </li>
-
-                    <li className={`nav-item ${isActive('/admin/classes') ? 'active' : ''}`}>
-                        <Link to="/admin/classes" className="nav-link">
-                            <i className="bi bi-calendar3"></i>
-                            {!collapsed && <span>Lớp học</span>}
-                        </Link>
-                    </li>
-
-                    <li className={`nav-item ${isActive('/admin/groups') ? 'active' : ''}`}>
-                        <Link to="/admin/courses" className="nav-link">
-                            <i className="bi bi-people"></i>
-                            {!collapsed && <span>Khóa học</span>}
-                        </Link>
-                    </li>
-
-                    <li className={`nav-item ${isActive('/admin/students') ? 'active' : ''}`}>
-                        <Link to="/admin/students" className="nav-link">
-                            <i className="bi bi-mortarboard"></i>
-                            {!collapsed && <span>Học viên</span>}
-                        </Link>
-                    </li>
-
-                    <li className={`nav-item ${isActive('/admin/teachers') ? 'active' : ''}`}>
-                        <Link to="/admin/teachers" className="nav-link">
-                            <i className="bi bi-person-workspace"></i>
-                            {!collapsed && <span>Giáo viên</span>}
-                        </Link>
-                    </li>
-
-    
-
-                    <li className={`nav-item ${isActive('/admin/downloads') ? 'active' : ''}`}>
-                        <Link to="/admin/downloads" className="nav-link">
-                            <i className="bi bi-cloud-download"></i>
-                            {!collapsed && <span>Tài liệu</span>}
-                        </Link>
-                    </li>
-
-
-                    <li className="nav-item">
-                        <Link to="/logout" className="nav-link">
-                            <i className="bi bi-box-arrow-right"></i>
-                            {!collapsed && <span>Đăng xuất</span>}
-                        </Link>
-                    </li>
+                <ul className="nav-menu">
+                    {menuItems.map((item) => (
+                        <li key={item.path}>
+                            <Link
+                                to={item.path}
+                                className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
+                            >
+                                <i className={item.icon}></i>
+                                <span>{item.label}</span>
+                            </Link>
+                        </li>
+                    ))}
                 </ul>
             </nav>
-        </div>
+
+            {/* Logout */}
+            <div className="sidebar-footer">
+                <Link to="/logout" className="logout-btn">
+                    <i className="bi bi-box-arrow-right"></i>
+                    <span>Đăng xuất</span>
+                </Link>
+            </div>
+        </aside>
     );
 }
 

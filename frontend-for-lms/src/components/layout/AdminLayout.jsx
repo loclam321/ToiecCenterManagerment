@@ -11,19 +11,11 @@ function AdminLayout({ children, title, notificationCount = 0 }) {
   };
 
   return (
-    <div className="admin-layout">
+    <div className={`admin-layout ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <AdminSidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
-      
-      <div className={`admin-main ${sidebarCollapsed ? 'expanded' : ''}`}>
-        <AdminPageHeader
-          title={title}
-          notificationCount={notificationCount}
-          onNotificationClick={() => console.log('Notifications')}
-        />
-
-        <div className="admin-content">
-          {children}
-        </div>
+      <div className="admin-main">
+        <AdminPageHeader title={title} notificationCount={notificationCount} />
+        <div className="admin-content">{children}</div>
       </div>
     </div>
   );

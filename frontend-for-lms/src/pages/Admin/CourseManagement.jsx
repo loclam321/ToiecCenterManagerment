@@ -10,6 +10,7 @@ function CourseManagement() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [loading, setLoading] = useState(true);
     const [courses, setCourses] = useState([]);
+    const [viewMode, setViewMode] = useState('table'); // 'table' hoặc 'grid'
     const [filters, setFilters] = useState({
         search: '',
         status: '',
@@ -24,6 +25,7 @@ function CourseManagement() {
         itemsPerPage: 10,
         totalItems: 0
     });
+    const [selectedCourses, setSelectedCourses] = useState([]);
 
     useEffect(() => {
         fetchCourses();
@@ -102,35 +104,134 @@ function CourseManagement() {
         return 'newest';
     };
 
+    const handleSelectCourse = (courseId) => {
+        setSelectedCourses(prev => {
+            if (prev.includes(courseId)) {
+                return prev.filter(id => id !== courseId);
+            }
+            return [...prev, courseId];
+        });
+    };
+
+    const handleSelectAll = () => {
+        if (selectedCourses.length === courses.length) {
+            setSelectedCourses([]);
+        } else {
+            setSelectedCourses(courses.map(c => c.course_id));
+        }
+    };
+
+    const handleDeleteSelected = () => {
+        if (selectedCourses.length === 0) {
+            toast.warning('Vui lòng chọn ít nhất một khóa học');
+            return;
+        }
+        
+        if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedCourses.length} khóa học đã chọn?`)) {
+            console.log('Delete courses:', selectedCourses);
+            toast.success(`Đã xóa ${selectedCourses.length} khóa học`);
+            setSelectedCourses([]);
+        }
+    };
+
+    const handleDeleteCourse = (courseId, courseName) => {
+        if (window.confirm(`Bạn có chắc chắn muốn xóa khóa học "${courseName}"?`)) {
+            console.log(`Delete course ${courseId}`);
+            toast.success('Đã xóa khóa học thành công');
+        }
+    };
+
+    const resetFilters = () => {
+        setFilters({
+            search: '',
+            status: '',
+            level: '',
+            mode: '',
+            sortBy: 'created_at',
+            sortOrder: 'desc'
+        });
+        setPagination(prev => ({
+            ...prev,
+            currentPage: 1
+        }));
+    };
+
+    const hasActiveFilters = () => {
+        return filters.search || filters.status || filters.level || filters.mode;
+    };
+
     return (
         <div className="admin-layout">
             <AdminSidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
 
             <div className={`admin-main ${sidebarCollapsed ? 'expanded' : ''}`}>
                 <AdminPageHeader
-                    title="DANH SÁCH KHÓA HỌC"
-                    itemCount={pagination.totalItems}
-                    itemName="khóa học"
-                    addButtonText="THÊM KHÓA HỌC"
-                    addButtonLink="/admin/courses/add"
-                    notificationCount={3}
+                    title="QUẢN LÝ KHÓA HỌC"
+                    subtitle={`Quản lý và theo dõi ${pagination.totalItems} khóa học`}
+                    actions={[
+                        {
+                            type: 'button',
+                            text: 'Thêm khóa học',
+                            icon: 'bi bi-plus-circle',
+                            variant: 'primary',
+                            onClick: () => window.location.href = '/admin/courses/add'
+                        },
+                        {
+                            type: 'button',
+                            text: 'Xuất Excel',
+                            icon: 'bi bi-file-earmark-excel',
+                            variant: 'success',
+                            onClick: () => toast.info('Chức năng xuất Excel')
+                        }
+                    ]}
                 />
 
                 <div className="admin-content">
                     <div className="course-management">
-                        <div className="content-filters">
-                            <div className="filter-group">
-                                <div className="search-box">
-                                    <i className="bi bi-search"></i>
-                                    <input
-                                        type="text"
-                                        placeholder="Tìm kiếm khóa học..."
-                                        value={filters.search}
-                                        onChange={(e) => handleFilterChange('search', e.target.value)}
-                                    />
+                        {/* Filter Section */}
+                        <div className="filters-section">
+                            <div className="filters-header">
+                                <h3 className="filters-title">
+                                    <i className="bi bi-funnel"></i>
+                                    Bộ lọc
+                                </h3>
+                                {hasActiveFilters() && (
+                                    <button className="reset-filters-btn" onClick={resetFilters}>
+                                        <i className="bi bi-arrow-counterclockwise"></i>
+                                        Đặt lại
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="filters-grid">
+                                <div className="filter-item">
+                                    <label>
+                                        <i className="bi bi-search"></i>
+                                        Tìm kiếm
+                                    </label>
+                                    <div className="search-input-wrapper">
+                                        <input
+                                            type="text"
+                                            placeholder="Tìm theo tên, mã khóa học..."
+                                            value={filters.search}
+                                            onChange={(e) => handleFilterChange('search', e.target.value)}
+                                        />
+                                        {filters.search && (
+                                            <button 
+                                                className="clear-search"
+                                                onClick={() => handleFilterChange('search', '')}
+                                            >
+                                                <i className="bi bi-x"></i>
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className="filter-controls">
+                                <div className="filter-item">
+                                    <label>
+                                        <i className="bi bi-bar-chart-steps"></i>
+                                        Trình độ
+                                    </label>
                                     <select
                                         value={filters.level}
                                         onChange={(e) => handleFilterChange('level', e.target.value)}
@@ -140,7 +241,13 @@ function CourseManagement() {
                                         <option value="INTERMEDIATE">Trung cấp</option>
                                         <option value="ADVANCED">Nâng cao</option>
                                     </select>
+                                </div>
 
+                                <div className="filter-item">
+                                    <label>
+                                        <i className="bi bi-laptop"></i>
+                                        Hình thức
+                                    </label>
                                     <select
                                         value={filters.mode}
                                         onChange={(e) => handleFilterChange('mode', e.target.value)}
@@ -150,7 +257,13 @@ function CourseManagement() {
                                         <option value="OFFLINE">Offline</option>
                                         <option value="HYBRID">Hybrid</option>
                                     </select>
+                                </div>
 
+                                <div className="filter-item">
+                                    <label>
+                                        <i className="bi bi-circle-fill"></i>
+                                        Trạng thái
+                                    </label>
                                     <select
                                         value={filters.status}
                                         onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -161,7 +274,13 @@ function CourseManagement() {
                                         <option value="UPCOMING">Sắp mở</option>
                                         <option value="COMPLETED">Đã kết thúc</option>
                                     </select>
+                                </div>
 
+                                <div className="filter-item">
+                                    <label>
+                                        <i className="bi bi-sort-down"></i>
+                                        Sắp xếp
+                                    </label>
                                     <select
                                         value={getSelectedSort()}
                                         onChange={(e) => {
@@ -198,13 +317,57 @@ function CourseManagement() {
                                         <option value="name_desc">Tên Z-A</option>
                                         <option value="price_asc">Học phí tăng dần</option>
                                         <option value="price_desc">Học phí giảm dần</option>
-                                        <option value="date_asc">Ngày khai giảng gần nhất</option>
+                                        <option value="date_asc">Khai giảng gần nhất</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="content-table">
+                        {/* Toolbar */}
+                        <div className="content-toolbar">
+                            <div className="toolbar-left">
+                                <div className="view-mode-toggle">
+                                    <button
+                                        className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
+                                        onClick={() => setViewMode('table')}
+                                        title="Xem dạng bảng"
+                                    >
+                                        <i className="bi bi-list-ul"></i>
+                                    </button>
+                                    <button
+                                        className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                                        onClick={() => setViewMode('grid')}
+                                        title="Xem dạng lưới"
+                                    >
+                                        <i className="bi bi-grid-3x3-gap"></i>
+                                    </button>
+                                </div>
+
+                                {selectedCourses.length > 0 && (
+                                    <div className="bulk-actions">
+                                        <span className="selected-count">
+                                            Đã chọn {selectedCourses.length} khóa học
+                                        </span>
+                                        <button 
+                                            className="btn-bulk-delete"
+                                            onClick={handleDeleteSelected}
+                                        >
+                                            <i className="bi bi-trash"></i>
+                                            Xóa đã chọn
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="toolbar-right">
+                                <span className="result-count">
+                                    Hiển thị {courses.length} / {pagination.totalItems} khóa học
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="content-body">
                             {loading ? (
                                 <div className="loading-container">
                                     <div className="spinner"></div>
@@ -212,133 +375,269 @@ function CourseManagement() {
                                 </div>
                             ) : courses.length > 0 ? (
                                 <>
-                                    <div className="table-responsive">
-                                        <table className="course-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Mã khóa học</th>
-                                                    <th>Tên khóa học</th>
-                                                    <th>Trình độ</th>
-                                                    <th>Hình thức</th>
-                                                    <th>Lịch học</th>
-                                                    <th>Thời gian</th>
-                                                    <th>Học phí</th>
-                                                    <th>Trạng thái</th>
-                                                    <th>Thao tác</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {courses.map(course => (
-                                                    <tr key={course.course_id}>
-                                                        <td>{course.course_code}</td>
-                                                        <td>
-                                                            <div className="course-name">
-                                                                <span className="primary-text">{course.course_name}</span>
-                                                                <span className="secondary-text">{course.course_description}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td>{getLevelText(course.level)}</td>
-                                                        <td>{course.mode}</td>
-                                                        <td>{course.schedule_text}</td>
-                                                        <td>
-                                                            <div className="date-range">
-                                                                <div>{formatDate(course.start_date)}</div>
-                                                                <div>→</div>
-                                                                <div>{formatDate(course.end_date)}</div>
-                                                            </div>
-                                                        </td>
-                                                        <td>{formatCurrency(course.tuition_fee)}</td>
-                                                        <td>
-                                                            <span className={`status-badge ${getStatusBadgeClass(course.course_status)}`}>
-                                                                {getStatusText(course.course_status)}
-                                                            </span>
-                                                        </td>
-                                                        <td>
-                                                            <div className="action-buttons">
-                                                                <Link to={`/admin/courses/${course.course_id}`} className="btn-icon" title="Xem chi tiết">
-                                                                    <i className="bi bi-eye"></i>
-                                                                </Link>
-                                                                <Link to={`/admin/courses/${course.course_id}/edit`} className="btn-icon" title="Chỉnh sửa">
-                                                                    <i className="bi bi-pencil"></i>
-                                                                </Link>
-                                                                <button
-                                                                    className="btn-icon text-danger"
-                                                                    title="Xóa"
-                                                                    onClick={() => {
-                                                                        if (window.confirm('Bạn có chắc chắn muốn xóa khóa học này?')) {
-                                                                            // Gọi API xóa
-                                                                            console.log(`Delete course ${course.course_id}`);
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <i className="bi bi-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    {viewMode === 'table' ? (
+                                        <div className="table-view">
+                                            <div className="table-responsive">
+                                                <table className="course-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th className="checkbox-cell">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedCourses.length === courses.length}
+                                                                    onChange={handleSelectAll}
+                                                                />
+                                                            </th>
+                                                            <th>Mã khóa học</th>
+                                                            <th>Thông tin khóa học</th>
+                                                            <th>Trình độ</th>
+                                                            <th>Hình thức</th>
+                                                            <th>Lịch học</th>
+                                                            <th>Thời gian</th>
+                                                            <th>Học phí</th>
+                                                            <th>Trạng thái</th>
+                                                            <th>Thao tác</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {courses.map(course => (
+                                                            <tr key={course.course_id} className={selectedCourses.includes(course.course_id) ? 'selected' : ''}>
+                                                                <td className="checkbox-cell">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={selectedCourses.includes(course.course_id)}
+                                                                        onChange={() => handleSelectCourse(course.course_id)}
+                                                                    />
+                                                                </td>
+                                                                <td>
+                                                                    <span className="course-code">{course.course_code}</span>
+                                                                </td>
+                                                                <td>
+                                                                    <div className="course-info">
+                                                                        <div className="course-name">{course.course_name}</div>
+                                                                        <div className="course-desc">{course.course_description}</div>
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <span className="level-badge">{getLevelText(course.level)}</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span className="mode-badge">{course.mode}</span>
+                                                                </td>
+                                                                <td>
+                                                                    <div className="schedule-info">
+                                                                        <i className="bi bi-calendar-week"></i>
+                                                                        {course.schedule_text}
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <div className="date-range">
+                                                                        <span>{formatDate(course.start_date)}</span>
+                                                                        <i className="bi bi-arrow-right"></i>
+                                                                        <span>{formatDate(course.end_date)}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <span className="tuition-fee">{formatCurrency(course.tuition_fee)}</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span className={`status-badge ${getStatusBadgeClass(course.course_status)}`}>
+                                                                        {getStatusText(course.course_status)}
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    <div className="action-buttons">
+                                                                        <Link 
+                                                                            to={`/admin/courses/${course.course_id}`} 
+                                                                            className="btn-action view" 
+                                                                            title="Xem chi tiết"
+                                                                        >
+                                                                            <i className="bi bi-eye"></i>
+                                                                        </Link>
+                                                                        <Link 
+                                                                            to={`/admin/courses/${course.course_id}/edit`} 
+                                                                            className="btn-action edit" 
+                                                                            title="Chỉnh sửa"
+                                                                        >
+                                                                            <i className="bi bi-pencil"></i>
+                                                                        </Link>
+                                                                        <button
+                                                                            className="btn-action delete"
+                                                                            title="Xóa"
+                                                                            onClick={() => handleDeleteCourse(course.course_id, course.course_name)}
+                                                                        >
+                                                                            <i className="bi bi-trash"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="grid-view">
+                                            {courses.map(course => (
+                                                <div key={course.course_id} className={`course-card ${selectedCourses.includes(course.course_id) ? 'selected' : ''}`}>
+                                                    <div className="card-header">
+                                                        <input
+                                                            type="checkbox"
+                                                            className="card-checkbox"
+                                                            checked={selectedCourses.includes(course.course_id)}
+                                                            onChange={() => handleSelectCourse(course.course_id)}
+                                                        />
+                                                        <span className={`status-badge ${getStatusBadgeClass(course.course_status)}`}>
+                                                            {getStatusText(course.course_status)}
+                                                        </span>
+                                                    </div>
 
-                                    <div className="pagination">
-                                        <button
-                                            onClick={() => handlePageChange(1)}
-                                            disabled={pagination.currentPage === 1}
-                                            className="page-button"
-                                        >
-                                            <i className="bi bi-chevron-double-left"></i>
-                                        </button>
-                                        <button
-                                            onClick={() => handlePageChange(pagination.currentPage - 1)}
-                                            disabled={pagination.currentPage === 1}
-                                            className="page-button"
-                                        >
-                                            <i className="bi bi-chevron-left"></i>
-                                        </button>
+                                                    <div className="card-body">
+                                                        <div className="course-code-badge">{course.course_code}</div>
+                                                        <h3 className="course-title">{course.course_name}</h3>
+                                                        <p className="course-description">{course.course_description}</p>
 
-                                        <div className="page-info">
-                                            Trang {pagination.currentPage} / {pagination.totalPages}
+                                                        <div className="course-meta">
+                                                            <div className="meta-item">
+                                                                <i className="bi bi-bar-chart-steps"></i>
+                                                                <span>{getLevelText(course.level)}</span>
+                                                            </div>
+                                                            <div className="meta-item">
+                                                                <i className="bi bi-laptop"></i>
+                                                                <span>{course.mode}</span>
+                                                            </div>
+                                                            <div className="meta-item">
+                                                                <i className="bi bi-calendar-week"></i>
+                                                                <span>{course.schedule_text}</span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="course-dates">
+                                                            <div className="date-item">
+                                                                <i className="bi bi-calendar-check"></i>
+                                                                <span>{formatDate(course.start_date)}</span>
+                                                            </div>
+                                                            <i className="bi bi-arrow-right"></i>
+                                                            <div className="date-item">
+                                                                <i className="bi bi-calendar-x"></i>
+                                                                <span>{formatDate(course.end_date)}</span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="course-price">
+                                                            <span className="price-label">Học phí:</span>
+                                                            <span className="price-value">{formatCurrency(course.tuition_fee)}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="card-footer">
+                                                        <Link 
+                                                            to={`/admin/courses/${course.course_id}`} 
+                                                            className="btn-card view"
+                                                        >
+                                                            <i className="bi bi-eye"></i>
+                                                            Chi tiết
+                                                        </Link>
+                                                        <Link 
+                                                            to={`/admin/courses/${course.course_id}/edit`} 
+                                                            className="btn-card edit"
+                                                        >
+                                                            <i className="bi bi-pencil"></i>
+                                                            Sửa
+                                                        </Link>
+                                                        <button
+                                                            className="btn-card delete"
+                                                            onClick={() => handleDeleteCourse(course.course_id, course.course_name)}
+                                                        >
+                                                            <i className="bi bi-trash"></i>
+                                                            Xóa
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Pagination */}
+                                    <div className="pagination-wrapper">
+                                        <div className="pagination">
+                                            <button
+                                                onClick={() => handlePageChange(1)}
+                                                disabled={pagination.currentPage === 1}
+                                                className="page-button first"
+                                            >
+                                                <i className="bi bi-chevron-double-left"></i>
+                                            </button>
+                                            <button
+                                                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                                                disabled={pagination.currentPage === 1}
+                                                className="page-button prev"
+                                            >
+                                                <i className="bi bi-chevron-left"></i>
+                                            </button>
+
+                                            <div className="page-info">
+                                                <span className="current-page">{pagination.currentPage}</span>
+                                                <span className="separator">/</span>
+                                                <span className="total-pages">{pagination.totalPages}</span>
+                                            </div>
+
+                                            <button
+                                                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                                                disabled={pagination.currentPage === pagination.totalPages}
+                                                className="page-button next"
+                                            >
+                                                <i className="bi bi-chevron-right"></i>
+                                            </button>
+                                            <button
+                                                onClick={() => handlePageChange(pagination.totalPages)}
+                                                disabled={pagination.currentPage === pagination.totalPages}
+                                                className="page-button last"
+                                            >
+                                                <i className="bi bi-chevron-double-right"></i>
+                                            </button>
                                         </div>
 
-                                        <button
-                                            onClick={() => handlePageChange(pagination.currentPage + 1)}
-                                            disabled={pagination.currentPage === pagination.totalPages}
-                                            className="page-button"
-                                        >
-                                            <i className="bi bi-chevron-right"></i>
-                                        </button>
-                                        <button
-                                            onClick={() => handlePageChange(pagination.totalPages)}
-                                            disabled={pagination.currentPage === pagination.totalPages}
-                                            className="page-button"
-                                        >
-                                            <i className="bi bi-chevron-double-right"></i>
-                                        </button>
+                                        <div className="items-per-page">
+                                            <label>Hiển thị:</label>
+                                            <select
+                                                value={pagination.itemsPerPage}
+                                                onChange={(e) => setPagination(prev => ({
+                                                    ...prev,
+                                                    itemsPerPage: parseInt(e.target.value),
+                                                    currentPage: 1
+                                                }))}
+                                            >
+                                                <option value="5">5</option>
+                                                <option value="10">10</option>
+                                                <option value="20">20</option>
+                                                <option value="50">50</option>
+                                            </select>
+                                            <span>khóa học/trang</span>
+                                        </div>
                                     </div>
                                 </>
                             ) : (
                                 <div className="empty-state">
                                     <div className="empty-icon">
-                                        <i className="bi bi-journal-x"></i>
+                                        <i className="bi bi-inbox"></i>
                                     </div>
                                     <h3>Không tìm thấy khóa học nào</h3>
-                                    <p>Không có khóa học nào phù hợp với tiêu chí tìm kiếm.</p>
-                                    <button
-                                        className="btn btn-outline-primary"
-                                        onClick={() => {
-                                            setFilters({
-                                                search: '',
-                                                status: '',
-                                                level: '',
-                                                mode: '',
-                                                sortBy: 'created_at',
-                                                sortOrder: 'desc'
-                                            });
-                                        }}
-                                    >
-                                        <i className="bi bi-arrow-repeat"></i> Đặt lại bộ lọc
-                                    </button>
+                                    <p>
+                                        {hasActiveFilters() 
+                                            ? 'Không có khóa học nào phù hợp với tiêu chí lọc.'
+                                            : 'Chưa có khóa học nào trong hệ thống.'
+                                        }
+                                    </p>
+                                    {hasActiveFilters() && (
+                                        <button
+                                            className="btn-reset"
+                                            onClick={resetFilters}
+                                        >
+                                            <i className="bi bi-arrow-counterclockwise"></i>
+                                            Đặt lại bộ lọc
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
