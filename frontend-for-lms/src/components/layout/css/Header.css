@@ -10,7 +10,7 @@
   z-index: 1050; /* Luôn nằm trên các element khác */
   box-sizing: border-box;
   /* Sử dụng chiều cao cố định để các cột có cùng chiều cao */
-  --header-height: 64px;
+  --header-height: 5.5em;
   height: var(--header-height);
   padding: 0; /* bỏ padding dọc để đảm bảo chiều cao đồng đều */
 }
@@ -23,7 +23,7 @@
 .header-content {
   /* Dùng grid để chia 3 cột cân bằng nhau */
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 2fr 1fr;
   align-items: center;
   height: var(--header-height);
 }
@@ -201,48 +201,53 @@
 html, body {
   overflow-x: hidden;
 }
-
-/* ===== RESPONSIVE BREAKPOINTS ===== */
-/* Mobile-first responsive design */
+/* Responsive styles for Header */
+/* Fix cho tablet ngang, laptop nhỏ */
+@media (max-width: 992px) {
+  .header-content {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    align-items: center;
+}
+}
+/* Hide navigation and show hamburger menu on small screens */
 @media (max-width: 768px) {
-  /* Giảm chiều cao header trên mobile */
-  .header { --header-height: 56px; }
 
   .header-content {
-    grid-template-columns: 1fr auto 1fr; /* linh hoạt hơn khi hẹp */
-    gap: 8px;
+    grid-template-columns: 1fr auto; /* Adjust layout for mobile */
   }
 
   .header-nav {
-    order: 3;
-    width: 100%;
-    justify-content: center;
-    gap: 20px;
+    display: none; /* Hide navigation links */
+    flex-direction: column;
+    gap: 16px;
+    background-color: #ffffff;
+    position: absolute;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    padding: 16px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1050;
   }
 
-  .brand-logo {
-    height: calc(var(--header-height) - 16px);
+  .header-nav.open {
+    display: flex; /* Show navigation when open */
   }
 
-  .brand-title {
-    font-size: 14px;
+  .mobile-menu-toggle {
+    display: block; /* Show hamburger menu */
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #111827;
   }
+}
 
-  .brand-subtitle {
-    font-size: 12px;
-  }
-
-  .header-actions {
-    gap: 8px;
-  }
-
-  .btn-login {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-
-  .btn-cta {
-    padding: 8px 16px;
-    font-size: 12px;
+/* Default styles for desktop */
+@media (min-width: 769px) {
+  .mobile-menu-toggle {
+    display: none; /* Hide hamburger menu */
   }
 }
