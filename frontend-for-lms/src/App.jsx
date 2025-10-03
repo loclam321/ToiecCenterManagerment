@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
@@ -12,6 +12,7 @@ import { fetchLearningPathsWithCourse, toggleCourseStatus } from './services/cou
 
 // Import pages
 import AuthPage from './pages/AuthPage';
+import FacilityPage from './pages/facility/facility';
 
 // Giữ HomePage content trong App nhưng chỉ hiển thị nó ở route "/"
 function HomeContent() {
@@ -369,17 +370,17 @@ function App() {
       <Header />
 
 
-      <main className="content bg-white border rounded p-0">
-        <Routes>
-          <Route path="/" element={<HomeContent />} />
-          <Route path="/login" element={<AuthPage />} />
-          <Route path="/test" element={<TestPage />} />
-          <Route path="/test/:testId" element={<TestPage />} />
-
-          {/* Thêm các routes khác ở đây */}
-        </Routes>
-      </main>
-
+        <main className="content bg-white border rounded p-0">
+          <Routes>
+            <Route path="/" element={<HomeContent />} />
+            <Route path="/login" element={<AuthPage />} />
+            <Route path="/test" element={<TestPage />} />
+            <Route path="/test/:testId" element={<TestPage />} />
+            <Route path="/facility" element={<FacilityPage />} />
+            {/* Thêm các routes khác ở đây */}
+          </Routes>
+        </main>
+    
 
       <Footer />
     </div>
