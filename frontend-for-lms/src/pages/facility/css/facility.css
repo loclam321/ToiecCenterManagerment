@@ -3,8 +3,9 @@
 }
 
 .facility-hero {
+  margin-top: 5.5em;
   position: relative;
-  height: 56vw;
+  height: 33em;
   max-height: 520px;
   overflow: hidden;
 }
@@ -23,20 +24,21 @@
 }
 
 .facility-hero-content {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: 24px;
-  color: #fff;
+    margin-top: 0em;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 24px;
+    color: #fff;
 }
 
 .facility-hero-title {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 800;
-  margin: 0 0 12px 0;
+  color: #fff;
 }
 
 .facility-hero-cta {
@@ -246,4 +248,26 @@
   }
 }
 
+
+.facility-hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.facility-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.55));
+}
+
+
+/* Swiper Gallery */
+.facility-intro-gallery .swiper-slide img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 12px;
+}
 

@@ -206,9 +206,10 @@ html, body {
 @media (max-width: 992px) {
   .header-content {
     display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-columns: 1.1fr 2.3fr 1.1fr;
     align-items: center;
 }
+
 }
 /* Hide navigation and show hamburger menu on small screens */
 @media (max-width: 768px) {

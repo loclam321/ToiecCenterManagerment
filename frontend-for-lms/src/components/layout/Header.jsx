@@ -45,7 +45,7 @@ function Header() {
 
   return (
     <header className="header">
-      <div className="container">
+      <div className="container-fluid">
         <div className="header-content">
           {/* Logo + Brand */}
           <a href="/" className="brand">
