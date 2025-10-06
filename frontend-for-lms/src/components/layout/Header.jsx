@@ -13,6 +13,7 @@ function Header() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -44,7 +45,7 @@ function Header() {
 
   return (
     <header className="header">
-      <div className="container">
+      <div className="container-fluid">
         <div className="header-content">
           {/* Logo + Brand */}
           <a href="/" className="brand">
@@ -55,8 +56,16 @@ function Header() {
             </div>
           </a>
 
+          {/* Hamburger Menu for Mobile */}
+          <button
+            className="mobile-menu-toggle"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+          >
+            ☰
+          </button>
+
           {/* Navigation */}
-          <nav className="header-nav">
+          <nav className={`header-nav ${mobileMenuOpen ? 'open' : ''}`}>
             <a href="/" className="nav-link">Trang chủ</a>
             <div
               className={`nav-link nav-dropdown ${showPaths ? 'open' : ''}`}
