@@ -377,7 +377,7 @@ function App() {
             <Route path="/test" element={<TestPage />} />
             <Route path="/test/:testId" element={<TestPage />} />
             <Route path="/facility" element={<FacilityPage />} />
-            {/* Thêm các routes khác ở đây */}
+                        {/* Thêm các routes khác ở đây */}
           </Routes>
         </main>
     
