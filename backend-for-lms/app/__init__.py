@@ -9,6 +9,7 @@ from .routes.schedule_route import schedule_bp
 from flask_cors import CORS
 from .routes.teacher_route import teacher_bp
 from .routes.course_route import course_bp
+from .routes.room_route import room_bp
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine.url import make_url
 
@@ -78,5 +79,7 @@ def create_app(config_name="default"):
     app.register_blueprint(course_bp)
     app.register_blueprint(class_bp)
     app.register_blueprint(schedule_bp)
+    app.register_blueprint(room_bp)
+    
 
     return app

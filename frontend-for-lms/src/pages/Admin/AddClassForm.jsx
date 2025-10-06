@@ -6,7 +6,7 @@ import { getCourseById } from '../../services/courseService';
 import AdminSidebar from '../../components/admin/Adminsidebar';
 import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import './css/AddClassForm.css';
-
+// Form thêm lớp học mới cho một khóa học cụ thể
 function AddClassForm() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -16,7 +16,7 @@ function AddClassForm() {
         class_name: '',
         class_startdate: '',
         class_enddate: '',
-        class_maxstudents: 20,
+        class_maxstudents: 30,
         class_status: 'ACTIVE'
     });
     const [errors, setErrors] = useState({});

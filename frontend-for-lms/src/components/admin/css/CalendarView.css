@@ -123,6 +123,8 @@
     height: 80px;
 }
 
+
+
 .schedule-cell.weekend {
     background: var(--warning-50);
 }
@@ -174,17 +176,17 @@
 
 /* Room Headers */
 .room-header {
-    background: var(--gray-50);
+    background: var(--gray-50) ;
     font-weight: var(--font-semibold);
     color: var(--text-primary);
     padding: var(--spacing-sm);
     border-bottom: 2px solid var(--border-primary);
 }
 
-.room-cell {
+.room-header .room-cell {
     background: var(--gray-50);
     font-weight: var(--font-medium);
-    color: var(--text-primary);
+    color: var(--text-primary) !important;
     padding: var(--spacing-sm);
     text-align: center;
     font-size: var(--text-sm);
@@ -312,6 +314,10 @@
     font-weight: var(--font-semibold);
     color: var(--text-primary);
     padding: var(--spacing-sm);
+}
+
+.fas{
+    color: var(--primary-600) !important;
 }
 
 .fc .fc-timegrid-slot {

@@ -9,7 +9,6 @@ schedule_service = ScheduleService()
 
 # Lấy lịch học theo ID
 @schedule_bp.route("/<int:schedule_id>", methods=["GET"])
-@jwt_required()
 def get_schedule(schedule_id):
     result = schedule_service.get_schedule_by_id(schedule_id)
     if result["success"]:
@@ -19,7 +18,6 @@ def get_schedule(schedule_id):
 
 # Lấy lịch học theo lớp
 @schedule_bp.route("/by-class/<int:class_id>", methods=["GET"])
-@jwt_required()
 def get_class_schedules(class_id):
     result = schedule_service.get_schedules_by_class(class_id)
     if result["success"]:
@@ -29,7 +27,6 @@ def get_class_schedules(class_id):
 
 # Lấy lịch học theo giáo viên
 @schedule_bp.route("/by-teacher/<teacher_id>", methods=["GET"])
-@jwt_required()
 def get_teacher_schedules(teacher_id):
     result = schedule_service.get_schedules_by_teacher(teacher_id)
     if result["success"]:
@@ -39,23 +36,19 @@ def get_teacher_schedules(teacher_id):
 
 # Lấy lịch học theo phòng
 @schedule_bp.route("/by-room/<int:room_id>", methods=["GET"])
-@jwt_required()
 def get_room_schedules(room_id):
     result = schedule_service.get_schedules_by_room(room_id)
     if result["success"]:
         return success_response(result["data"])
     return error_response(result["error"], 404)
 
-
 # Lấy lịch học theo ngày
 @schedule_bp.route("/by-date/<date>", methods=["GET"])
-@jwt_required()
 def get_schedules_by_date(date):
     result = schedule_service.get_schedules_by_date(date)
     if result["success"]:
         return success_response(result["data"])
     return error_response(result["error"], 404)
-
 
 # Tạo lịch học mới
 @schedule_bp.route("", methods=["POST"])
@@ -69,10 +62,8 @@ def create_schedule():
         return success_response(result["data"], 201)
     return error_response(result["error"], 400)
 
-
 # Cập nhật lịch học
 @schedule_bp.route("/<int:schedule_id>", methods=["PUT", "PATCH"])
-@jwt_required()
 def update_schedule(schedule_id):
     data = request.get_json()
     if not data:
@@ -83,20 +74,16 @@ def update_schedule(schedule_id):
         return success_response(result["data"])
     return error_response(result["error"], 400)
 
-
 # Xóa lịch học
 @schedule_bp.route("/<int:schedule_id>", methods=["DELETE"])
-@jwt_required()
 def delete_schedule(schedule_id):
     result = schedule_service.delete_schedule(schedule_id)
     if result["success"]:
         return success_response({"message": result["message"]})
     return error_response(result["error"], 404)
 
-
 # Tìm phòng trống
 @schedule_bp.route("/available-rooms", methods=["GET"])
-@jwt_required()
 def find_available_rooms():
     date = request.args.get("date")
     start_time = request.args.get("start_time")
@@ -142,7 +129,6 @@ def create_recurring_schedule():
 
 # Kiểm tra tình trạng sẵn sàng của giáo viên
 @schedule_bp.route("/teacher-availability/<teacher_id>", methods=["GET"])
-@jwt_required()
 def get_teacher_availability(teacher_id):
     date = request.args.get("date")
     start_date = request.args.get("start_date")
@@ -164,7 +150,6 @@ def get_teacher_availability(teacher_id):
 
 # Lấy lịch học của lớp (dạng list hoặc calendar)
 @schedule_bp.route("/class-schedule/<int:class_id>", methods=["GET"])
-@jwt_required()
 def get_class_schedule(class_id):
     format_type = request.args.get("format", "list")
 

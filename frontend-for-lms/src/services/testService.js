@@ -30,4 +30,3 @@ export async function submitTest(testId, payload) {
   return data;
 }
 
-123
