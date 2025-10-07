@@ -2,35 +2,58 @@ from app.config import db
 from .test_model import Test
 from .enrollment_model import Enrollment
 from .class_model import Class
+from sqlalchemy import and_
 
 
 class Attempt(db.Model):
-    __tablename__ = "ATTEMPT"
+    __tablename__ = "attempts"
 
-    att_id = db.Column("ATT_ID", db.Integer, primary_key=True, autoincrement=True, nullable=False)
+    att_id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     test_id = db.Column(
-        "TEST_ID",
         db.Integer,
-        db.ForeignKey("TEST.TEST_ID", ondelete="RESTRICT", onupdate="RESTRICT"),
+        db.ForeignKey(
+            f"{Test.__tablename__}.test_id", ondelete="RESTRICT", onupdate="RESTRICT"
+        ),
         nullable=False,
     )
-    user_id = db.Column(
-        "USER_ID",
-        db.String(10),
-        db.ForeignKey("ENROLLMENT.USER_ID", ondelete="RESTRICT", onupdate="RESTRICT"),
+    user_id = db.Column(db.String(10), nullable=False)
+    class_id = db.Column(db.Integer, nullable=False)
+    att_started_at = db.Column(db.DateTime)
+    att_submitted_at = db.Column(db.DateTime)
+    att_raw_score = db.Column(db.Integer)
+    att_scaled_listening = db.Column(db.Integer)
+    att_scaled_reading = db.Column(db.Integer)
+    att_status = db.Column(db.String(12))
+    att_responses_json = db.Column(db.String(10))
+
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            [user_id, class_id],
+            [
+                f"{Enrollment.__tablename__}.user_id",
+                f"{Enrollment.__tablename__}.class_id",
+            ],
+            ondelete="RESTRICT",
+            onupdate="RESTRICT",
+        ),
     )
-    class_id = db.Column("CLASS_ID", db.Integer)
-    att_started_at = db.Column("ATT_STARTED_AT", db.DateTime)
-    att_submitted_at = db.Column("ATT_SUBMITTED_AT", db.DateTime)
-    att_raw_score = db.Column("ATT_RAW_SCORE", db.Integer)
-    att_scaled_listening = db.Column("ATT_SCALED_LISTENING", db.Integer)
-    att_scaled_reading = db.Column("ATT_SCALED_READING", db.Integer)
-    att_status = db.Column("ATT_STATUS", db.String(12))
-    att_responses_json = db.Column("ATT_RESPONSES_JSON", db.String(10))
 
     test = db.relationship("Test", backref=db.backref("attempts", lazy=True))
-    enrollment = db.relationship("Enrollment", backref=db.backref("attempts", lazy=True), primaryjoin="Attempt.user_id == Enrollment.user_id")
-    class_ref = db.relationship("Class", backref=db.backref("attempts", lazy=True), primaryjoin="Attempt.class_id == Class.class_id", foreign_keys=[class_id], uselist=False)
+    class_ref = db.relationship(
+        "Class",
+        backref=db.backref("attempts", lazy=True),
+        primaryjoin="Attempt.class_id == Class.class_id",
+        foreign_keys=[class_id],
+        uselist=False,
+    )
+    enrollment = db.relationship(
+        "Enrollment",
+        backref=db.backref("attempts", lazy=True),
+        primaryjoin=and_(
+            user_id == Enrollment.user_id, class_id == Enrollment.class_id
+        ),
+        viewonly=True,
+    )
 
     def __repr__(self):
         return f"<Attempt {self.att_id} - Test {self.test_id}>"
@@ -41,8 +64,12 @@ class Attempt(db.Model):
             "test_id": self.test_id,
             "user_id": self.user_id,
             "class_id": self.class_id,
-            "att_started_at": self.att_started_at.isoformat() if self.att_started_at else None,
-            "att_submitted_at": self.att_submitted_at.isoformat() if self.att_submitted_at else None,
+            "att_started_at": (
+                self.att_started_at.isoformat() if self.att_started_at else None
+            ),
+            "att_submitted_at": (
+                self.att_submitted_at.isoformat() if self.att_submitted_at else None
+            ),
             "att_raw_score": self.att_raw_score,
             "att_scaled_listening": self.att_scaled_listening,
             "att_scaled_reading": self.att_scaled_reading,

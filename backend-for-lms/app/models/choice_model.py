@@ -3,18 +3,17 @@ from .item_model import Item
 
 
 class Choice(db.Model):
-    __tablename__ = "CHOICE"
+    __tablename__ = "choices"
 
-    choice_id = db.Column("CHOICE_ID", db.Integer, primary_key=True, nullable=False)
+    choice_id = db.Column(db.Integer, primary_key=True, nullable=False)
     item_id = db.Column(
-        "ITEM_ID",
         db.Integer,
-        db.ForeignKey("ITEM.ITEM_ID", ondelete="RESTRICT", onupdate="RESTRICT"),
+        db.ForeignKey(f"{Item.__tablename__}.item_id", ondelete="RESTRICT", onupdate="RESTRICT"),
         nullable=False,
     )
-    choice_label = db.Column("CHOICE_LABEL", db.String(1), nullable=False)
-    choice_content = db.Column("CHOICE_CONTENT", db.Text, nullable=False)
-    choice_is_correct = db.Column("CHOICE_IS_CORRECT", db.Boolean, nullable=False)
+    choice_label = db.Column(db.String(1), nullable=False)
+    choice_content = db.Column(db.Text, nullable=False)
+    choice_is_correct = db.Column(db.Boolean, nullable=False)
 
     item = db.relationship("Item", backref=db.backref("choices", lazy=True))
 

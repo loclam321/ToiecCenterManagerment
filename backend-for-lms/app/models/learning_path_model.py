@@ -10,7 +10,7 @@ class LearningPath(db.Model):
     # Sử dụng course_id làm primary key (1-1)
     course_id = db.Column(
         db.String(10),
-        db.ForeignKey("courses.course_id", ondelete="CASCADE", onupdate="CASCADE"),
+        db.ForeignKey("course.course_id", ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
         nullable=False,  # Thêm dòng này để đảm bảo rõ ràng
     )
@@ -24,7 +24,7 @@ class LearningPath(db.Model):
     # Sử dụng course_id làm primary key (1-1)
     course_id = db.Column(
         db.String(10),
-        db.ForeignKey("courses.course_id", ondelete="CASCADE", onupdate="CASCADE"),
+        db.ForeignKey("course.course_id", ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
         nullable=False,  # Thêm dòng này để đảm bảo rõ ràng
     )

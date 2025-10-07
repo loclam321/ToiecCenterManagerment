@@ -19,6 +19,7 @@ class Teacher(db.Model):
     tch_specialization = db.Column(db.String(100), nullable=True)  # Chuyên môn
     tch_qualification = db.Column(db.String(100), nullable=True)   # Bằng cấp/Chứng chỉ
     tch_hire_date = db.Column(db.Date, nullable=True)             # Ngày tuyển dụng
+    tch_avtlink = db.Column(db.String(255), nullable=True)  # Liên kết đến trang cá nhân hoặc hồ sơ
     
     # Thêm các trường tracking
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())

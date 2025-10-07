@@ -2,19 +2,18 @@ from app.config import db
 
 
 class Course(db.Model):
-    __tablename__ = "COURSE"
+    __tablename__ = "course"
 
-    course_id = db.Column("COURSE_ID", db.String(10), primary_key=True, nullable=False)
+    course_id = db.Column(db.String(10), primary_key=True, nullable=False)
     cou_course_id = db.Column(
-        "COU_COURSE_ID",
         db.String(10),
-        db.ForeignKey("COURSE.COURSE_ID", ondelete="RESTRICT", onupdate="RESTRICT"),
+        db.ForeignKey("course.course_id", ondelete="RESTRICT", onupdate="RESTRICT"),
         nullable=True,
     )
-    course_name = db.Column("COURSE_NAME", db.String(100), nullable=True)
-    course_description = db.Column("COURSE_DESCRIPTION", db.String(1024), nullable=True)
-    course_code = db.Column("COURSE_CODE", db.String(15), nullable=True)
-    course_status = db.Column("COURSE_STATUS", db.String(50), nullable=True)
+    course_name = db.Column(db.String(100), nullable=True)
+    course_description = db.Column(db.String(1024), nullable=True)
+    course_code = db.Column(db.String(15), nullable=True)
+    course_status = db.Column(db.String(50), nullable=True)
 
     parent_course = db.relationship(
         "Course",

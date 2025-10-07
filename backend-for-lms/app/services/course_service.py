@@ -1,5 +1,5 @@
 from typing import Dict, Any, Optional
-from datetime import datetime, date
+from datetime import datetime
 from flask import current_app
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
@@ -15,6 +15,7 @@ class CourseService:
         self.db = database or db
 
     def _generate_course_id(self) -> str:
+        """Tạo course_id tự động theo format C0000001"""
         last_id = self.db.session.query(func.max(Course.course_id)).scalar()
         if not last_id:
             return "C0000001"
@@ -32,33 +33,35 @@ class CourseService:
             filters: Dict chứa các tham số lọc và sắp xếp
         """
         try:
-            query = Course.query.filter_by(is_deleted=0)
+            query = Course.query
 
             # Xử lý các filter nếu có
             if filters:
-                # Filter theo level
-                if filters.get("level"):
-                    query = query.filter(Course.level == filters["level"])
-
-                # Filter theo mode
-                if filters.get("mode"):
-                    query = query.filter(Course.mode == filters["mode"])
-
                 # Filter theo status
-                if filters.get("status"):
-                    query = query.filter(Course.status == filters["status"])
+                if filters.get("course_status"):
+                    query = query.filter(
+                        Course.course_status == filters["course_status"]
+                    )
 
-                # Filter theo teacher
-                if filters.get("teacher_id"):
-                    query = query.filter(Course.teacher_id == filters["teacher_id"])
+                # Filter theo parent course
+                if filters.get("cou_course_id"):
+                    query = query.filter(
+                        Course.cou_course_id == filters["cou_course_id"]
+                    )
 
                 # Filter theo tên (tìm kiếm)
                 if filters.get("search"):
                     search_term = f"%{filters['search']}%"
-                    query = query.filter(Course.course_name.like(search_term))
+                    query = query.filter(
+                        db.or_(
+                            Course.course_name.like(search_term),
+                            Course.course_code.like(search_term),
+                            Course.course_description.like(search_term),
+                        )
+                    )
 
                 # Xử lý sắp xếp
-                sort_by = filters.get("sort_by", "created_at")
+                sort_by = filters.get("sort_by", "course_id")
                 sort_order = filters.get("sort_order", "desc")
 
                 # Đảm bảo sort_by là tên cột hợp lệ trong Course model
@@ -66,15 +69,8 @@ class CourseService:
                     "course_id",
                     "course_code",
                     "course_name",
-                    "level",
-                    "mode",
-                    "start_date",
-                    "end_date",
-                    "tuition_fee",
-                    "capacity",
-                    "status",
-                    "created_at",
-                    "updated_at",
+                    "course_status",
+                    "cou_course_id",
                 ]
 
                 if sort_by in valid_sort_columns:
@@ -85,10 +81,10 @@ class CourseService:
                         query = query.order_by(column.asc())
                 else:
                     # Sắp xếp mặc định nếu sort_by không hợp lệ
-                    query = query.order_by(Course.created_at.desc())
+                    query = query.order_by(Course.course_id.desc())
             else:
                 # Sắp xếp mặc định
-                query = query.order_by(Course.created_at.desc())
+                query = query.order_by(Course.course_id.desc())
 
             # Phân trang
             pagination = query.paginate(page=page, per_page=per_page, error_out=False)
@@ -110,83 +106,93 @@ class CourseService:
             return {"success": False, "error": f"Error retrieving courses: {str(e)}"}
 
     def get_course_by_id(self, course_id: str) -> Dict[str, Any]:
+        """Lấy thông tin chi tiết một khóa học"""
         course = Course.query.get(course_id)
         if not course:
             return {"success": False, "error": "Course not found"}
         return {"success": True, "data": course.to_dict()}
 
-    def create_course(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def get_child_courses(self, course_id: str) -> Dict[str, Any]:
+        """Lấy danh sách các khóa học con của một khóa học"""
         try:
+            parent_course = Course.query.get(course_id)
+            if not parent_course:
+                return {"success": False, "error": "Parent course not found"}
+
+            child_courses = Course.query.filter_by(cou_course_id=course_id).all()
+            return {
+                "success": True,
+                "data": [course.to_dict() for course in child_courses],
+            }
+        except Exception as e:
+            current_app.logger.error(f"Error getting child courses: {str(e)}")
+            return {"success": False, "error": str(e)}
+
+    def create_course(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Tạo khóa học mới"""
+        try:
+            # Validate parent course nếu có
+            if payload.get("cou_course_id"):
+                parent_course = Course.query.get(payload["cou_course_id"])
+                if not parent_course:
+                    return {"success": False, "error": "Parent course not found"}
+
             course = Course(
                 course_id=self._generate_course_id(),
                 course_code=payload.get("course_code"),
-                course_name=payload["course_name"],
+                course_name=payload.get("course_name"),
                 course_description=payload.get("course_description"),
-                target_score=payload.get("target_score"),
-                level=payload.get("level"),
-                mode=payload.get("mode", "OFFLINE"),
-                schedule_text=payload.get("schedule_text"),
-                start_date=self._parse_date(payload.get("start_date")),
-                end_date=self._parse_date(payload.get("end_date")),
-                session_count=payload.get("session_count"),
-                total_hours=payload.get("total_hours"),
-                tuition_fee=payload.get("tuition_fee"),
-                capacity=payload.get("capacity"),
-                status=payload.get("status", "OPEN"),
-                is_deleted=0,
-                teacher_id=payload.get("teacher_id"),
-                learning_path_id=payload.get("learning_path_id"),
-                campus_id=payload.get("campus_id"),
+                course_status=payload.get("course_status"),
+                cou_course_id=payload.get("cou_course_id"),
             )
+
             self.db.session.add(course)
             self.db.session.commit()
             return {"success": True, "data": course.to_dict()}
+
         except IntegrityError as exc:
             self.db.session.rollback()
             current_app.logger.error(f"Integrity error creating course: {exc}")
             return {"success": False, "error": "Duplicate course code or ID"}
-        except KeyError as exc:
-            self.db.session.rollback()
-            return {"success": False, "error": f"Missing field: {exc.args[0]}"}
         except Exception as exc:
             self.db.session.rollback()
             current_app.logger.exception("Unexpected error creating course")
             return {"success": False, "error": str(exc)}
 
     def update_course(self, course_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Cập nhật thông tin khóa học"""
         course = Course.query.get(course_id)
         if not course:
             return {"success": False, "error": "Course not found"}
 
         try:
+            # Validate parent course nếu có thay đổi
+            if "cou_course_id" in payload and payload["cou_course_id"]:
+                # Không cho phép tự tham chiếu
+                if payload["cou_course_id"] == course_id:
+                    return {
+                        "success": False,
+                        "error": "Course cannot be its own parent",
+                    }
+
+                parent_course = Course.query.get(payload["cou_course_id"])
+                if not parent_course:
+                    return {"success": False, "error": "Parent course not found"}
+
+            # Cập nhật các trường
             for field in [
                 "course_code",
                 "course_name",
                 "course_description",
-                "target_score",
-                "level",
-                "mode",
-                "schedule_text",
-                "session_count",
-                "total_hours",
-                "tuition_fee",
-                "capacity",
-                "status",
-                "teacher_id",
-                "learning_path_id",
-                "campus_id",
+                "course_status",
+                "cou_course_id",
             ]:
                 if field in payload:
                     setattr(course, field, payload[field])
 
-            if "start_date" in payload:
-                course.start_date = self._parse_date(payload["start_date"])
-            if "end_date" in payload:
-                course.end_date = self._parse_date(payload["end_date"])
-
-            course.updated_at = datetime.utcnow()
             self.db.session.commit()
             return {"success": True, "data": course.to_dict()}
+
         except IntegrityError as exc:
             self.db.session.rollback()
             current_app.logger.error(f"Integrity error updating course: {exc}")
@@ -196,28 +202,112 @@ class CourseService:
             current_app.logger.exception("Unexpected error updating course")
             return {"success": False, "error": str(exc)}
 
-    def delete_course(self, course_id: str, soft_delete: bool = True) -> Dict[str, Any]:
+    def delete_course(self, course_id: str) -> Dict[str, Any]:
+        """Xóa khóa học"""
         course = Course.query.get(course_id)
         if not course:
             return {"success": False, "error": "Course not found"}
 
         try:
-            if soft_delete:
-                course.is_deleted = 1
-                course.updated_at = datetime.utcnow()
-            else:
-                self.db.session.delete(course)
+            # Kiểm tra có khóa học con không
+            child_courses = Course.query.filter_by(cou_course_id=course_id).count()
+            if child_courses > 0:
+                return {
+                    "success": False,
+                    "error": "Cannot delete course with child courses. Delete child courses first.",
+                }
+
+            self.db.session.delete(course)
             self.db.session.commit()
-            return {"success": True}
+            return {"success": True, "message": "Course deleted successfully"}
+
+        except IntegrityError as exc:
+            self.db.session.rollback()
+            current_app.logger.error(f"Integrity error deleting course: {exc}")
+            return {
+                "success": False,
+                "error": "Cannot delete course due to foreign key constraint",
+            }
         except Exception as exc:
             self.db.session.rollback()
             current_app.logger.exception("Unexpected error deleting course")
             return {"success": False, "error": str(exc)}
 
-    @staticmethod
-    def _parse_date(value: Optional[str]) -> Optional[date]:
-        if not value:
-            return None
-        if isinstance(value, date):
-            return value
-        return datetime.strptime(value, "%Y-%m-%d").date()
+    def get_course_hierarchy(self, course_id: str) -> Dict[str, Any]:
+        """Lấy cấu trúc phân cấp của khóa học (parent và children)"""
+        try:
+            course = Course.query.get(course_id)
+            if not course:
+                return {"success": False, "error": "Course not found"}
+
+            result = course.to_dict()
+
+            # Thêm thông tin parent course
+            if course.parent_course:
+                result["parent_course"] = course.parent_course.to_dict()
+
+            # Thêm thông tin child courses
+            result["child_courses"] = [
+                child.to_dict() for child in course.child_courses
+            ]
+
+            return {"success": True, "data": result}
+
+        except Exception as e:
+            current_app.logger.error(f"Error getting course hierarchy: {str(e)}")
+            return {"success": False, "error": str(e)}
+
+    def get_courses_summary(self) -> Dict[str, Any]:
+        """Lấy tóm tắt thống kê các khóa học"""
+        try:
+            # Import ở đây để tránh circular import
+            from app.models.learning_path_model import LearningPath
+            
+            # Query với tên bảng và cột chính xác
+            query = self.db.session.query(
+                Course.course_id,
+                Course.course_name,
+                Course.course_status,
+                func.count(LearningPath.lp_id).label('learning_path_count')
+            ).outerjoin(
+                LearningPath, 
+                LearningPath.course_id == Course.course_id
+            ).group_by(
+                Course.course_id, 
+                Course.course_name, 
+                Course.course_status
+            ).order_by(Course.course_id)
+
+            results = query.all()
+            
+            summary_data = []
+            total_courses = 0
+            active_courses = 0
+            
+            for result in results:
+                total_courses += 1
+                if result.course_status == 'active':
+                    active_courses += 1
+                    
+                summary_data.append({
+                    'course_id': result.course_id,
+                    'course_name': result.course_name,
+                    'course_status': result.course_status,
+                    'learning_path_count': result.learning_path_count
+                })
+                
+            return {
+                "success": True,
+                "data": {
+                    "courses": summary_data,
+                    "statistics": {
+                        "total_courses": total_courses,
+                        "active_courses": active_courses,
+                        "inactive_courses": total_courses - active_courses
+                    }
+                }
+            }
+            
+        except Exception as e:
+            current_app.logger.error(f"Error in get_courses_summary: {str(e)}")
+            return {"success": False, "error": str(e)}

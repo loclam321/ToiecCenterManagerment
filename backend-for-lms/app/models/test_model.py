@@ -1,18 +1,15 @@
 from app.config import db
-from sqlalchemy import func
-from datetime import datetime
-from .skill_model import Skill
 
 
 class Test(db.Model):
-    __tablename__ = "TEST"
+    __tablename__ = "tests"
 
-    test_id = db.Column("TEST_ID", db.Integer, primary_key=True, nullable=False)
-    test_name = db.Column("TEST_NAME", db.String(100))
-    test_description = db.Column("TEST_DESCRIPTION", db.Text)
-    test_duration_min = db.Column("TEST_DURATION_MIN", db.Integer)
-    test_total_questions = db.Column("TEST_TOTAL_QUESTIONS", db.DateTime)
-    test_status = db.Column("TEST_STATUS", db.DateTime)
+    test_id = db.Column(db.Integer, primary_key=True, nullable=False)
+    test_name = db.Column(db.String(100))
+    test_description = db.Column(db.Text)
+    test_duration_min = db.Column(db.Integer)
+    test_total_questions = db.Column(db.DateTime)
+    test_status = db.Column(db.DateTime)
 
     def __repr__(self):
         return f"<Test {self.test_id}: {self.test_name}>"

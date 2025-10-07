@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from app.services.course_service import CourseService
 from app.utils.response_helper import (
     success_response,
@@ -104,7 +104,6 @@ def delete_course(course_id):
     return error_response(result["error"], 400)
 
 
-
 @course_bp.route("/", methods=["GET"])
 def list_courses():
     try:
@@ -197,55 +196,25 @@ def list_learning_paths_with_course():
 
 
 @course_bp.route("/summary", methods=["GET"])
-def courses_summary():
+def get_courses_summary():
+    """API endpoint để lấy tóm tắt khóa học"""
     try:
-        # Đếm số learning paths theo course - try new column then fallback to legacy
-        try:
-            results = (
-                db.session.query(
-                    Course.course_id,
-                    Course.course_name,
-                    literal_column("courses.status"),
-                    db.func.count(LearningPath.lp_id),
-                )
-                .outerjoin(LearningPath, LearningPath.course_id == Course.course_id)
-                .group_by(
-                    Course.course_id,
-                    Course.course_name,
-                    literal_column("courses.status"),
-                )
-                .order_by(Course.course_id)
-                .all()
-            )
-        except OperationalError:
-            results = (
-                db.session.query(
-                    Course.course_id,
-                    Course.course_name,
-                    literal_column("courses.course_status"),
-                    db.func.count(LearningPath.lp_id),
-                )
-                .outerjoin(LearningPath, LearningPath.course_id == Course.course_id)
-                .group_by(
-                    Course.course_id,
-                    Course.course_name,
-                    literal_column("courses.course_status"),
-                )
-                .order_by(Course.course_id)
-                .all()
-            )
-        data = [
-            {
-                "course_id": r[0],
-                "course_name": r[1],
-                "course_status": r[2],
-                "learning_path_count": int(r[3]) if r[3] is not None else 0,
-            }
-            for r in results
-        ]
-        return success_response({"courses": data})
+        course_service = CourseService()
+        result = course_service.get_courses_summary()
+
+        if result["success"]:
+            return jsonify(
+                {"success": True, "data": result["data"]}
+            ), 200
+        else:
+            return jsonify(
+                {"success": False, "error": result["error"]}
+            ), 500
+
     except Exception as e:
-        return error_response(f"Lỗi khi lấy tổng quan khóa học: {str(e)}", 500)
+        return jsonify(
+            {"success": False, "error": str(e)}
+        ), 500
 
 
 @course_bp.route("/<course_id>/learning-paths", methods=["GET"])

@@ -8,7 +8,7 @@ class Vocabulary(db.Model):
     __tablename__ = "vocalbulary"  # Giữ nguyên tên bảng như trong schema
     
     vc_index = db.Column(db.Integer, primary_key=True, nullable=False)
-    ls_id = db.Column(db.Integer, db.ForeignKey('lessons.ls_id'), nullable=False)
+    ls_id = db.Column(db.Integer, db.ForeignKey('lesson.ls_id'), nullable=False)
     vc_english = db.Column(db.String(100), nullable=True)
     vc_vietnamese = db.Column(db.String(100), nullable=True)
     vc_englishmean = db.Column(db.String(255), nullable=True)

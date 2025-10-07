@@ -2,13 +2,13 @@ from app.config import db
 
 
 class Part(db.Model):
-    __tablename__ = "PART"
+    __tablename__ = "part"
 
-    part_id = db.Column("PART_ID", db.Integer, primary_key=True, nullable=False)
-    part_code = db.Column("PART_CODE", db.String(10), nullable=False)
-    part_name = db.Column("PART_NAME", db.String(10), nullable=False)
-    part_section = db.Column("PART_SECTION", db.String(10), nullable=False)
-    part_order_in_test = db.Column("PART_ORDER_IN_TEST", db.Integer, nullable=False)
+    part_id = db.Column(db.Integer, primary_key=True, nullable=False)
+    part_code = db.Column(db.String(10), nullable=False)
+    part_name = db.Column(db.String(10), nullable=False)
+    part_section = db.Column(db.String(10), nullable=False)
+    part_order_in_test = db.Column(db.Integer, nullable=False)
 
     def __repr__(self):
         return f"<Part {self.part_id}: {self.part_code}>"
