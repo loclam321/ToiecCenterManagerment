@@ -6,6 +6,8 @@ import './css/test.css';
 import heroImg from '../../assets/english-education.jpg';
 
 // Data will be loaded from API
+
+// DEMO hardcoded dataset
 const DEMO_META = {
   test_id: 0,
   test_name: 'Làm thử - Kiểm tra đầu vào TOEIC',
@@ -85,7 +87,8 @@ export default function TestPage() {
   const { testId: testIdParam } = useParams();
   const parsedId = Number(testIdParam);
   const isLanding = typeof testIdParam === 'undefined';
-  const testId = isLanding ? null : parsedId;
+  const isDemo = !isLanding && Number.isNaN(parsedId);
+  const testId = isLanding || isDemo ? null : parsedId;
   const [testMeta, setTestMeta] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +113,13 @@ export default function TestPage() {
           if (!cancelled) setLoading(false);
           return;
         }
-        
+        if (isDemo) {
+          // Use hardcoded dataset for demo mode
+          if (cancelled) return;
+          setTestMeta(DEMO_META);
+          setQuestions(DEMO_QUESTIONS);
+          return;
+        }
         const [meta, qs] = await Promise.all([
           fetchTestMeta(testId),
           fetchTestQuestions(testId),
@@ -136,7 +145,7 @@ export default function TestPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [testId, isLanding]);
+  }, [testId, isDemo, isLanding]);
 
   const progressPercent = useMemo(() => {
     const answered = Object.keys(responses).length;
@@ -180,7 +189,13 @@ export default function TestPage() {
 
   function handleSubmit() {
     if (submitted) return;
-    
+    if (isDemo) {
+      const score = Object.keys(responses).length;
+      const passed = score >= (testMeta?.test_passing_score || 0);
+      setResult({ sc_score: score, passed });
+      setSubmitted(true);
+      return;
+    }
     const user = getCurrentUser();
     const payload = {
       user_id: user?.user_id || null,
@@ -220,7 +235,7 @@ export default function TestPage() {
             <p className="test-hero-desc">Theo sát hành trình học của bạn với bài kiểm tra năng lực trực tuyến — phù hợp từ nền tảng đến luyện thi TOEIC/IELTS. Làm nhanh tại nhà, kết quả tức thì.</p>
             <p className="test-hero-note"><em>*Bài kiểm tra chỉ mang tính tham khảo, không thay thế đánh giá trình độ đầu vào với giáo viên tại trung tâm.</em></p>
             <div className="test-hero-actions">
-              <button className="btn-primary" onClick={() => navigate('/test-demo')}>Tiếp theo</button>
+              <button className="btn-primary" onClick={() => navigate('/test/demo')}>Tiếp theo</button>
             </div>
           </div>
         </section>
