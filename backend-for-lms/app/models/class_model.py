@@ -8,7 +8,7 @@ class Class(db.Model):
     __tablename__ = "classes"  # Đổi tên để phù hợp với quy ước số nhiều
 
     class_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    course_id = db.Column(db.String(10), db.ForeignKey('course.course_id'), nullable=False)
+    course_id = db.Column(db.String(10), db.ForeignKey('courses.course_id'), nullable=False)
     class_name = db.Column(db.String(100), nullable=True)
     class_startdate = db.Column(db.Date, nullable=True)
     class_enddate = db.Column(db.Date, nullable=True)
