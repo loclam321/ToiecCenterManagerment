@@ -6,21 +6,63 @@
 }
 
 /* Đồng bộ với App.css layout */
-.teacher-page .container {
+/* ...existing code... */
+
+/* Status badges */
+.status-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: white;
+}
+
+.status-badge.status-active {
+  background-color: #28a745;
+}
+
+.status-badge.status-inactive {
+  background-color: #ffc107;
+  color: #000;
+}
+
+.status-badge.status-retired {
+  background-color: #6c757d;
+}
+
+.status-badge.status-unknown {
+  background-color: #dc3545;
+}
+
+/* Teacher card adjustments */
+.teacher-card {
+  position: relative;
+}
+
+.teacher-header {
+  position: relative;
+}
+
+/* ...existing code... */teacher-page .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 15px;
 }
 
 .teacher-intro-container {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: calc(100vh - 80px); /* Trừ đi chiều cao header */
+    background: #ffffff; /* Thay đổi từ gradient thành trắng */
+    min-height: calc(100vh - 80px);
+    padding: 0;
 }
 
 /* Hero Section */
 .teacher-hero {
-    padding: 60px 20px;
+    padding: 60px 20px 40px; /* Giảm padding bottom */
     text-align: center;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); /* Gradient chuyên nghiệp hơn */
     color: white;
     position: relative;
     overflow: hidden;
@@ -215,26 +257,134 @@
     font-size: 1.1rem;
 }
 
+/* Container cho teachers grid với navigation */
+.teachers-container {
+    position: relative;
+    width: 100%;
+    margin: 0 auto;
+}
+
 .teachers-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 40px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 30px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 20px 0;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(102, 126, 234, 0.3) transparent;
+    white-space: nowrap;
+}
+
+.teachers-grid::-webkit-scrollbar {
+    height: 8px;
+}
+
+.teachers-grid::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+.teachers-grid::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+}
+
+.teachers-grid::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
+/* Navigation buttons */
+.scroll-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.scroll-nav-btn:hover {
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.scroll-nav-btn.prev {
+    left: -25px;
+}
+
+.scroll-nav-btn.next {
+    right: -25px;
 }
 
 .teacher-card {
     background: white;
     border-radius: 25px;
-    padding: 30px;
+    padding: 25px;
     box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
     overflow: hidden;
     border: 1px solid rgba(102, 126, 234, 0.1);
+    min-width: 400px !important;
+    max-width: 450px;
+    flex-shrink: 0 !important;
+    height: fit-content;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
 }
 
 .teacher-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
+    transform: translateY(-5px); /* Giảm từ -8px */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); /* Nhẹ hơn */
+}
+
+/* Left side - Avatar and basic info */
+.teacher-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 120px;
+}
+
+.teacher-basic {
+    margin-top: 10px;
+}
+
+.teacher-basic .teacher-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+}
+
+.teacher-basic .teacher-specialization {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    margin: 0;
+}
+
+/* Right side - Details */
+.teacher-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .teacher-card::before {
@@ -247,11 +397,61 @@
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.teacher-header {
+/* Teacher badges row */
+.teacher-badges {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 25px;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Quick info section */
+.teacher-quick-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.info-item {
+    font-size: 0.85rem;
+    color: #555;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 4px 8px;
+    border-radius: 12px;
+    white-space: nowrap;
+}
+
+/* Contact section */
+.teacher-contact {
+    margin-top: 5px;
+}
+
+.contact-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.contact-item {
+    font-size: 0.8rem;
+    color: #666;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.teacher-header {
+    position: relative;
+    padding: 25px 25px 15px; /* Giảm padding */
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    text-align: center;
+    border-radius: 20px 20px 0 0; /* Chỉ bo góc trên */
 }
 
 .teacher-avatar {
@@ -525,6 +725,614 @@
 }
 
 /* Loading Spinner */
+/* Teacher Introduction Page Styles - Professional Design */
+.teacher-page {
+    min-height: 100vh;
+    background: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Container styling */
+.teacher-intro-container {
+    background: #ffffff;
+    min-height: calc(100vh - 80px);
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+/* Hero Section */
+.teacher-hero {
+    padding: 80px 20px 60px;
+    text-align: center;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.teacher-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero-title {
+    font-size: 3.2rem;
+    font-weight: 700;
+    margin: 0 0 20px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    line-height: 1.2;
+}
+
+.hero-icon {
+    font-size: 3.5rem;
+    margin-right: 15px;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    opacity: 0.95;
+    margin: 0;
+    font-weight: 400;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Statistics Section */
+.teacher-stats-section {
+    padding: 60px 20px;
+    background: #ffffff;
+}
+
+.section-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin: 0 0 50px 0;
+    color: #1f2937;
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: #6366f1;
+    border-radius: 2px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+.stat-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 40px 30px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.stat-content h3 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #6366f1;
+    margin: 0 0 10px 0;
+}
+
+.stat-content p {
+    font-size: 1rem;
+    color: #6b7280;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Teachers Showcase */
+.teachers-showcase {
+    padding: 60px 20px;
+    background: #f9fafb;
+}
+
+.showcase-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.section-subtitle {
+    font-size: 1.125rem;
+    color: #6b7280;
+    margin: 15px auto 0;
+    font-weight: 400;
+    max-width: 600px;
+}
+
+/* CSS này đã được thay thế bởi horizontal layout ở trên */
+
+/* Duplicate CSS removed - using main teacher-card above */
+
+.teacher-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.teacher-header {
+    position: relative;
+    padding: 30px 30px 20px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    text-align: center;
+}
+
+/* Status badges - Positioned in top corners like the image */
+.status-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 5px 10px; /* Tăng padding */
+    border-radius: 15px; /* Bo góc hơn */
+    font-size: 0.7rem;
+    font-weight: 700; /* Tăng font weight */
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.status-badge.status-active {
+    background: #22c55e; /* Green tươi hơn */
+    color: white;
+}
+
+.teacher-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #f97316; /* Orange thay vì đỏ */
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* Teacher Avatar - Large circular design like image */
+.teacher-avatar {
+    width: 100px; /* Giảm từ 120px */
+    height: 100px;
+    margin: 0 auto 15px; /* Giảm margin bottom */
+    position: relative;
+}
+.avatar-icon {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.25); /* Tăng opacity */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3.5rem; /* Giảm size icon */
+    border: 3px solid rgba(255, 255, 255, 0.4); /* Giảm border width */
+    backdrop-filter: blur(8px);
+}
+
+.teacher-info {
+    padding: 0 25px 20px; /* Giảm padding */
+    text-align: center;
+}
+
+.teacher-name {
+    font-size: 1.4rem; /* Giảm từ 1.5rem */
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 6px 0; /* Giảm margin */
+}
+.teacher-specialization {
+    font-size: 0.95rem; /* Giảm từ 1rem */
+    color: #6366f1;
+    margin: 0 0 20px 0;
+    font-weight: 600;
+}
+
+/* Cập nhật experience section để compact hơn */
+.teacher-experience {
+    display: flex;
+    justify-content: space-around; /* Thay đổi từ center */
+    gap: 20px; /* Giảm gap */
+    margin-bottom: 20px;
+    padding: 15px; /* Giảm padding */
+    background: #f8fafc;
+    border-radius: 10px; /* Giảm border radius */
+}
+
+.exp-item {
+    text-align: center;
+    flex: 1;
+    min-width: 0; /* Cho phép shrink */
+}
+
+.exp-icon {
+    font-size: 1.3rem; /* Giảm từ 1.5rem */
+    display: block;
+    margin-bottom: 6px; /* Giảm margin */
+}
+
+.exp-text {
+    font-size: 0.8rem; /* Giảm từ 0.875rem */
+    color: #374151;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+/* Cập nhật details section */
+.teacher-details {
+    margin-bottom: 20px;
+    padding: 0 25px; /* Thêm padding horizontal */
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0; /* Giảm padding */
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.82rem; /* Giảm font size */
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.detail-value {
+    color: #1f2937;
+    font-weight: 600;
+    text-align: right;
+}
+
+/* Cập nhật achievements section */
+.teacher-achievements {
+    padding: 15px 25px 25px; /* Điều chỉnh padding */
+    display: flex;
+    gap: 8px; /* Giảm gap */
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.achievement-item {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Giảm gap */
+    background: #6366f1;
+    color: white;
+    padding: 6px 12px; /* Giảm padding */
+    border-radius: 15px;
+    font-size: 0.7rem; /* Giảm font size */
+    font-weight: 600;
+}
+
+.achievement-icon {
+    font-size: 0.875rem;
+}
+
+/* Why Choose Section */
+.why-choose-section {
+    padding: 60px 20px;
+    background: #ffffff;
+}
+
+.reasons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+.reason-card {
+    text-align: center;
+    padding: 40px 30px;
+    background: #ffffff;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.reason-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.reason-icon {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.reason-card h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 15px 0;
+}
+
+.reason-card p {
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.6;
+    font-size: 0.875rem;
+}
+
+/* CTA Section */
+.cta-section {
+    padding: 80px 20px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    text-align: center;
+}
+
+.cta-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 0 20px 0;
+}
+
+.cta-subtitle {
+    font-size: 1.125rem;
+    opacity: 0.9;
+    margin: 0 0 40px 0;
+    font-weight: 400;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto 40px;
+}
+
+.cta-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-primary, .btn-secondary {
+    padding: 16px 32px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 160px;
+}
+
+.btn-primary {
+    background: white;
+    color: #6366f1;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+.btn-secondary:hover {
+    background: white;
+    color: #6366f1;
+    transform: translateY(-2px);
+}
+
+/* Loading and Error States */
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    color: #6b7280;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e5e7eb;
+    border-top: 4px solid #6366f1;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error-message {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 40px 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    color: #1f2937;
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.empty-state p {
+    color: #6b7280;
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .section-title {
+        font-size: 2rem;
+    }
+    
+    /* Mobile navigation buttons */
+    .scroll-nav-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .scroll-nav-btn.prev {
+        left: -20px;
+    }
+    
+    .scroll-nav-btn.next {
+        right: -20px;
+    }
+    
+    .teacher-card {
+        min-width: 350px;
+        max-width: 380px;
+        padding: 20px;
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .teacher-left {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+    
+    .teacher-right {
+        width: 100%;
+    }
+    
+    .info-row,
+    .contact-row {
+        justify-content: center;
+    }
+    
+/* CSS duplicate đã xủ */
+
+.teachers-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.teachers-scroll-container {
+    position: relative;
+    margin: 0 40px;
+}
+    
+    .teacher-card {
+        margin: 0 10px;
+    }
+    
+    .teacher-experience {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .cta-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+        max-width: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .teacher-hero {
+        padding: 40px 20px;
+    }
+    
+    .hero-title {
+        font-size: 2rem;
+    }
+    
+    .teachers-showcase,
+    .teacher-stats-section,
+    .why-choose-section,
+    .cta-section {
+        padding: 40px 20px;
+    }
+    
+    .teacher-header,
+    .teacher-info,
+    .teacher-achievements {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}    
+
 .loading-spinner {
     display: flex;
     flex-direction: column;
