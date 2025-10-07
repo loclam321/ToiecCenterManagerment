@@ -40,14 +40,14 @@ class CourseService:
                 # Filter theo status
                 if filters.get("course_status"):
                     query = query.filter(
-                        Course.course_status == filters["course_status"]
+                        Course.status == filters["course_status"]
                     )
 
-                # Filter theo parent course
-                if filters.get("cou_course_id"):
-                    query = query.filter(
-                        Course.cou_course_id == filters["cou_course_id"]
-                    )
+                # Filter theo parent course - disabled (field không tồn tại)
+                # if filters.get("cou_course_id"):
+                #     query = query.filter(
+                #         Course.cou_course_id == filters["cou_course_id"]
+                #     )
 
                 # Filter theo tên (tìm kiếm)
                 if filters.get("search"):
@@ -70,7 +70,7 @@ class CourseService:
                     "course_code",
                     "course_name",
                     "course_status",
-                    "cou_course_id",
+                    "status",
                 ]
 
                 if sort_by in valid_sort_columns:
@@ -113,38 +113,40 @@ class CourseService:
         return {"success": True, "data": course.to_dict()}
 
     def get_child_courses(self, course_id: str) -> Dict[str, Any]:
-        """Lấy danh sách các khóa học con của một khóa học"""
-        try:
-            parent_course = Course.query.get(course_id)
-            if not parent_course:
-                return {"success": False, "error": "Parent course not found"}
-
-            child_courses = Course.query.filter_by(cou_course_id=course_id).all()
-            return {
-                "success": True,
-                "data": [course.to_dict() for course in child_courses],
-            }
-        except Exception as e:
-            current_app.logger.error(f"Error getting child courses: {str(e)}")
-            return {"success": False, "error": str(e)}
+        """Lấy danh sách các khóa học con - disabled (không hỗ trợ parent-child relationship)"""
+        return {
+            "success": False,
+            "error": "Parent-child course relationships not supported in current model"
+        }
 
     def create_course(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Tạo khóa học mới"""
         try:
-            # Validate parent course nếu có
-            if payload.get("cou_course_id"):
-                parent_course = Course.query.get(payload["cou_course_id"])
-                if not parent_course:
-                    return {"success": False, "error": "Parent course not found"}
-
             course = Course(
                 course_id=self._generate_course_id(),
                 course_code=payload.get("course_code"),
                 course_name=payload.get("course_name"),
                 course_description=payload.get("course_description"),
-                course_status=payload.get("course_status"),
-                cou_course_id=payload.get("cou_course_id"),
+                target_score=payload.get("target_score"),
+                level=payload.get("level"),
+                mode=payload.get("mode"),
+                schedule_text=payload.get("schedule_text"),
+                start_date=payload.get("start_date"),
+                end_date=payload.get("end_date"),
+                session_count=payload.get("session_count"),
+                total_hours=payload.get("total_hours"),
+                tuition_fee=payload.get("tuition_fee"),
+                capacity=payload.get("capacity"),
+                teacher_id=payload.get("teacher_id"),
+                learning_path_id=payload.get("learning_path_id"),
+                campus_id=payload.get("campus_id"),
             )
+            
+            # Set status (có thể là course_status từ frontend)
+            if payload.get("course_status"):
+                course.course_status = payload.get("course_status")
+            elif payload.get("status"):
+                course.status = payload.get("status")
 
             self.db.session.add(course)
             self.db.session.commit()
@@ -166,29 +168,33 @@ class CourseService:
             return {"success": False, "error": "Course not found"}
 
         try:
-            # Validate parent course nếu có thay đổi
-            if "cou_course_id" in payload and payload["cou_course_id"]:
-                # Không cho phép tự tham chiếu
-                if payload["cou_course_id"] == course_id:
-                    return {
-                        "success": False,
-                        "error": "Course cannot be its own parent",
-                    }
-
-                parent_course = Course.query.get(payload["cou_course_id"])
-                if not parent_course:
-                    return {"success": False, "error": "Parent course not found"}
-
-            # Cập nhật các trường
+            # Cập nhật các trường cơ bản
             for field in [
                 "course_code",
-                "course_name",
+                "course_name", 
                 "course_description",
-                "course_status",
-                "cou_course_id",
+                "target_score",
+                "level",
+                "mode",
+                "schedule_text",
+                "start_date",
+                "end_date",
+                "session_count",
+                "total_hours",
+                "tuition_fee",
+                "capacity",
+                "teacher_id",
+                "learning_path_id",
+                "campus_id",
             ]:
                 if field in payload:
                     setattr(course, field, payload[field])
+            
+            # Xử lý riêng cho status field (có thể đến từ frontend như course_status)
+            if "course_status" in payload:
+                course.course_status = payload["course_status"]
+            elif "status" in payload:
+                course.status = payload["status"]
 
             self.db.session.commit()
             return {"success": True, "data": course.to_dict()}
@@ -209,13 +215,7 @@ class CourseService:
             return {"success": False, "error": "Course not found"}
 
         try:
-            # Kiểm tra có khóa học con không
-            child_courses = Course.query.filter_by(cou_course_id=course_id).count()
-            if child_courses > 0:
-                return {
-                    "success": False,
-                    "error": "Cannot delete course with child courses. Delete child courses first.",
-                }
+            # Kiểm tra các ràng buộc khác nếu có (hiện tại không có parent-child relationship)
 
             self.db.session.delete(course)
             self.db.session.commit()
@@ -242,14 +242,9 @@ class CourseService:
 
             result = course.to_dict()
 
-            # Thêm thông tin parent course
-            if course.parent_course:
-                result["parent_course"] = course.parent_course.to_dict()
-
-            # Thêm thông tin child courses
-            result["child_courses"] = [
-                child.to_dict() for child in course.child_courses
-            ]
+            # Parent-child relationships không được hỗ trợ trong model hiện tại
+            result["parent_course"] = None
+            result["child_courses"] = []
 
             return {"success": True, "data": result}
 
@@ -263,19 +258,19 @@ class CourseService:
             # Import ở đây để tránh circular import
             from app.models.learning_path_model import LearningPath
             
-            # Query với tên bảng và cột chính xác
+            # Query với tên bảng và cột chính xác - sử dụng status thay vì course_status
             query = self.db.session.query(
                 Course.course_id,
                 Course.course_name,
-                Course.course_status,
-                func.count(LearningPath.lp_id).label('learning_path_count')
+                Course.status,
+                func.count(LearningPath.course_id).label('learning_path_count')
             ).outerjoin(
                 LearningPath, 
                 LearningPath.course_id == Course.course_id
             ).group_by(
                 Course.course_id, 
                 Course.course_name, 
-                Course.course_status
+                Course.status
             ).order_by(Course.course_id)
 
             results = query.all()
@@ -286,13 +281,14 @@ class CourseService:
             
             for result in results:
                 total_courses += 1
-                if result.course_status == 'active':
+                # Đếm active courses dựa trên status enum values
+                if result.status in ['OPEN', 'RUNNING']:
                     active_courses += 1
                     
                 summary_data.append({
                     'course_id': result.course_id,
                     'course_name': result.course_name,
-                    'course_status': result.course_status,
+                    'course_status': result.status,  # Trả về như course_status để tương thích với frontend
                     'learning_path_count': result.learning_path_count
                 })
                 

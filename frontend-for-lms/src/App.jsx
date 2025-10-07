@@ -3,8 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import TestPage from './pages/test/test';
-import DemoTestPage from './pages/test/DemoTestPage';
-import AddClassForm from './pages/Admin/AddClassForm';
+
 
 // Import layout components
 import Header from './components/layout/Header';
