@@ -15,15 +15,18 @@ class Test(db.Model):
         return f"<Test {self.test_id}: {self.test_name}>"
 
     def to_dict(self):
+        def _serialize(value):
+            try:
+                return value.isoformat()  # datetime-like
+            except AttributeError:
+                return value  # keep as-is (e.g., int, str, None)
+
         return {
             "test_id": self.test_id,
             "test_name": self.test_name,
             "test_description": self.test_description,
             "test_duration_min": self.test_duration_min,
-            "test_total_questions": (
-                self.test_total_questions.isoformat()
-                if self.test_total_questions
-                else None
-            ),
-            "test_status": self.test_status.isoformat() if self.test_status else None,
+            # Field type may vary in existing data; serialize defensively
+            "test_total_questions": _serialize(self.test_total_questions),
+            "test_status": _serialize(self.test_status),
         }

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { fetchTestMeta, fetchTestQuestions, submitTest } from '../../services/testService';
 import { getCurrentUser } from '../../services/authService';
 import './css/test.css';
 import heroImg from '../../assets/english-education.jpg';

@@ -21,6 +21,15 @@ import AddClassForm from './pages/Admin/AddClassForm';
 import ClassDetail from './pages/Admin/ClassDetail'; // Thêm import
 import AddStudentToClass from './pages/Admin/AddStudentToClass';
 import Schedule from './pages/Admin/Schedule';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import StudentPage from './pages/student/StudentPage';
+import StudentDashboard from './pages/student/Dashboard';
+import MyCourses from './pages/student/MyCourses';
+import StudentSchedule from './pages/student/Schedule';
+import StudentTests from './pages/student/Tests';
+import StudentProfile from './pages/student/Profile';
+import TestRunner from './pages/student/TestRunner';
+import Logout from './pages/Logout';
 
 
 
@@ -31,22 +40,146 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/*" element={<App />} />
         <Route path="/login" element={<AuthPage />} />
         <Route path="/teachers" element={<TeacherIntroduction />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/students" element={<StudentManagement />} />
-        <Route path="/admin/students/:id" element={<StudentDetail />} />
-        <Route path="/admin/students/add" element={<StudentForm />} />
-        <Route path="/admin/students/:id/edit" element={<StudentForm />} />
-        <Route path="/admin/teachers" element={<TeacherManagement />} />
-        <Route path="/admin/teachers/:id" element={<TeacherDetail />} />
-        <Route path="/admin/teachers/add" element={<TeacherForm />} />
-        <Route path="/admin/teachers/:id/edit" element={<TeacherForm />} />
-        <Route path="/admin/courses" element={<CourseManagement />} />
-        <Route path="/admin/courses/:id" element={<CourseDetail />} />
-        <Route path="/admin/courses/:courseId/add-class" element={<AddClassForm />} />
+  <Route path="/logout" element={<Logout />} />
+        {/* Admin area (teachers may share admin UI). Restrict to teacher for now. */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/students"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <StudentManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/students/:id"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <StudentDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/students/add"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <StudentForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/students/:id/edit"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <StudentForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/teachers"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <TeacherManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/teachers/:id"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <TeacherDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/teachers/add"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <TeacherForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/teachers/:id/edit"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <TeacherForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/courses"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <CourseManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/courses/:id"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <CourseDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/courses/:courseId/add-class"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <AddClassForm />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/courses/:courseId" element={<CourseIntroduction />} />
-        <Route path="/admin/classes/:id" element={<ClassDetail />} />
-        <Route path="/admin/classes/:id/add-students" element={<AddStudentToClass />} />
-        <Route path="/admin/schedule" element={<Schedule />} />
+        <Route
+          path="/admin/classes/:id"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <ClassDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/classes/:id/add-students"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <AddStudentToClass />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/schedule"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <Schedule />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Student area */}
+        <Route
+          path="/student"
+          element={
+            <ProtectedRoute roles={["student"]}>
+              <StudentPage />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<StudentDashboard />} />
+          <Route path="courses" element={<MyCourses />} />
+          <Route path="schedule" element={<StudentSchedule />} />
+          <Route path="tests" element={<StudentTests />} />
+          <Route path="tests/:testId" element={<TestRunner />} />
+          <Route path="profile" element={<StudentProfile />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

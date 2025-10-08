@@ -72,9 +72,23 @@ function FacilityPage() {
               navigation
               className="mySwiper"
             >
-              <SwiperSlide><img src={heroImg4} alt="Cơ sở vật chất 1" /></SwiperSlide>
-              <SwiperSlide><img src={heroImg2} alt="Cơ sở vật chất 2" /></SwiperSlide>
-              <SwiperSlide><img src={heroImg3} alt="Cơ sở vật chất 3" /></SwiperSlide>
+              <SwiperSlide>
+                <img src={heroImg4} alt="Cơ sở vật chất 1" />
+              </SwiperSlide>
+              <SwiperSlide>
+                <img src={heroImg2} alt="Cơ sở vật chất 2" />
+              </SwiperSlide>
+              <SwiperSlide>
+                <img
+                  src={heroImg3}
+                  alt="Cơ sở vật chất 3"
+                  onError={(e) => {
+                    // Fallback: if src/assets/f5.png is missing/corrupt, use the public asset copy
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/assets1/f5.png';
+                  }}
+                />
+              </SwiperSlide>
             </Swiper>
           </div>
         </div>
