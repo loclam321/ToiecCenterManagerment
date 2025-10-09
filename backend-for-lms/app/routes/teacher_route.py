@@ -134,16 +134,6 @@ def delete_teacher(user_id):
         return error_response(f"Lỗi khi xóa giáo viên: {str(e)}", 500)
 
 
-@teacher_bp.route("/init-test-data", methods=["POST"])
-def init_test_data():
-    """Khởi tạo dữ liệu test cho giáo viên"""
-    try:
-        teachers = teacher_service.create_test_teachers()
-        data = [teacher.to_dict() for teacher in teachers]
-        
-        return success_response({
-            "message": f"Đã tạo {len(teachers)} giáo viên test",
-            "teachers": data
-        }, 201)
-    except Exception as e:
-        return error_response(f"Lỗi khi tạo dữ liệu test: {str(e)}", 500)
+"""
+Gỡ bỏ endpoint khởi tạo dữ liệu test để tránh tạo dữ liệu giả ngoài ý muốn.
+"""

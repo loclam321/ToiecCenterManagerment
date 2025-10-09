@@ -63,6 +63,17 @@ class Course(db.Model):
         ),
     )
 
+    # Property để tương thích với code cũ sử dụng course_status
+    @property
+    def course_status(self):
+        """Alias cho trường status để tương thích với code cũ"""
+        return self.status
+    
+    @course_status.setter
+    def course_status(self, value):
+        """Setter cho course_status để có thể set giá trị"""
+        self.status = value
+
     def __repr__(self):
         return f"<Course(course_id='{self.course_id}', code='{self.course_code}', name='{self.course_name}')>"
 

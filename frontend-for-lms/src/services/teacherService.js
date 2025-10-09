@@ -228,6 +228,11 @@ export const mapTeacherToApi = (teacherData) => {
     tch_status: teacherData.status || 'active'
   };
   
+  // Đưa avatar path vào API nếu có
+  if (teacherData.avatarPath) {
+    data.tch_avtlink = teacherData.avatarPath;
+  }
+  
   // Chỉ thêm mật khẩu nếu có (khi tạo mới hoặc đổi mật khẩu)
   if (teacherData.password && teacherData.password.trim()) {
     data.user_password = teacherData.password;
@@ -241,8 +246,23 @@ export const mapTeacherToApi = (teacherData) => {
  * @param {Object} apiTeacher - Dữ liệu giáo viên từ API response
  */
 export const mapTeacherFromApi = (apiTeacher) => {
-  if (!apiTeacher) return null;
-  
+  const normalizeAvatarPath = (p) => {
+    if (!p) return '';
+    if (/^(https?:|data:)/i.test(p)) return p; // absolute url or data uri
+    let path = String(p).replace(/\\/g, '/');
+    const lower = path.toLowerCase();
+    const publicIdx = lower.indexOf('/public/');
+    if (publicIdx !== -1) {
+      path = path.substring(publicIdx + '/public'.length); // keep leading slash before avatar
+    }
+    const avatarIdx = path.toLowerCase().indexOf('/avatar/');
+    if (avatarIdx !== -1) {
+      path = path.substring(avatarIdx);
+    }
+    if (!path.startsWith('/')) path = '/' + path;
+    return path;
+  };
+
   return {
     id: apiTeacher.user_id,
     name: apiTeacher.user_name,
@@ -255,8 +275,17 @@ export const mapTeacherFromApi = (apiTeacher) => {
     qualification: apiTeacher.tch_qualification,
     hireDate: apiTeacher.tch_hire_date,
     status: apiTeacher.tch_status || 'active',
-    createdAt: apiTeacher.created_at,
-    updatedAt: apiTeacher.updated_at
+    
+  // Avatar (đã normalize về web path)
+  avatarPath: normalizeAvatarPath(apiTeacher.tch_avtlink),
+    
+    // Metadata
+    createdAt: apiTeacher.created_at || apiTeacher.user_created_at,
+    updatedAt: apiTeacher.updated_at || apiTeacher.user_updated_at,
+    
+    // Additional computed fields
+    displayName: apiTeacher.user_name || 'Không có tên',
+    isActive: apiTeacher.tch_status === 'active'
   };
 };
 

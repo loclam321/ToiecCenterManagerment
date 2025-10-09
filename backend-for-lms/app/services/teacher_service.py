@@ -3,7 +3,6 @@ from app.models.teacher_model import Teacher
 from sqlalchemy.exc import IntegrityError
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date
-import uuid
 
 
 class TeacherService:
@@ -124,7 +123,8 @@ class TeacherService:
                 user_telephone=data.get('user_telephone'),
                 tch_specialization=data.get('tch_specialization'),
                 tch_qualification=data.get('tch_qualification'),
-                tch_hire_date=datetime.strptime(data['tch_hire_date'], '%Y-%m-%d').date() if data.get('tch_hire_date') else None
+                tch_hire_date=datetime.strptime(data['tch_hire_date'], '%Y-%m-%d').date() if data.get('tch_hire_date') else None,
+                tch_avtlink=data.get('tch_avtlink')
             )
             
             # Set password nếu có
@@ -169,6 +169,8 @@ class TeacherService:
                 teacher.tch_qualification = data['tch_qualification']
             if 'tch_hire_date' in data and data['tch_hire_date']:
                 teacher.tch_hire_date = datetime.strptime(data['tch_hire_date'], '%Y-%m-%d').date()
+            if 'tch_avtlink' in data:
+                teacher.tch_avtlink = data['tch_avtlink']
             if 'user_password' in data and data['user_password']:
                 teacher.set_password(data['user_password'])
             
@@ -211,53 +213,3 @@ class TeacherService:
         
         # Nếu không có hoặc lỗi, bắt đầu từ TC000001
         return "TC000001"
-
-    def create_test_teachers(self) -> List[Teacher]:
-        """Tạo dữ liệu test cho teachers"""
-        try:
-            test_teachers = [
-                {
-                    'user_name': 'Nguyễn Văn An',
-                    'user_gender': 'M',
-                    'user_email': 'an.nguyen@example.com',
-                    'user_birthday': '1985-03-15',
-                    'user_telephone': '0123456789',
-                    'tch_specialization': 'Tiếng Anh',
-                    'tch_qualification': 'Thạc sĩ Ngôn ngữ Anh',
-                    'tch_hire_date': '2018-01-15',
-                    'user_password': 'password123'
-                },
-                {
-                    'user_name': 'Trần Thị Bình',
-                    'user_gender': 'F',
-                    'user_email': 'binh.tran@example.com',
-                    'user_birthday': '1980-07-22',
-                    'user_telephone': '0987654321',
-                    'tch_specialization': 'Toán học',
-                    'tch_qualification': 'Tiến sĩ Toán học',
-                    'tch_hire_date': '2015-09-01',
-                    'user_password': 'password123'
-                },
-                {
-                    'user_name': 'Lê Minh Cường',
-                    'user_gender': 'M',
-                    'user_email': 'cuong.le@example.com',
-                    'user_birthday': '1975-12-10',
-                    'user_telephone': '0369852147',
-                    'tch_specialization': 'Vật lý',
-                    'tch_qualification': 'Thạc sĩ Vật lý',
-                    'tch_hire_date': '2010-03-20',
-                    'user_password': 'password123'
-                }
-            ]
-            
-            created_teachers = []
-            for teacher_data in test_teachers:
-                teacher = self.create(teacher_data)
-                if teacher:
-                    created_teachers.append(teacher)
-            
-            return created_teachers
-        except Exception as e:
-            print(f"Lỗi khi tạo test teachers: {str(e)}")
-            return []

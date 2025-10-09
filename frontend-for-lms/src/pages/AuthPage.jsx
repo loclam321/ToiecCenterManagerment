@@ -91,11 +91,13 @@ function AuthPage() {
       const role = localStorage.getItem('role');
       setTimeout(() => {
         if (role === 'admin') {
-          navigate('/admin/dashboard');
+          navigate('/admin');
         } else if (role === 'teacher') {
-          navigate('/teacher/dashboard');
+          navigate('/admin');
+        } else if (role === 'student') {
+          navigate('/student');
         } else {
-          navigate('/'); // Mặc định cho học viên
+          navigate('/');
         }
       }, 1000);
     } catch (err) {

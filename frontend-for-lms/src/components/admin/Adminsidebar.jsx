@@ -73,7 +73,7 @@ function AdminSidebar() {
                 </div>
                 <div className="user-details">
                     <p className="user-name">{currentUser?.user_name || 'Admin'}</p>
-                    <p className="user-role">Administrator</p>
+                    <p className="user-role">{(localStorage.getItem('role') || 'admin').toString().toUpperCase()}</p>
                 </div>
             </div>
 

@@ -73,6 +73,9 @@ def create_app(config_name="default"):
     # Import models (để Flask-Migrate detect được)
     from app.models.course_model import Course
 
+    # Import test blueprint
+    from .routes.test_route import test_bp
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(teacher_bp)
     app.register_blueprint(student_bp)
@@ -80,6 +83,7 @@ def create_app(config_name="default"):
     app.register_blueprint(class_bp)
     app.register_blueprint(schedule_bp)
     app.register_blueprint(room_bp)
+    app.register_blueprint(test_bp)
     
 
     return app

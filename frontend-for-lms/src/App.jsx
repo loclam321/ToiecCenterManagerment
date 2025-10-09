@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import TestPage from './pages/test/test';
+import ToeicTestPage from './pages/test/toeic-test';
 
 
 // Import layout components
@@ -376,6 +377,8 @@ function App() {
             <Route path="/login" element={<AuthPage />} />
             <Route path="/test" element={<TestPage />} />
             <Route path="/test/:testId" element={<TestPage />} />
+            <Route path="/toeic-test" element={<ToeicTestPage />} />
+            <Route path="/toeic-test/:testId" element={<ToeicTestPage />} />
             <Route path="/facility" element={<FacilityPage />} />
             {/* Thêm các routes khác ở đây */}
           </Routes>

@@ -203,7 +203,7 @@ class CourseService:
             # Cập nhật các trường cơ bản
             basic_fields = [
                 "course_code",
-                "course_name",
+                "course_name", 
                 "course_description",
                 "target_score",
                 "level",
