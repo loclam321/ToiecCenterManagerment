@@ -7,6 +7,8 @@ from sqlalchemy import func, or_, and_
 from app.config import db
 from app.models.class_model import Class
 from app.models.course_model import Course
+from app.models.enrollment_model import Enrollment
+from app.models.student_model import Student
 
 
 class ClassService:
@@ -41,10 +43,11 @@ class ClassService:
                     query = query.filter(Class.class_status == filters["status"])
 
                 if filters.get("active_only") is True:
+                    # Sử dụng phương thức is_active() từ model
                     query = query.filter(Class.class_status == "ACTIVE")
 
                 if filters.get("available_only") is True:
-                    # Lớp còn slot và đang active
+                    # Lớp còn slot và đang active - sử dụng logic từ is_full()
                     query = query.filter(
                         and_(
                             Class.class_status == "ACTIVE",
@@ -56,10 +59,12 @@ class ClassService:
                     )
 
                 if filters.get("ongoing") is True:
+                    # Sử dụng logic từ is_ongoing()
                     today = date.today()
                     query = query.filter(
                         and_(
-                            Class.class_startdate <= today, Class.class_enddate >= today
+                            Class.class_startdate <= today,
+                            Class.class_enddate >= today
                         )
                     )
 
@@ -67,6 +72,15 @@ class ClassService:
                 if filters.get("search"):
                     search_term = f"%{filters['search']}%"
                     query = query.filter(Class.class_name.like(search_term))
+
+                # Lọc theo thời gian
+                if filters.get("start_date"):
+                    start_date = datetime.strptime(filters["start_date"], "%Y-%m-%d").date()
+                    query = query.filter(Class.class_startdate >= start_date)
+
+                if filters.get("end_date"):
+                    end_date = datetime.strptime(filters["end_date"], "%Y-%m-%d").date()
+                    query = query.filter(Class.class_enddate <= end_date)
 
             # Sắp xếp
             sort_by = filters.get("sort_by", "class_id") if filters else "class_id"
@@ -116,7 +130,17 @@ class ClassService:
                     "error": f"Class with ID {class_id} not found",
                 }
 
-            return {"success": True, "data": class_obj.to_dict()}
+            result = class_obj.to_dict()
+            
+            # Bổ sung thêm thông tin từ course (nếu có)
+            if class_obj.course:
+                result["course"] = {
+                    "course_id": class_obj.course.course_id,
+                    "course_name": class_obj.course.course_name,
+                    "course_code": getattr(class_obj.course, "course_code", None),
+                }
+            
+            return {"success": True, "data": result}
         except Exception as e:
             current_app.logger.error(f"Error in get_class_by_id: {str(e)}")
             return {"success": False, "error": f"Error retrieving class: {str(e)}"}
@@ -162,6 +186,10 @@ class ClassService:
                     ).date()
                 else:
                     end_date = data["class_enddate"]
+
+            # Validate ngày bắt đầu và kết thúc
+            if start_date and end_date and start_date > end_date:
+                return {"success": False, "error": "Start date must be before end date"}
 
             # Tạo lớp học mới
             class_obj = Class(
@@ -227,6 +255,11 @@ class ClassService:
                 else:
                     class_obj.class_enddate = data["class_enddate"]
 
+            # Validate ngày bắt đầu và kết thúc
+            if (class_obj.class_startdate and class_obj.class_enddate and 
+                class_obj.class_startdate > class_obj.class_enddate):
+                return {"success": False, "error": "Start date must be before end date"}
+
             if "class_maxstudents" in data:
                 class_obj.class_maxstudents = data["class_maxstudents"]
 
@@ -235,8 +268,6 @@ class ClassService:
 
             if "class_status" in data:
                 class_obj.class_status = data["class_status"]
-
-            # Không cho phép thay đổi course_id sau khi đã tạo lớp
 
             self.db.session.commit()
 
@@ -275,6 +306,15 @@ class ClassService:
                 class_obj.class_status = "DELETED"
                 self.db.session.commit()
             else:
+                # Hard delete - kiểm tra các ràng buộc
+                # Kiểm tra xem có enrollments không
+                enrollments = Enrollment.query.filter_by(class_id=class_id).first()
+                if enrollments:
+                    return {
+                        "success": False,
+                        "error": "Cannot delete class with existing enrollments. Use soft delete or remove enrollments first."
+                    }
+                    
                 # Hard delete
                 self.db.session.delete(class_obj)
                 self.db.session.commit()
@@ -306,17 +346,13 @@ class ClassService:
                     "error": f"Class with ID {class_id} not found",
                 }
 
-            # Kiểm tra trạng thái lớp học
+            # Kiểm tra trạng thái lớp học - sử dụng phương thức is_active() từ model
             if not class_obj.is_active():
                 return {"success": False, "error": "Cannot enroll in inactive class"}
 
-            # Kiểm tra lớp học đã đầy chưa
+            # Kiểm tra lớp học đã đầy chưa - sử dụng phương thức is_full() từ model
             if class_obj.is_full():
                 return {"success": False, "error": "Class is already full"}
-
-            # Kiểm tra sinh viên đã đăng ký chưa
-            from app.models.enrollment_model import Enrollment
-            from app.models.student_model import Student
 
             # Kiểm tra sinh viên tồn tại
             student = Student.query.get(student_id)
@@ -327,17 +363,26 @@ class ClassService:
                 }
 
             # Kiểm tra đã đăng ký trước đó chưa
-            if Enrollment.is_enrolled(student_id, class_id):
-                return {
-                    "success": False,
-                    "error": "Student already enrolled in this class",
-                }
-
-            # Tạo bản ghi enrollment mới
-            enrollment = Enrollment(
-                user_id=student_id, class_id=class_id, status="ACTIVE"
-            )
-            self.db.session.add(enrollment)
+            existing_enrollment = Enrollment.query.filter_by(
+                user_id=student_id, class_id=class_id
+            ).first()
+            
+            if existing_enrollment:
+                # Nếu đã drop, có thể re-enroll
+                if existing_enrollment.status == "DROPPED":
+                    existing_enrollment.status = "ACTIVE"
+                    existing_enrollment.updated_at = func.now()
+                else:
+                    return {
+                        "success": False,
+                        "error": "Student already enrolled in this class",
+                    }
+            else:
+                # Tạo bản ghi enrollment mới
+                enrollment = Enrollment(
+                    user_id=student_id, class_id=class_id, status="ACTIVE"
+                )
+                self.db.session.add(enrollment)
 
             # Tăng số lượng học viên
             class_obj.class_currentenrollment += 1
@@ -370,11 +415,17 @@ class ClassService:
                     "error": f"Class with ID {class_id} not found",
                 }
 
-            # TODO: Xóa enrollment record (cần model Student_Class)
-            # enrollment = Student_Class.query.filter_by(student_id=student_id, class_id=class_id).first()
-            # if not enrollment:
-            #    return {"success": False, "error": "Student not enrolled in this class"}
-            # self.db.session.delete(enrollment)
+            # Tìm và cập nhật enrollment record
+            enrollment = Enrollment.query.filter_by(
+                user_id=student_id, class_id=class_id, status="ACTIVE"
+            ).first()
+            
+            if not enrollment:
+                return {"success": False, "error": "Student not enrolled in this class or already dropped"}
+            
+            # Cập nhật trạng thái thành DROPPED
+            enrollment.status = "DROPPED"
+            enrollment.updated_at = func.now()
 
             # Giảm số lượng học viên
             if class_obj.class_currentenrollment > 0:
@@ -411,6 +462,53 @@ class ClassService:
             current_app.logger.error(f"Error in get_classes_by_course: {str(e)}")
             return {"success": False, "error": f"Error retrieving classes: {str(e)}"}
 
+    def get_active_classes(self) -> Dict[str, Any]:
+        """
+        Lấy danh sách lớp học đang hoạt động
+
+        Returns:
+            Dict chứa danh sách lớp học đang active
+        """
+        try:
+            # Sử dụng trực tiếp phương thức class_status
+            active_classes = Class.query.filter_by(class_status="ACTIVE").all()
+
+            return {
+                "success": True,
+                "data": [class_obj.to_dict() for class_obj in active_classes],
+            }
+
+        except Exception as e:
+            current_app.logger.error(f"Error in get_active_classes: {str(e)}")
+            return {"success": False, "error": f"Error retrieving active classes: {str(e)}"}
+
+    def get_ongoing_classes(self) -> Dict[str, Any]:
+        """
+        Lấy danh sách lớp học đang trong thời gian học
+
+        Returns:
+            Dict chứa danh sách lớp học đang diễn ra
+        """
+        try:
+            today = date.today()
+            # Sử dụng logic từ is_ongoing() của model
+            ongoing_classes = Class.query.filter(
+                and_(
+                    Class.class_startdate <= today,
+                    Class.class_enddate >= today,
+                    Class.class_status == "ACTIVE"
+                )
+            ).all()
+
+            return {
+                "success": True,
+                "data": [class_obj.to_dict() for class_obj in ongoing_classes],
+            }
+
+        except Exception as e:
+            current_app.logger.error(f"Error in get_ongoing_classes: {str(e)}")
+            return {"success": False, "error": f"Error retrieving ongoing classes: {str(e)}"}
+
     def get_class_metrics(self, class_id: int) -> Dict[str, Any]:
         """
         Lấy các chỉ số thống kê của lớp học
@@ -429,12 +527,21 @@ class ClassService:
                     "error": f"Class with ID {class_id} not found",
                 }
 
-            # Tính toán các chỉ số
+            # Tính toán các chỉ số - sử dụng các phương thức helper từ model
             enrollment_rate = 0
             if class_obj.class_maxstudents and class_obj.class_maxstudents > 0:
                 enrollment_rate = (
                     class_obj.class_currentenrollment / class_obj.class_maxstudents
                 ) * 100
+
+            # Đếm số buổi học nếu có bảng schedules
+            session_count = 0
+            try:
+                from app.models.schedule_model import Schedule
+                session_count = Schedule.query.filter_by(class_id=class_id).count()
+            except ImportError:
+                # Bỏ qua nếu không có model Schedule
+                pass
 
             metrics = {
                 "class_id": class_obj.class_id,
@@ -445,6 +552,9 @@ class ClassService:
                 "is_full": class_obj.is_full(),
                 "is_active": class_obj.is_active(),
                 "is_ongoing": class_obj.is_ongoing(),
+                "session_count": session_count,
+                "course_id": class_obj.course_id,
+                "course_name": class_obj.course.course_name if class_obj.course else None
             }
 
             return {"success": True, "data": metrics}
@@ -475,9 +585,6 @@ class ClassService:
                 return {"success": False, "error": f"Class with ID {class_id} not found"}
                 
             # Sử dụng join để lấy danh sách học viên đã đăng ký
-            from app.models.enrollment_model import Enrollment
-            from app.models.student_model import Student
-            
             query = Student.query.join(
                 Enrollment, Enrollment.user_id == Student.user_id
             ).filter(
@@ -527,8 +634,6 @@ class ClassService:
                 return {"success": False, "error": f"Class with ID {class_id} not found"}
                 
             # Lấy danh sách ghi danh
-            from app.models.enrollment_model import Enrollment
-            
             # Tạo query base
             query = Enrollment.query.filter_by(class_id=class_id)
             
@@ -544,8 +649,10 @@ class ClassService:
             result_data = []
             for enrollment in enrollments:
                 enrollment_dict = enrollment.to_dict()
-                if enrollment.student:
-                    enrollment_dict["student"] = enrollment.student.to_dict()
+                # Lấy thông tin student từ relationship
+                student = Student.query.get(enrollment.user_id)
+                if student:
+                    enrollment_dict["student"] = student.to_dict()
                 result_data.append(enrollment_dict)
             
             return {

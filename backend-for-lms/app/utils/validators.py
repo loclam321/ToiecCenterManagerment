@@ -5,6 +5,37 @@ from typing import Dict, Any, List, Optional
 class Validator:
     """Class chứa các validation functions"""
 
+    def __init__(self):
+        self.errors = {}
+
+    def require(self, field_name, value, message):
+        """Kiểm tra field bắt buộc"""
+        if not value or (isinstance(value, str) and not value.strip()):
+            self.errors[field_name] = message
+        return self
+
+    def integer(self, field_name, value, message, min_val=None, max_val=None):
+        """Kiểm tra số nguyên"""
+        if value is not None:
+            try:
+                val = int(value)
+                if min_val is not None and val < min_val:
+                    self.errors[field_name] = f"{message} (minimum: {min_val})"
+                elif max_val is not None and val > max_val:
+                    self.errors[field_name] = f"{message} (maximum: {max_val})"
+            except (ValueError, TypeError):
+                self.errors[field_name] = message
+        return self
+
+    def add_error(self, field_name, message):
+        """Thêm lỗi thủ công"""
+        self.errors[field_name] = message
+        return self
+
+    def is_valid(self):
+        """Kiểm tra có lỗi không"""
+        return len(self.errors) == 0
+
     @staticmethod
     def validate_required_fields(
         data: Dict[str, Any], required_fields: List[str]
@@ -243,7 +274,7 @@ class Validator:
         """Validate phone number format"""
         if not phone:
             return False
-        
+
         # Vietnamese phone number pattern
         pattern = r"^(0[3|5|7|8|9])[0-9]{8}$"
         return bool(re.match(pattern, phone.strip()))

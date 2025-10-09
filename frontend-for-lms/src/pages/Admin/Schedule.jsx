@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/admin/Adminsidebar';
 import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import CalendarView from '../../components/admin/CalendarView';
+import ScheduleFormModal from '../../components/admin/ScheduleFormModal';
 import { getSchedules } from '../../services/scheduleService';
 import { roomService } from '../../services/roomService';
+import { getTeachersForSelect } from '../../services/teacherService';
 import { toast } from 'react-toastify';
 import './css/Schedule.css';
 
@@ -17,9 +19,12 @@ function Schedule() {
         teacherId: '',
         roomId: ''
     });
+    console.log('Schedule:', schedules);
     const [classes, setClasses] = useState([]);
     const [teachers, setTeachers] = useState([]);
     const [rooms, setRooms] = useState([]);
+    const [showModal, setShowModal] = useState(false);
+    const [editSchedule, setEditSchedule] = useState(null);
 
     // Danh sách các ngày trong tuần
     const getWeekDates = () => {
@@ -102,17 +107,29 @@ function Schedule() {
                 setRooms(formattedRooms);
             }
 
-            // Mock data cho classes và teachers (sẽ thay bằng API sau)
+            // Fetch teachers từ API
+            try {
+                const teachersData = await getTeachersForSelect();
+                const formattedTeachers = teachersData.map(teacher => ({
+                    id: teacher.value,
+                    name: teacher.label
+                }));
+                setTeachers(formattedTeachers);
+            } catch (teacherError) {
+                console.error("Error fetching teachers:", teacherError);
+                // Fallback to mock data if API fails
+                setTeachers([
+                    { id: 'TCH001', name: 'Nguyễn Thị Mai' },
+                    { id: 'TCH002', name: 'Trần Văn Nam' },
+                    { id: 'TCH003', name: 'Lê Hoàng Anh' }
+                ]);
+            }
+
+            // Mock data cho classes (sẽ thay bằng API sau)
             setClasses([
                 { id: '1', name: 'TOEIC 500+ (Sáng T2-4-6)' },
                 { id: '2', name: 'TOEIC 300+ (Sáng T2-4-6)' },
                 { id: '3', name: 'TOEIC 750+ (Tối T3-5-7)' }
-            ]);
-
-            setTeachers([
-                { id: 'T001', name: 'Nguyễn Văn A' },
-                { id: 'T002', name: 'Trần Thị B' },
-                { id: 'T003', name: 'Lê Văn C' }
             ]);
         } catch (error) {
             console.error("Error fetching filter options:", error);
@@ -157,6 +174,20 @@ function Schedule() {
         setSidebarCollapsed(!sidebarCollapsed);
     };
 
+    const handleAddSchedule = () => {
+        setEditSchedule(null);
+        setShowModal(true);
+    };
+
+    const handleEditSchedule = (schedule) => {
+        setEditSchedule(schedule);
+        setShowModal(true);
+    };
+
+    const handleScheduleSuccess = (newSchedule) => {
+        fetchScheduleData(); // Refresh data after add/edit
+    };
+
     return (
         <div className="admin-layout">
             <AdminSidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
@@ -171,7 +202,7 @@ function Schedule() {
                             text: 'Thêm buổi học',
                             icon: 'fas fa-plus',
                             variant: 'primary',
-                            onClick: () => alert('Chức năng thêm buổi học')
+                            onClick: handleAddSchedule
                         }
                     ]}
                 />
@@ -301,15 +332,22 @@ function Schedule() {
                             <CalendarView
                                 selectedDate={selectedDate}
                                 schedules={schedules}
-                                onEventClick={(event) => {
-                                    console.log('Chi tiết buổi học:', event);
-                                    // Có thể mở modal hoặc navigate đến trang chi tiết
-                                }}
+                                onEventClick={handleEditSchedule}
                             />
                         )}
                     </div>
                 </div>
             </div>
+
+            {showModal && (
+                <ScheduleFormModal
+                    show={showModal}
+                    onClose={() => setShowModal(false)}
+                    onSuccess={handleScheduleSuccess}
+                    editData={editSchedule}
+                    selectedDate={selectedDate}
+                />
+            )}
         </div>
     );
 }

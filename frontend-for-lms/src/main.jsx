@@ -20,6 +20,8 @@ import CourseIntroduction from './pages/Courses/CourseIntroduction';
 import AddClassForm from './pages/Admin/AddClassForm';
 import ClassDetail from './pages/Admin/ClassDetail'; // Thêm import
 import AddStudentToClass from './pages/Admin/AddStudentToClass';
+import TeacherService from './services/teacherService';
+import Classes from './pages/Admin/Classes'
 import Schedule from './pages/Admin/Schedule';
 
 
@@ -47,6 +49,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/admin/classes/:id" element={<ClassDetail />} />
         <Route path="/admin/classes/:id/add-students" element={<AddStudentToClass />} />
         <Route path="/admin/schedule" element={<Schedule />} />
+        <Route path="/admin/classes" element={<Classes />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

@@ -57,11 +57,22 @@ function AddClassForm() {
                 
                 const suggestedName = `${baseCode.replace(/\d+/g, '')} ${levelText} (Sáng T2-4-6)`;
                 
+                // Chuẩn bị ngày bắt đầu và kết thúc theo định dạng YYYY-MM-DD
+                const today = new Date();
+                const startDate = courseData.start_date || today.toISOString().split('T')[0];
+                
+                // Ngày kết thúc mặc định 3 tháng sau ngày bắt đầu
+                const endDate = courseData.end_date || (() => {
+                    const endDate = new Date(startDate);
+                    endDate.setMonth(endDate.getMonth() + 3);
+                    return endDate.toISOString().split('T')[0];
+                })();
+                
                 setFormData(prev => ({
                     ...prev,
                     class_name: suggestedName,
-                    class_startdate: courseData.start_date || '',
-                    class_enddate: courseData.end_date || '',
+                    class_startdate: startDate,
+                    class_enddate: endDate,
                     class_maxstudents: courseData.capacity || 20
                 }));
             }
@@ -124,14 +135,29 @@ function AddClassForm() {
         
         setSubmitting(true);
         try {
-            // Gọi API tạo lớp học mới
-            const result = await createClass(courseId, formData);
-            console.log('Kết quả tạo lớp:', result);
-            toast.success('Tạo lớp học thành công!');
-            navigate(`/admin/courses/${courseId}`);
+            // Chuẩn bị dữ liệu theo cấu trúc API yêu cầu
+            const classData = {
+                course_id: courseId,
+                class_name: formData.class_name,
+                class_startdate: formData.class_startdate,
+                class_enddate: formData.class_enddate,
+                class_maxstudents: parseInt(formData.class_maxstudents),
+                class_currentenrollment: 0, // Lớp mới bắt đầu với 0 học viên
+                class_status: formData.class_status
+            };
+            
+            // Gọi API tạo lớp học mới với cấu trúc đã cập nhật
+            const result = await createClass(classData);
+            
+            if (result.success) {
+                toast.success('Tạo lớp học thành công!');
+                navigate(`/admin/courses/${courseId}`);
+            } else {
+                toast.error(`Không thể tạo lớp học: ${result.message}`);
+            }
         } catch (error) {
             console.error('Error creating class:', error);
-            toast.error('Không thể tạo lớp học: ' + (error.message || 'Đã xảy ra lỗi'));
+            toast.error('Không thể tạo lớp học: ' + (error.response?.data?.message || error.message || 'Đã xảy ra lỗi'));
         } finally {
             setSubmitting(false);
         }
@@ -171,6 +197,12 @@ function AddClassForm() {
                                         <h3 className="course-title">{course.course_name}</h3>
                                         <p className="course-code">{course.course_code}</p>
                                     </div>
+                                    <div className="course-meta">
+                                        <span className="course-dates">
+                                            <i className="bi bi-calendar-event"></i>
+                                            {new Date(course.start_date).toLocaleDateString('vi-VN')} - {new Date(course.end_date).toLocaleDateString('vi-VN')}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <form className="class-form" onSubmit={handleSubmit}>
@@ -187,6 +219,9 @@ function AddClassForm() {
                                                 placeholder="Nhập tên lớp"
                                             />
                                             {errors.class_name && <div className="error-message">{errors.class_name}</div>}
+                                            <small className="form-text text-muted">
+                                                Gợi ý đặt tên: "TOEIC 500+ (Sáng T2-4-6)", "IELTS 6.0 (Tối T3-5-7)"
+                                            </small>
                                         </div>
 
                                         <div className="form-group">
@@ -210,6 +245,7 @@ function AddClassForm() {
                                                 name="class_enddate"
                                                 value={formData.class_enddate}
                                                 onChange={handleChange}
+                                                min={formData.class_startdate}
                                                 className={errors.class_enddate ? 'error' : ''}
                                             />
                                             {errors.class_enddate && <div className="error-message">{errors.class_enddate}</div>}

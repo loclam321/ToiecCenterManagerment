@@ -6,7 +6,7 @@ export const roomService = {
   // Lấy tất cả phòng học
   getAllRooms: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/rooms/all`);
+      const response = await axios.get(`${API_BASE_URL}/api/rooms/`);
       return response.data;
     } catch (error) {
       console.error('Error fetching rooms:', error);

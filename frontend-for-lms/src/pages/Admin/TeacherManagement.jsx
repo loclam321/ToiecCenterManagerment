@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import TeacherTable from '../../components/admin/TeacherTable';
 import TeacherFilters from '../../components/admin/TeacherFilters';
-import { getTeachers, mapTeacherFromApi } from '../../services/teacherService';
+import { getTeachers } from '../../services/teacherService';
 import AdminSidebar from '../../components/admin/Adminsidebar';
 import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import './css/TeacherManagement.css';
@@ -11,6 +11,7 @@ function TeacherManagement() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [teachers, setTeachers] = useState([]);
+  console.log('Teachers state:', teachers);
   const [filters, setFilters] = useState({
     search: '',
     status: 'all',
@@ -18,15 +19,15 @@ function TeacherManagement() {
     sortBy: 'newest'
   });
   const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    itemsPerPage: 10,
-    totalItems: 0
+    page: 1,
+    total_pages: 1,
+    per_page: 10,
+    total: 0
   });
 
   useEffect(() => {
     fetchTeachers();
-  }, [filters, pagination.currentPage]);
+  }, [filters, pagination.page]);
 
   const fetchTeachers = async () => {
     setLoading(true);
@@ -34,8 +35,8 @@ function TeacherManagement() {
       const sortOptions = getSortOptions(filters.sortBy);
 
       const options = {
-        page: pagination.currentPage,
-        perPage: pagination.itemsPerPage,
+        page: pagination.page,
+        perPage: pagination.per_page,
         search: filters.search,
         sortBy: sortOptions.field,
         sortOrder: sortOptions.order,
@@ -44,17 +45,22 @@ function TeacherManagement() {
 
       const result = await getTeachers(options);
 
-      const mappedTeachers = result.teachers.map(teacher => mapTeacherFromApi(teacher));
-
-      setTeachers(mappedTeachers);
-      setPagination({
-        currentPage: result.pagination.page,
-        totalPages: result.pagination.pages,
-        itemsPerPage: result.pagination.per_page,
-        totalItems: result.pagination.total
-      });
+      // Xử lý response API mới
+      if (result.success && result.data) {
+        setTeachers(result.data.teachers || []);
+        setPagination(result.data.pagination || {
+          page: 1,
+          total_pages: 1,
+          per_page: 10,
+          total: 0
+        });
+      } else {
+        console.error('API response format error:', result);
+        setTeachers([]);
+      }
     } catch (error) {
       console.error('Error fetching teachers:', error);
+      setTeachers([]);
     } finally {
       setLoading(false);
     }
@@ -71,9 +77,9 @@ function TeacherManagement() {
       case 'name_desc':
         return { field: 'user_name', order: 'desc' };
       case 'experience_asc':
-        return { field: 'experience', order: 'asc' };
+        return { field: 'tch_hire_date', order: 'desc' }; // Sắp xếp theo ngày thuê
       case 'experience_desc':
-        return { field: 'experience', order: 'desc' };
+        return { field: 'tch_hire_date', order: 'asc' };
       default:
         return { field: '', order: '' };
     }
@@ -86,14 +92,14 @@ function TeacherManagement() {
     }));
     setPagination(prev => ({
       ...prev,
-      currentPage: 1
+      page: 1
     }));
   };
 
   const handlePageChange = (newPage) => {
     setPagination(prev => ({
       ...prev,
-      currentPage: newPage
+      page: newPage
     }));
   };
 
@@ -114,6 +120,14 @@ function TeacherManagement() {
 
         <div className="admin-content">
           <div className="teacher-management">
+            <div className="content-header">
+              <h1 className="page-title">Danh sách giáo viên</h1>
+              <Link to="/admin/teachers/add" className="btn-primary">
+                <i className="bi bi-plus-lg"></i>
+                <span>Thêm giáo viên mới</span>
+              </Link>
+            </div>
+
             <div className="content-filters">
               <TeacherFilters
                 filters={filters}

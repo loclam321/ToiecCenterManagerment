@@ -42,30 +42,22 @@ function CalendarView({ selectedDate, schedules, onEventClick }) {
         fetchRooms();
     }, []);
 
-    // Chuyển đổi ngày thành số thứ trong tuần (0 = Chủ nhật, 1 = Thứ 2, ...)
-    const getDayOfWeek = (date) => {
-        return date.getDay();
+    // Format thời gian để hiển thị (bỏ phần giây)
+    const formatTimeDisplay = (timeStr) => {
+        if (!timeStr) return '';
+        const timeParts = timeStr.split(':');
+        return `${timeParts[0]}:${timeParts[1]}`;
     };
 
     // Lọc lịch học theo ngày được chọn
     const getSchedulesForDate = () => {
-        if (!schedules || schedules.length === 0) return [];
+        if (!schedules || !Array.isArray(schedules)) return [];
 
-        const dayOfWeek = getDayOfWeek(selectedDate);
+        // Format selectedDate to YYYY-MM-DD
+        const dateString = selectedDate.toISOString().split('T')[0];
 
         return schedules.filter(schedule => {
-            // Kiểm tra xem lịch học có trong ngày được chọn không
-            if (schedule.days && Array.isArray(schedule.days)) {
-                return schedule.days.includes(dayOfWeek);
-            }
-
-            // Nếu có schedule_date, so sánh trực tiếp
-            if (schedule.schedule_date) {
-                const scheduleDate = new Date(schedule.schedule_date);
-                return scheduleDate.toDateString() === selectedDate.toDateString();
-            }
-
-            return false;
+            return schedule.schedule_date === dateString;
         });
     };
 
@@ -73,31 +65,65 @@ function CalendarView({ selectedDate, schedules, onEventClick }) {
     const getClassForTimeAndRoom = (timeSlot, roomId) => {
         const schedulesForDate = getSchedulesForDate();
         const slotStart = parseInt(timeSlot.startTime.split(':')[0]);
+        
+        // Convert roomId to number if needed
+        const roomIdNum = typeof roomId === 'string' ? parseInt(roomId, 10) : roomId;
 
         return schedulesForDate.filter(schedule => {
-            const scheduleStartHour = parseInt(schedule.start_time?.split(':')[0] || '0');
-            const scheduleEndHour = parseInt(schedule.end_time?.split(':')[0] || '0');
-            const isInTimeSlot = scheduleStartHour <= slotStart && scheduleEndHour > slotStart;
-            const isInRoom = schedule.room_id === roomId;
+            // Xác định thời gian bắt đầu và kết thúc của lịch học
+            const startTimeStr = schedule.schedule_startime;
+            const endTimeStr = schedule.schedule_endtime;
+            
+            if (!startTimeStr || !endTimeStr) return false;
+            
+            const startHour = parseInt(startTimeStr.split(':')[0]);
+            const startMin = parseInt(startTimeStr.split(':')[1] || '0');
+            
+            const endHour = parseInt(endTimeStr.split(':')[0]);
+            const endMin = parseInt(endTimeStr.split(':')[1] || '0');
+            
+            // Cộng thêm 1 giờ nếu phút > 0 (để hiển thị chính xác)
+            const adjustedEndHour = endHour + (endMin > 0 ? 1 : 0);
+
+            // Kiểm tra xem time slot có nằm trong khoảng thời gian của lịch học không
+            const isInTimeSlot = (startHour <= slotStart && adjustedEndHour > slotStart);
+            
+            // Kiểm tra đúng phòng học
+            const scheduleRoomId = typeof schedule.room_id === 'string' 
+                ? parseInt(schedule.room_id, 10) 
+                : schedule.room_id;
+                
+            const isInRoom = scheduleRoomId === roomIdNum;
 
             return isInTimeSlot && isInRoom;
         });
     };
 
-    // Tính số hàng cần merge cho class (dựa trên thời lượng)
+    // Tính số ô (row) cần chiếm cho một lịch học dựa trên thời lượng
     const getRowSpan = (startTime, endTime) => {
-        const startHour = parseInt(startTime.split(':')[0]);
-        const startMinute = parseInt(startTime.split(':')[1] || '0');
-        const endHour = parseInt(endTime.split(':')[0]);
-        const endMinute = parseInt(endTime.split(':')[1] || '0');
+        if (!startTime || !endTime) return 1;
+        
+        const startParts = startTime.split(':');
+        const endParts = endTime.split(':');
+        
+        if (startParts.length < 2 || endParts.length < 2) return 1;
+        
+        const startHour = parseInt(startParts[0]);
+        const startMin = parseInt(startParts[1]);
+        
+        const endHour = parseInt(endParts[0]);
+        const endMin = parseInt(endParts[1]);
 
-        let totalMinutes = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
-        let rowSpan = Math.ceil(totalMinutes / 60);
+        // Tính tổng số phút của lịch học
+        const totalMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+        
+        // Tính số giờ (làm tròn lên)
+        const rowSpan = Math.ceil(totalMinutes / 60);
 
         return Math.max(1, rowSpan);
     };
 
-    // Kiểm tra xem ô có bị merge bởi lớp trước không
+    // Kiểm tra xem ô đã bị merge bởi lịch học ở time slot trước đó chưa
     const isPreviouslyMerged = (timeSlotIndex, roomId) => {
         if (timeSlotIndex === 0) return false;
 
@@ -105,10 +131,28 @@ function CalendarView({ selectedDate, schedules, onEventClick }) {
         const previousClasses = getClassForTimeAndRoom(previousTimeSlot, roomId);
 
         return previousClasses.some(schedule => {
-            const scheduleEndHour = parseInt(schedule.end_time?.split(':')[0] || '0');
+            const endTimeField = schedule.schedule_endtime;
+            const scheduleEndHour = parseInt(endTimeField.split(':')[0] || '0');
+            const scheduleEndMin = parseInt(endTimeField.split(':')[1] || '0');
+            
             const currentHour = parseInt(timeSlots[timeSlotIndex].startTime.split(':')[0]);
-            return scheduleEndHour > currentHour;
+            
+            // Nếu có phút > 0, cần xét thêm giờ kế tiếp
+            const adjustedEndHour = scheduleEndHour + (scheduleEndMin > 0 ? 1 : 0);
+            
+            return adjustedEndHour > currentHour;
         });
+    };
+
+    // Xác định class CSS dựa trên trạng thái lịch học
+    const getStatusClass = (schedule) => {
+        const status = schedule.status || 'SCHEDULED';
+        switch (status) {
+            case 'CONFIRMED': return 'status-confirmed';
+            case 'CANCELLED': return 'status-cancelled';
+            case 'COMPLETED': return 'status-completed';
+            default: return 'status-scheduled';
+        }
     };
 
     if (loading) {
@@ -116,15 +160,6 @@ function CalendarView({ selectedDate, schedules, onEventClick }) {
             <div className="calendar-loading">
                 <div className="spinner"></div>
                 <p>Đang tải lịch học...</p>
-            </div>
-        );
-    }
-
-    if (rooms.length === 0) {
-        return (
-            <div className="calendar-empty">
-                <i className="bi bi-calendar-x"></i>
-                <p>Không có phòng học nào</p>
             </div>
         );
     }
@@ -152,12 +187,19 @@ function CalendarView({ selectedDate, schedules, onEventClick }) {
                                     const classes = getClassForTimeAndRoom(timeSlot, room.room_id);
                                     const isMerged = isPreviouslyMerged(timeIndex, room.room_id);
 
+                                    // Nếu ô đã bị merge từ ô trước, không render
                                     if (isMerged) {
                                         return null;
                                     }
 
                                     const hasClass = classes.length > 0;
-                                    const rowSpan = hasClass ? getRowSpan(classes[0].start_time, classes[0].end_time) : 1;
+                                    
+                                    // Tính số row span dựa vào thời gian bắt đầu và kết thúc
+                                    const rowSpan = hasClass 
+                                        ? getRowSpan(
+                                            classes[0].schedule_startime, 
+                                            classes[0].schedule_endtime
+                                        ) : 1;
 
                                     return (
                                         <td
@@ -167,27 +209,26 @@ function CalendarView({ selectedDate, schedules, onEventClick }) {
                                         >
                                             {hasClass && classes.map(schedule => (
                                                 <div
-                                                    key={schedule.schedule_id || schedule.id}
-                                                    className="class-card"
+                                                    key={schedule.schedule_id}
+                                                    className={`class-card`}
                                                     onClick={() => onEventClick && onEventClick(schedule)}
                                                 >
                                                     <div className="class-header">
                                                         <div className="class-name">
-                                                            {schedule.class_name || schedule.title}
+                                                            {schedule.class_name || "Lớp học"}
                                                         </div>
                                                         <div className="class-time">
                                                             <i className="bi bi-clock"></i>
-                                                            <span>{schedule.start_time} - {schedule.end_time}</span>
+                                                            <span>
+                                                                {formatTimeDisplay(schedule.schedule_startime)} - 
+                                                                {formatTimeDisplay(schedule.schedule_endtime)}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                     <div className="class-info">
                                                         <div className="class-teacher">
                                                             <i className="bi bi-person"></i>
                                                             <span>{schedule.teacher_name || 'Chưa có giáo viên'}</span>
-                                                        </div>
-                                                        <div className="class-course">
-                                                            <i className="bi bi-book"></i>
-                                                            <span>{schedule.course_name || 'Chưa có khóa học'}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -200,6 +241,13 @@ function CalendarView({ selectedDate, schedules, onEventClick }) {
                     </tbody>
                 </table>
             </div>
+            
+            {schedules && schedules.length > 0 && getSchedulesForDate().length === 0 && (
+                <div className="no-schedules-message">
+                    <i className="bi bi-calendar2-x"></i>
+                    <p>Không có lịch học nào vào ngày {selectedDate.toLocaleDateString('vi-VN')}</p>
+                </div>
+            )}
         </div>
     );
 }

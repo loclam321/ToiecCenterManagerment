@@ -16,7 +16,7 @@ from .item_model import Item
 from .choice_model import Choice
 from .room_model import Room
 from .schedule_model import Schedule
-from .test_model import Test
+from .test_model import Testq
 from .attempt_model import Attempt
 from .words_model import Word
 from .student_words_model import StudentWords

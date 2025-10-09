@@ -1,11 +1,22 @@
 /* Calendar Container */
 .calendar-view {
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: 600px;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-lg);
-    background: var(--bg-primary);
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.calendar-wrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 70vh;
+}
+
+.calendar-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
 }
 
 /* Headers */
@@ -75,13 +86,18 @@
 }
 
 .time-header {
-    width: 100px;
-    padding: var(--spacing-md);
-    text-align: center;
-    font-weight: var(--font-semibold);
-    color: var(--text-primary);
-    border-right: 1px solid var(--border-primary);
-    border-bottom: 2px solid var(--border-primary);
+  width: 100px;
+  min-width: 100px;
+  position: sticky;
+  left: 0;
+  background-color: var(--primary-50);
+  z-index: 10;
+  padding: var(--spacing-md);
+  text-align: center;
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-primary);
+  border-bottom: 2px solid var(--border-primary);
 }
 
 .day-header {
@@ -116,87 +132,149 @@
 }
 
 .schedule-cell {
-    padding: var(--spacing-xs);
-    border: 1px solid var(--border-primary);
-    position: relative;
-    vertical-align: top;
-    height: 80px;
+  height: 60px;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 4px;
+  vertical-align: top;
 }
 
-
-
-.schedule-cell.weekend {
-    background: var(--warning-50);
+.schedule-cell:hover {
+  background-color: var(--gray-50);
 }
 
-.schedule-cell.today {
-    background: var(--primary-50);
+.has-class {
+  padding: 0;
+  vertical-align: top;
 }
 
-.class-item {
-    background: var(--gradient-primary);
-    color: var(--bg-primary);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm);
-    margin-bottom: var(--spacing-xs);
-    cursor: pointer;
-    height: 100%;
-    overflow: hidden;
+.class-card {
+  height: 100%;
+  padding: 8px;
+  background-color: rgba(25, 118, 210, 0.08);
+  border-left: 4px solid #1976d2;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-.class-title {
-    font-weight: var(--font-semibold);
-    margin-bottom: var(--spacing-xs);
-    font-size: var(--text-sm);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.class-card:hover {
+  background-color: rgba(25, 118, 210, 0.15);
 }
 
-.class-details {
-    font-size: var(--text-xs);
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
+/* Status-based styling */
+.class-card.status-confirmed {
+  background-color: rgba(25, 118, 210, 0.08);
+  border-left-color: #1976d2;
 }
 
-.class-time, .class-room, .class-teacher {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.class-card.status-scheduled {
+  background-color: rgba(245, 124, 0, 0.08);
+  border-left-color: #f57c00;
 }
 
-.class-time i, .class-room i, .class-teacher i {
-    font-size: var(--text-xs);
-    opacity: 0.8;
+.class-card.status-completed {
+  background-color: rgba(46, 125, 50, 0.08);
+  border-left-color: #2e7d32;
+}
+
+.class-card.status-cancelled {
+  background-color: rgba(211, 47, 47, 0.08);
+  border-left-color: #d32f2f;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.class-header {
+  margin-bottom: var(--spacing-xs);
+}
+
+.class-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.class-time {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.class-time i {
+  font-size: 0.8rem;
+  color: #1976d2;
+}
+
+.class-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.class-teacher, .class-course, .class-description {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.8rem;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.class-teacher i, .class-course i, .class-description i {
+  font-size: 0.8rem;
+  color: #1976d2;
+  flex-shrink: 0;
+}
+
+.makeup-badge {
+  background-color: var(--warning-200);
+  color: var(--warning-700);
+  font-size: var(--text-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-weight: var(--font-medium);
+  align-self: flex-start;
+  margin-top: var(--spacing-xs);
 }
 
 /* Room Headers */
 .room-header {
-    background: var(--gray-50) ;
-    font-weight: var(--font-semibold);
-    color: var(--text-primary);
-    padding: var(--spacing-sm);
-    border-bottom: 2px solid var(--border-primary);
+  min-width: 180px;
+  height: 60px;
+  background-color: var(--primary-50);
+  color: var(--primary-700);
+  text-align: center;
+  font-weight: var(--font-semibold);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-primary);
+  border-left: 1px solid var(--border-primary);
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
-.room-header .room-cell {
-    background: var(--gray-50);
-    font-weight: var(--font-medium);
-    color: var(--text-primary) !important;
-    padding: var(--spacing-sm);
-    text-align: center;
-    font-size: var(--text-sm);
-    border-bottom: 2px solid var(--border-primary);
-    white-space: nowrap;
+.room-header i {
+  font-size: var(--text-md);
+  margin-right: var(--spacing-xs);
+  color: var(--primary-500);
 }
 
-.room-cell.weekend {
-    background: var(--warning-50);
-    color: var(--warning-700);
+.room-header span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Day Selection */
@@ -298,10 +376,9 @@
 
 /* Calendar Wrapper */
 .calendar-wrapper {
-    background: var(--bg-primary);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    padding: var(--spacing-md);
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 70vh;
 }
 
 /* FullCalendar Styles */
@@ -378,26 +455,53 @@
     background: var(--primary-50) !important;
 }
 
+/* Loading and Empty States */
+.calendar-loading, .calendar-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.calendar-loading .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--gray-200);
+  border-top-color: var(--primary-500);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--spacing-md);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.calendar-empty i, .no-schedules-message i {
+  font-size: 3rem;
+  color: var(--gray-300);
+  margin-bottom: var(--spacing-md);
+}
+
+.no-schedules-message {
+  text-align: center;
+  padding: 40px 0;
+  color: #666;
+}
+
+.no-schedules-message i {
+  font-size: 2rem;
+  color: #bdbdbd;
+  margin-bottom: 8px;
+  display: block;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
-    .day-selection {
-        padding: var(--spacing-md);
-    }
-    
-    .day-toggle {
-        padding: var(--spacing-sm);
-        min-width: 40px;
-        font-size: var(--text-sm);
-    }
-    
-    .calendar-wrapper {
-        padding: var(--spacing-sm);
-        margin: 0 -1rem;
-        border-radius: 0;
-    }
-    
-    .fc .fc-toolbar {
-        flex-direction: column;
-        gap: var(--spacing-sm);
-    }
+  .calendar-wrapper {
+    max-height: 60vh;
+  }
 }
