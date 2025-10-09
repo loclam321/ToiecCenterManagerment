@@ -1,4 +1,5 @@
 from app.config import db
+import re
 from sqlalchemy import func
 from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -28,6 +29,33 @@ class Teacher(db.Model):
     def __repr__(self):
         return f"<Teacher {self.user_id}: {self.user_name}>"
     
+    def _avatar_web_path(self):
+        """Normalize stored tch_avtlink to a web path served by frontend (e.g. /avatar/3.jpg)."""
+        if not self.tch_avtlink:
+            return None
+        p = str(self.tch_avtlink).strip().replace('\\', '/')
+        low = p.lower()
+
+        # If already absolute URL or data URI, return as-is
+        if low.startswith('http://') or low.startswith('https://') or low.startswith('data:'):
+            return p
+
+        # Prefer substring starting at /avatar/
+        ia = low.find('/avatar/')
+        if ia != -1:
+            p = p[ia:]
+        else:
+            # If contains /public/, strip everything up to and including /public
+            ip = low.find('/public/')
+            if ip != -1:
+                p = p[ip + len('/public'):]
+
+        if not p.startswith('/'):
+            p = '/' + p
+        # Collapse duplicate slashes
+        p = re.sub(r'/+', '/', p)
+        return p
+
     def to_dict(self):
         """Chuyển đổi teacher thành dict để trả về qua API"""
         return {
@@ -40,6 +68,8 @@ class Teacher(db.Model):
             'tch_specialization': self.tch_specialization,
             'tch_qualification': self.tch_qualification,
             'tch_hire_date': self.tch_hire_date.strftime('%Y-%m-%d') if self.tch_hire_date else None,
+            # Return normalized avatar path for frontend consumption
+            'tch_avtlink': self._avatar_web_path(),
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

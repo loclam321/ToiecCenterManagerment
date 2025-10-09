@@ -242,6 +242,11 @@ export const mapTeacherToApi = (teacherData) => {
     tch_status: teacherData.status || 'active'
   };
   
+  // Đưa avatar path vào API nếu có
+  if (teacherData.avatarPath) {
+    data.tch_avtlink = teacherData.avatarPath;
+  }
+  
   // Chỉ thêm mật khẩu nếu có (khi tạo mới hoặc đổi mật khẩu)
   if (teacherData.password && teacherData.password.trim()) {
     data.user_password = teacherData.password;
@@ -255,6 +260,23 @@ export const mapTeacherToApi = (teacherData) => {
  * @param {Object} apiTeacher - Teacher data từ API
  */
 export const mapTeacherFromApi = (apiTeacher) => {
+  const normalizeAvatarPath = (p) => {
+    if (!p) return '';
+    if (/^(https?:|data:)/i.test(p)) return p; // absolute url or data uri
+    let path = String(p).replace(/\\/g, '/');
+    const lower = path.toLowerCase();
+    const publicIdx = lower.indexOf('/public/');
+    if (publicIdx !== -1) {
+      path = path.substring(publicIdx + '/public'.length); // keep leading slash before avatar
+    }
+    const avatarIdx = path.toLowerCase().indexOf('/avatar/');
+    if (avatarIdx !== -1) {
+      path = path.substring(avatarIdx);
+    }
+    if (!path.startsWith('/')) path = '/' + path;
+    return path;
+  };
+
   return {
     // ID theo pattern T00000001
     id: apiTeacher.user_id || apiTeacher.tch_id,
@@ -273,6 +295,9 @@ export const mapTeacherFromApi = (apiTeacher) => {
     hireDate: apiTeacher.tch_hire_date || '',
     experience: apiTeacher.tch_experience_years || 0,
     status: apiTeacher.tch_status || 'active',
+    
+  // Avatar (đã normalize về web path)
+  avatarPath: normalizeAvatarPath(apiTeacher.tch_avtlink),
     
     // Metadata
     createdAt: apiTeacher.created_at || apiTeacher.user_created_at,

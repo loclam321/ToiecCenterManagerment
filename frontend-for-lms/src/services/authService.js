@@ -8,7 +8,8 @@ const API_BASE_URL = 'http://localhost:5000/api';
 const saveAuthData = (authData) => {
   if (authData && authData.access_token) {
     localStorage.setItem('token', authData.access_token);
-    localStorage.setItem('role', authData.role);
+    const normalizedRole = (authData.role || '').toString().trim().toLowerCase();
+    localStorage.setItem('role', normalizedRole);
     if (authData.user) {
       localStorage.setItem('user', JSON.stringify(authData.user));
     }

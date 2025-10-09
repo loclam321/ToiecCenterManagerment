@@ -331,26 +331,84 @@
 }
 
 .teacher-card {
-    background: white;
-    border-radius: 25px;
-    padding: 25px;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
+    background: #111827; /* dark background behind image */
+    border-radius: 24px;
     overflow: hidden;
-    border: 1px solid rgba(102, 126, 234, 0.1);
-    min-width: 400px !important;
-    max-width: 450px;
-    flex-shrink: 0 !important;
-    height: fit-content;
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
+    min-width: 420px;
+    max-width: 480px;
+    height: 520px; /* fixed height like sample */
+    flex-shrink: 0;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .teacher-card:hover {
-    transform: translateY(-5px); /* Giảm từ -8px */
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); /* Nhẹ hơn */
+    transform: translateY(-4px);
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.2);
+}
+
+/* Full-bleed image */
+.teacher-card-img-wrap {
+    position: absolute;
+    inset: 0;
+}
+.teacher-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Bottom band with name/title */
+.teacher-card-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 18px 24px;
+    background: linear-gradient(180deg, rgba(17,24,39,0) 0%, rgba(17,24,39,0.2) 20%, rgba(29,78,216,0.92) 100%);
+}
+.teacher-card-name {
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+.teacher-card-title {
+    color: #e5e7eb;
+    font-size: 0.95rem;
+}
+
+/* Status badge */
+.status-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+}
+
+/* Hover overlay */
+.teacher-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(17,24,39,0.25) 0%, rgba(17,24,39,0.85) 60%, rgba(17,24,39,0.95) 100%);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    display: flex;
+    align-items: flex-end;
+}
+.teacher-card:hover .teacher-card-overlay {
+    opacity: 1;
+}
+.teacher-overlay-content {
+    width: 100%;
+    padding: 24px;
+    color: #fff;
+}
+.overlay-row {
+    font-size: 0.95rem;
+    margin: 6px 0;
+    color: #f9fafb;
 }
 
 /* Left side - Avatar and basic info */
@@ -938,6 +996,15 @@
     height: 100px;
     margin: 0 auto 15px; /* Giảm margin bottom */
     position: relative;
+}
+.teacher-avatar .avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    border: 3px solid rgba(0, 0, 0, 0.05);
+    background: #f3f4f6;
 }
 .avatar-icon {
     width: 100%;

@@ -114,12 +114,22 @@ const TeacherIntroduction = () => {
         }
     };
 
-    const getGenderIcon = (gender) => {
-        switch (gender) {
-            case 'male': return '👨‍🏫';
-            case 'female': return '👩‍🏫';
-            default: return '👨‍🏫';
+    // Chuẩn hóa đường dẫn avatar sang web path an toàn
+    const normalizeAvatar = (p) => {
+        if (!p) return '';
+        if (/^(https?:|data:)/i.test(p)) return p;
+        let path = String(p).replace(/\\/g, '/');
+        const lower = path.toLowerCase();
+        const publicIdx = lower.indexOf('/public/');
+        if (publicIdx !== -1) {
+            path = path.substring(publicIdx + '/public'.length);
         }
+        const avatarIdx = path.toLowerCase().indexOf('/avatar/');
+        if (avatarIdx !== -1) {
+            path = path.substring(avatarIdx);
+        }
+        if (!path.startsWith('/')) path = '/' + path;
+        return path;
     };
 
     const calculateYearsOfService = (hireDate) => {
@@ -185,58 +195,7 @@ const TeacherIntroduction = () => {
             <Header />
             <main className="content bg-white border rounded p-0">
                 <div className="teacher-intro-container">
-                    {/* Hero Section */}
-                    <div className="teacher-hero">
-                        <div className="hero-content">
-                            <h1 className="hero-title">
-                                <span className="hero-icon">👨‍🏫</span>
-                                Đội Ngũ Giáo Viên Uy Tín
-                            </h1>
-                            <p className="hero-subtitle">
-                                Với nhiều năm kinh nghiệm và chuyên môn sâu, đội ngũ giáo viên của chúng tôi 
-                                cam kết mang đến chất lượng giảng dạy tốt nhất cho học viên
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Statistics Section - Updated với calculated stats */}
-                    <div className="teacher-stats-section">
-                        <div className="container">
-                            <h2 className="section-title">Thống Kê Đội Ngũ</h2>
-                            <div className="stats-grid">
-                                <div className="stat-card">
-                                    <div className="stat-icon">👥</div>
-                                    <div className="stat-content">
-                                        <h3>{stats.total_teachers}+</h3>
-                                        <p>Giáo viên giàu kinh nghiệm</p>
-                                    </div>
-                                </div>
-                                <div className="stat-card">
-                                    <div className="stat-icon">⭐</div>
-                                    <div className="stat-content">
-                                        <h3>{stats.senior_teachers}+</h3>
-                                        <p>Giáo viên thâm niên (trên 5 năm)</p>
-                                    </div>
-                                </div>
-                                <div className="stat-card">
-                                    <div className="stat-icon">🎓</div>
-                                    <div className="stat-content">
-                                        <h3>{stats.avg_years_service}+</h3>
-                                        <p>Năm kinh nghiệm trung bình</p>
-                                    </div>
-                                </div>
-                                <div className="stat-card">
-                                    <div className="stat-icon">🏆</div>
-                                    <div className="stat-content">
-                                        <h3>{stats.success_rate}%</h3>
-                                        <p>Tỷ lệ học viên đạt mục tiêu</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Teachers Showcase - Updated với teacher model fields */}
+                    {/* Teachers Showcase */}
                     <div className="teachers-showcase">
                         <div className="container">
                             <div className="showcase-header">
@@ -260,73 +219,40 @@ const TeacherIntroduction = () => {
                                     <p>Vui lòng quay lại sau để xem thông tin chi tiết</p>
                                 </div>
                             ) : (
-                                <div className="teachers-container">
-                                    <button 
-                                        className="scroll-nav-btn prev" 
-                                        onClick={scrollLeft}
-                                        aria-label="Xem giáo viên trước"
-                                    >
-                                        &#8249;
-                                    </button>
-                                    <button 
-                                        className="scroll-nav-btn next" 
-                                        onClick={scrollRight}
-                                        aria-label="Xem giáo viên tiếp theo"
-                                    >
-                                        &#8250;
-                                    </button>
-                                    <div className="teachers-grid" ref={gridRef}>
-                                        {teachers.map((teacher) => (
+                                <div className="teachers-grid" ref={gridRef}>
+                                    {teachers.map((teacher) => (
                                         <div key={teacher.id} className="teacher-card">
-                                            {/* Left side - Avatar */}
-                                            <div className="teacher-left">
-                                                <div className="teacher-avatar">
-                                                    <span className="avatar-icon">
-                                                        {getGenderIcon(teacher.gender)}
-                                                    </span>
-                                                </div>
-                                                <div className="teacher-basic">
-                                                    <h3 className="teacher-name">{teacher.displayName}</h3>
-                                                    <p className="teacher-specialization">
-                                                        {teacher.specialization || 'Chuyên gia TOEIC'}
-                                                    </p>
-                                                </div>
+                                            {/* Full-bleed image */}
+                                            <div className="teacher-card-img-wrap">
+                                                <img
+                                                    className="teacher-card-img"
+                                                    src={normalizeAvatar(teacher.avatarPath)}
+                                                    alt={teacher.displayName}
+                                                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/avatar/default.svg'; }}
+                                                />
                                             </div>
-                                            
-                                            {/* Right side - Details */}
-                                            <div className="teacher-right">
-                                                <div className="teacher-badges">
-                                                    <div className="teacher-badge">
-                                                        <span className="badge-text">
-                                                            {calculateYearsOfService(teacher.hireDate)} năm
-                                                        </span>
-                                                    </div>
-                                                    <div className={`status-badge ${getStatusBadge(teacher.status).class}`}>
-                                                        {getStatusBadge(teacher.status).text}
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="teacher-quick-info">
-                                                    <div className="info-row">
-                                                        <span className="info-item">📅 {teacher.experience || calculateYearsOfService(teacher.hireDate)} năm</span>
-                                                        <span className="info-item">🎓 {teacher.qualification || 'Chứng chỉ quốc tế'}</span>
-                                                    </div>
-                                                    <div className="info-row">
-                                                        <span className="info-item">👤 {getGenderText(teacher.gender)}</span>
-                                                        <span className="info-item">📍 {formatDate(teacher.hireDate)}</span>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="teacher-contact">
-                                                    <div className="contact-row">
-                                                        <span className="contact-item">📧 {teacher.email}</span>
-                                                        <span className="contact-item">📞 {teacher.phone || 'N/A'}</span>
-                                                    </div>
+                                            {/* Status badge */}
+                                            <div className={`status-badge ${getStatusBadge(teacher.status).class}`}>
+                                                {getStatusBadge(teacher.status).text}
+                                            </div>
+                                            {/* Bottom band with name/title */}
+                                            <div className="teacher-card-bottom">
+                                                <div className="teacher-card-name">{teacher.displayName}</div>
+                                                <div className="teacher-card-title">{teacher.specialization || 'Chuyên gia TOEIC'}</div>
+                                            </div>
+                                            {/* Hover overlay with details */}
+                                            <div className="teacher-card-overlay">
+                                                <div className="teacher-overlay-content">
+                                                    <div className="overlay-row">🎓 {teacher.qualification || 'Chứng chỉ quốc tế'}</div>
+                                                    <div className="overlay-row">📅 {teacher.experience || calculateYearsOfService(teacher.hireDate)} năm kinh nghiệm</div>
+                                                    <div className="overlay-row">👤 {getGenderText(teacher.gender)}</div>
+                                                    <div className="overlay-row">📍 Bắt đầu: {formatDate(teacher.hireDate)}</div>
+                                                    <div className="overlay-row">📧 {teacher.email}</div>
+                                                    {teacher.phone && <div className="overlay-row">📞 {teacher.phone}</div>}
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
-                                    </div>
                                 </div>
                             )}
                         </div>

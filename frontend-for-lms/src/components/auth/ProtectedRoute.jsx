@@ -22,10 +22,14 @@ export default function ProtectedRoute({ roles, redirectTo = '/login', children 
 
   // Role restriction check
   if (roles && roles.length > 0) {
-    const currentRole = localStorage.getItem('role');
-    if (!roles.includes(currentRole)) {
+    const normalizedRoles = roles.map(r => (r || '').toLowerCase());
+    const currentRoleRaw = localStorage.getItem('role') || '';
+    const currentRole = currentRoleRaw.toLowerCase();
+    if (!normalizedRoles.includes(currentRole)) {
       // If role mismatch, try redirecting to a sensible home per role
-      if (currentRole === 'teacher') return <Navigate to="/admin" replace />;
+      if (currentRole === 'teacher' || currentRole === 'admin') {
+        return <Navigate to="/admin" replace />;
+      }
       if (currentRole === 'student') return <Navigate to="/student" replace />;
       return <Navigate to="/" replace />;
     }

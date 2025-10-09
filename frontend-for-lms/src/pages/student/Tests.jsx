@@ -44,7 +44,13 @@ export default function StudentTests() {
                 </div>
               </div>
               <div>
-                <Link className="btn btn-primary" to={`/student/tests/${t.test_id}`}>Bắt đầu</Link>
+                <Link
+                  className="btn btn-primary"
+                  to={`/student/tests/${t.test_id}`}
+                  state={{ freshStart: true }}
+                >
+                  Bắt đầu
+                </Link>
               </div>
             </div>
           ))}
