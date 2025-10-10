@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { listTests, getTestMeta } from '../../services/testService';
+import { listTests, getTestAttempts } from '../../services/testService';
+import { getCurrentUser } from '../../services/authService';
 
 export default function StudentTests() {
   const [loading, setLoading] = useState(true);
   const [tests, setTests] = useState([]);
   const [error, setError] = useState('');
+  const [attemptSummaries, setAttemptSummaries] = useState({}); // { [test_id]: {count, best_score, last_submitted_at} }
+  const user = getCurrentUser();
 
   useEffect(() => {
     let mounted = true;
@@ -14,6 +17,25 @@ export default function StudentTests() {
         const data = await listTests();
         if (!mounted) return;
         setTests(data);
+        // fetch attempts summary per test if logged in
+        if (user?.user_id) {
+          const summaries = {};
+          await Promise.all(
+            (data || []).map(async (t) => {
+              try {
+                const s = await getTestAttempts(t.test_id, user.user_id);
+                summaries[t.test_id] = {
+                  count: s.count || (Array.isArray(s.attempts) ? s.attempts.length : 0),
+                  best_score: s.best_score ?? null,
+                  last_submitted_at: s.last_submitted_at || null,
+                };
+              } catch (_) {
+                // ignore per-test errors
+              }
+            })
+          );
+          if (mounted) setAttemptSummaries(summaries);
+        }
       } catch (e) {
         setError(e.message || 'Không thể tải bài kiểm tra');
       } finally {
@@ -42,6 +64,17 @@ export default function StudentTests() {
                 <div className="text-muted small">
                   Thời lượng: {t.test_duration_min ?? '—'} phút • Tổng câu: {t.test_total_questions ?? '—'}
                 </div>
+                {attemptSummaries[t.test_id] && (
+                  <div className="mt-1">
+                    <span className="badge text-bg-light me-2">Đã làm: {attemptSummaries[t.test_id].count}</span>
+                    {typeof attemptSummaries[t.test_id].best_score === 'number' && (
+                      <span className="badge bg-success me-2">Điểm cao nhất: {attemptSummaries[t.test_id].best_score}</span>
+                    )}
+                    {attemptSummaries[t.test_id].last_submitted_at && (
+                      <span className="text-muted small">Lần gần nhất: {new Date(attemptSummaries[t.test_id].last_submitted_at).toLocaleString()}</span>
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <Link

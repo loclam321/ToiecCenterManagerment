@@ -73,10 +73,24 @@ function FacilityPage() {
               className="mySwiper"
             >
               <SwiperSlide>
-                <img src={heroImg4} alt="Cơ sở vật chất 1" />
+                <img
+                  src={heroImg4}
+                  alt="Cơ sở vật chất 1"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/assets1/f2.png';
+                  }}
+                />
               </SwiperSlide>
               <SwiperSlide>
-                <img src={heroImg2} alt="Cơ sở vật chất 2" />
+                <img
+                  src={heroImg2}
+                  alt="Cơ sở vật chất 2"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/assets1/f3.png';
+                  }}
+                />
               </SwiperSlide>
               <SwiperSlide>
                 <img

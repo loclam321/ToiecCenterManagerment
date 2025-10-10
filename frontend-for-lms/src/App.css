@@ -1,129 +1,376 @@
 /*
   ===== TOEIC CENTER MANAGEMENT SYSTEM - CSS STYLES =====
   
-  Tổng quan hệ thống:
-  - Header: Logo + navigation + CTA buttons (fixed position, full-width)
-  - Homepage: Hero section với video background + content sections
-  - Footer: Copyright info + CTA button + URL bar + floating buttons
-  - Responsive: Mobile-first design với breakpoints 768px, 576px
+  Professional Design System:
+  - Modern gradient backgrounds & glassmorphism effects
+  - Smooth animations & transitions
+  - Responsive layout with mobile-first approach
+  - Accessibility-focused design
   
-  Cấu trúc chính:
-  1. Root container & layout
-  2. Header (fixed, 3-column layout)
-  3. Homepage sections (hero, features, testimonials)
-  4. Footer (professional layout với floating buttons)
-  5. Responsive breakpoints
+  Structure:
+  1. Root variables & global styles
+  2. Header system (fixed navigation)
+  3. Hero section (video background + overlay)
+  4. Feature sections (learning paths, teachers, testimonials)
+  5. Footer system (professional layout)
+  6. Responsive breakpoints
 */
-/* ===== 1. ROOT CONTAINER & LAYOUT ===== */
+
+/* ===== 1. ROOT VARIABLES & GLOBAL STYLES ===== */
+:root {
+  --primary-blue: #2563eb;
+  --primary-blue-dark: #1d4ed8;
+  --primary-blue-light: #3b82f6;
+  --accent-red: #dc2626;
+  --accent-red-dark: #b91c1c;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --success-green: #059669;
+  --warning-orange: #f59e0b;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  background: var(--gray-50);
+}
+
+/* ===== UTILITY ANIMATIONS ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Scroll animations */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.animate-on-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Smooth reveal animation for sections */
+.section {
+  animation: fadeIn 0.8s ease-out;
+}
+
+.section > * {
+  animation: slideInUp 0.6s ease-out;
+  animation-fill-mode: both;
+}
+
+.section > *:nth-child(1) { animation-delay: 0.1s; }
+.section > *:nth-child(2) { animation-delay: 0.2s; }
+.section > *:nth-child(3) { animation-delay: 0.3s; }
 
 
 /* ===== 2. HEADER SYSTEM ===== */
-/* Header chính - Fixed position, full-width background */
 .header {
-  background-color: #ffffff; /* Nền trắng sạch */
-  color: #111827; /* Màu chữ tối */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Bóng nhẹ */
-  position: fixed; /* Cố định khi cuộn */
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  width: 100%; /* Phủ toàn bộ chiều rộng */
-  z-index: 1050; /* Luôn nằm trên các element khác */
-  box-sizing: border-box;
-  padding: 12px 0; /* Padding dọc */
+  width: 100%;
+  z-index: 1050;
+  padding: 14px 0;
+  transition: all var(--transition-base);
 }
 
-/* Đẩy nội dung xuống để không bị header che mất */
+.header.scrolled {
+  padding: 10px 0;
+  box-shadow: var(--shadow-lg);
+  background: rgba(255, 255, 255, 0.98);
+}
+
 .app-layout {
-  padding-top: 76px; /* Đẩy nội dung xuống dưới header cố định */
+  padding-top: 76px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ===== 3. HOMEPAGE SECTIONS ===== */
-/* Hero section với video background và overlay */
+/* ===== 3. HERO SECTION ===== */
 .home-hero {
-  position: relative; /* tạo stacking context riêng */
-  overflow: visible; /* để nội dung chồng lên không bị cắt */
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  position: relative;
+  overflow: visible;
+  border-bottom: none;
+  margin-bottom: 0;
 }
+
 .home-hero .hero-media {
   position: relative;
-  height: 300px; /* vùng hiển thị video */
-  overflow: hidden; /* cắt video trong vùng này */
+  height: 480px;
+  overflow: hidden;
 }
+
 .home-hero .hero-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   position: relative;
-  z-index: 0; /* nằm dưới overlay và nội dung */
+  z-index: 0;
+  filter: brightness(0.85);
+  transition: filter var(--transition-slow);
 }
+
+.home-hero:hover .hero-video {
+  filter: brightness(0.95);
+}
+
 .home-hero .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.45));
-  z-index: 1; /* trên video, dưới nội dung */
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.7) 0%,
+    rgba(139, 92, 246, 0.6) 50%,
+    rgba(220, 38, 38, 0.7) 100%
+  );
+  z-index: 1;
   pointer-events: none;
+  animation: gradientShift 15s ease infinite;
 }
-.py-6 {
-  padding-top: 4rem !important;
-  padding-bottom: 0rem !important;
+
+@keyframes gradientShift {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.95; }
 }
 
 .home-hero .hero-content {
   position: absolute;
-  top: 50%; /* căn giữa chuẩn theo trục dọc */
+  top: 50%;
   left: 0;
   right: 0;
-  transform: translateY(5%);
+  transform: translateY(-50%);
   color: #ffffff;
-  z-index: 2; /* trên overlay và video */
-  padding-left: 1rem;
-  padding-right: 1rem;
+  z-index: 2;
+  padding: 0 2rem;
+  animation: fadeInUp 1s ease-out;
 }
 
-/* Responsive typography for hero */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(-40%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
+}
+
 .home-hero .hero-content .display-6 {
-  font-size: clamp(1.5rem, 3.5vw + 0.5rem, 2.5rem);
+  font-size: clamp(2rem, 4vw + 0.5rem, 3.5rem);
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  letter-spacing: -0.02em;
 }
+
 .home-hero .hero-content .lead {
-  font-size: clamp(0.95rem, 1.2vw + 0.6rem, 1.25rem);
+  font-size: clamp(1.1rem, 1.5vw + 0.6rem, 1.5rem);
+  font-weight: 400;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  max-width: 700px;
 }
+
 .hero-badges {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
+  margin-bottom: 2rem;
 }
+
 .badge-item {
-  background: rgba(255,255,255,0.18);
-  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
   color: #fff;
-  backdrop-filter: blur(4px);
-  padding: 6px 10px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 10px 18px;
   border-radius: 999px;
   font-size: 14px;
+  font-weight: 600;
+  transition: all var(--transition-base);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+
+.badge-item:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
 .home-hero .btn {
-  box-shadow: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  border: none;
+  padding: 14px 32px;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0.3px;
+  transition: all var(--transition-base);
 }
-.home-hero .hero-content .btn {
-  margin-bottom: 8px;
+
+.home-hero .btn-primary {
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
+}
+
+.home-hero .btn-primary:hover {
+  background: linear-gradient(135deg, var(--primary-blue-dark) 0%, var(--primary-blue) 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.4);
+}
+
+.home-hero .btn-outline-primary {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+.home-hero .btn-outline-primary:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #fff;
+  transform: translateY(-3px);
+}
+
+.py-6 {
+  padding-top: 5rem !important;
+  padding-bottom: 5rem !important;
+}
+
+/* ===== 4. SECTION STYLES ===== */
+.section {
+  position: relative;
+  transition: all var(--transition-base);
 }
 
 .section-title {
-  font-weight: 700;
-  color: #111827;
+  font-weight: 800;
+  color: var(--gray-900);
+  font-size: clamp(2rem, 3vw + 1rem, 2.75rem);
+  line-height: 1.2;
+  margin-bottom: 1rem;
+  position: relative;
+  display: inline-block;
 }
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-blue), var(--accent-red));
+  border-radius: 2px;
+}
+
 .section-subtitle {
-  color: #6b7280;
+  color: var(--gray-600);
+  font-size: clamp(1rem, 1.2vw + 0.5rem, 1.25rem);
+  font-weight: 400;
+  line-height: 1.6;
 }
+
 .section-header {
-  max-width: 760px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 800px;
+  margin: 0 auto 4rem;
+  text-align: center;
 }
+
 .section-desc {
-  color: #4b5563;
+  color: var(--gray-700);
+  font-size: 1.125rem;
+  line-height: 1.75;
 }
 
 .intro-features {
@@ -180,35 +427,99 @@
   margin-bottom: 6px;
 }
 
+/* ===== 5. CARD STYLES ===== */
 .path-card {
-  background: #ffffff;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1.5px solid rgba(37, 99, 235, 0.1) !important;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
 }
+
+.path-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.05), transparent);
+  transition: left 0.5s ease;
+}
+
+.path-card:hover::before {
+  left: 100%;
+}
+
 .path-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
+  border-color: rgba(37, 99, 235, 0.25) !important;
 }
+
 .path-icon {
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
-  background: #eef2ff;
-  color: #4f46e5;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.3);
+  transition: all var(--transition-base);
 }
+
+.path-card:hover .path-icon {
+  transform: rotate(5deg) scale(1.1);
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.4);
+}
+
 .feature-list {
-  padding-left: 18px;
+  padding-left: 24px;
+  list-style: none;
 }
+
+.feature-list li {
+  position: relative;
+  padding-left: 12px;
+  margin-bottom: 8px;
+  color: var(--gray-600);
+}
+
+.feature-list li::before {
+  content: '✓';
+  position: absolute;
+  left: -16px;
+  color: var(--success-green);
+  font-weight: 700;
+}
+
 .path-link {
   position: absolute;
-  bottom: 16px;
-  color: #2563eb;
+  bottom: 20px;
+  left: 24px;
+  color: var(--primary-blue);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
 }
+
+.path-link::after {
+  content: '→';
+  transition: transform var(--transition-fast);
+}
+
 .path-link:hover {
-  text-decoration: underline;
+  color: var(--primary-blue-dark);
+  gap: 10px;
+}
+
+.path-link:hover::after {
+  transform: translateX(4px);
 }
 
 /* Drag & Drop overlay for learning paths */
@@ -340,25 +651,61 @@
   cursor: not-allowed;
 }
 
+/* ===== 7. TESTIMONIAL CARDS ===== */
 .testimonial-card {
-  background: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1.5px solid var(--gray-200) !important;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
 }
+
+.testimonial-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, var(--primary-blue), var(--accent-red));
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  z-index: -1;
+  border-radius: inherit;
+}
+
+.testimonial-card:hover::before {
+  opacity: 0.1;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
+  border-color: transparent !important;
+}
+
 .testimonial-card .quote-mark {
-  font-size: 40px;
+  font-size: 64px;
   line-height: 0.5;
-  color: #d1d5db;
+  color: var(--gray-200);
+  font-family: Georgia, serif;
+  opacity: 0.5;
 }
+
 .testimonial-card p {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.5;
-  max-height: 3em; /* 2 lines × 1.5 line-height */
+  line-height: 1.7;
+  max-height: 5.1em;
+  color: var(--gray-700);
+  font-size: 15px;
+  font-style: italic;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition-base);
 }
 
 .testimonial-card:hover p {
@@ -366,6 +713,7 @@
   line-clamp: unset;
   max-height: none;
   overflow: visible;
+  color: var(--gray-800);
 }
 
 /* Path cards text truncation */
@@ -389,50 +737,98 @@
   overflow: visible;
 }
 
-/* Teacher cards */
+/* ===== 6. TEACHER CARDS ===== */
 .teacher-card {
   background: #ffffff;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  border: 1.5px solid var(--gray-200) !important;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
 }
+
+.teacher-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-blue), var(--accent-red));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--transition-base);
+}
+
+.teacher-card:hover::before {
+  transform: scaleX(1);
+}
+
 .teacher-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  border-color: var(--gray-300) !important;
 }
 
 .avatar-circle-large {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  background: #e5e7eb;
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  font-weight: 700;
-  color: #374151;
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.avatar-circle-large::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(37, 99, 235, 0.2);
+  transition: all var(--transition-base);
+}
+
+.teacher-card:hover .avatar-circle-large {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.teacher-card:hover .avatar-circle-large::after {
+  border-color: rgba(37, 99, 235, 0.4);
+  inset: -8px;
 }
 
 .teacher-name {
-  color: #111827;
-  font-weight: 600;
+  color: var(--gray-900);
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .teacher-title {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--gray-600);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .teacher-card p {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.5;
-  max-height: 3em; /* 2 lines × 1.5 line-height */
-  cursor: pointer;
-  transition: all 0.3s ease;
+  line-height: 1.6;
+  max-height: 4.8em;
+  color: var(--gray-600);
+  transition: all var(--transition-base);
 }
 
 .teacher-card:hover p {
@@ -440,11 +836,20 @@
   line-clamp: unset;
   max-height: none;
   overflow: visible;
+  color: var(--gray-700);
 }
 
 .teacher-experience .badge {
-  font-size: 11px;
-  padding: 4px 8px;
+  font-size: 12px;
+  padding: 6px 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: all var(--transition-fast);
+}
+
+.teacher-experience .badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 .avatar-circle {
   width: 36px;
@@ -460,23 +865,96 @@
 }
 .rating { color: #f59e0b; }
 
+/* ===== 8. RESPONSIVE DESIGN ===== */
+@media (max-width: 1024px) {
+  .home-hero .hero-media {
+    height: 400px;
+  }
+  
+  .py-6 {
+    padding-top: 3.5rem !important;
+    padding-bottom: 3.5rem !important;
+  }
+}
+
 @media (max-width: 768px) {
   .home-hero .hero-media {
-    height: 190px; /* vùng video ở mobile */
+    height: 320px;
   }
+  
   .home-hero .hero-content {
-    top: 75%;
-    transform: translateY(-50%);
+    padding: 0 1.5rem;
   }
+  
   .home-hero .hero-content .display-6 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  .home-hero .hero-content .lead {
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .py-6 {
+    padding-top: 3rem !important;
+    padding-bottom: 3rem !important;
+  }
+  
+  .section-title {
+    font-size: 1.75rem;
+  }
+  
+  .path-card, .teacher-card, .testimonial-card {
+    margin-bottom: 1.5rem;
   }
 }
 
 @media (max-width: 576px) {
-  .hero-badges { gap: 6px; }
-  .badge-item { font-size: 12px; padding: 5px 8px; }
-  .home-hero .hero-content .btn { font-size: 0.95rem; padding: 8px 14px; }
+  .app-layout {
+    padding-top: 70px;
+  }
+  
+  .home-hero .hero-media {
+    height: 280px;
+  }
+  
+  .home-hero .hero-content .display-6 {
+    font-size: 1.5rem;
+  }
+  
+  .home-hero .hero-content .lead {
+    font-size: 0.95rem;
+  }
+  
+  .hero-badges {
+    gap: 8px;
+  }
+  
+  .badge-item {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+  
+  .home-hero .btn {
+    font-size: 14px;
+    padding: 12px 24px;
+    width: 100%;
+    margin-bottom: 10px !important;
+  }
+  
+  .py-6 {
+    padding-top: 2.5rem !important;
+    padding-bottom: 2.5rem !important;
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+  }
+  
+  .section-subtitle {
+    font-size: 0.95rem;
+  }
 }
 
 /* ===== HEADER LAYOUT - 3-COLUMN STRUCTURE ===== */
