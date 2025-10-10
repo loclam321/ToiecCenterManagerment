@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import AdminSidebar from '../../components/admin/Adminsidebar';
 import AdminPageHeader from '../../components/admin/AdminPageHeader';
-import { 
-  getAllClasses, 
-  deleteClass, 
-  getClassStatusBadgeClass, 
-  getClassStatusText
+import {
+    getAllClasses,
+    getClassStatusBadgeClass,
+    getClassStatusText,
+    getDisplayStatusBadgeClass // Thêm import này
 } from '../../services/classService';
 import { getCourses } from '../../services/courseService';
 import './css/Classes.css';
@@ -63,7 +63,7 @@ function Classes() {
                 sort_by: filters.sort_by,
                 sort_order: filters.sort_order
             };
-            
+
             const response = await getAllClasses(params);
             if (response.success && response.data) {
                 setClasses(response.data);
@@ -115,19 +115,6 @@ function Classes() {
         }));
     };
 
-    const handleDeleteClass = async (classId, className) => {
-        if (window.confirm(`Bạn có chắc chắn muốn xóa lớp "${className}"?`)) {
-            try {
-                await deleteClass(classId);
-                toast.success('Đã xóa lớp học thành công');
-                fetchClasses();
-            } catch (error) {
-                console.error('Error deleting class:', error);
-                toast.error('Không thể xóa lớp học');
-            }
-        }
-    };
-
     const handleSearch = (e) => {
         e.preventDefault();
         fetchClasses();
@@ -145,8 +132,8 @@ function Classes() {
 
     const renderSortIcon = (field) => {
         if (filters.sort_by !== field) return <i className="bi bi-arrow-down-up text-muted"></i>;
-        return filters.sort_order === 'asc' 
-            ? <i className="bi bi-sort-down"></i> 
+        return filters.sort_order === 'asc'
+            ? <i className="bi bi-sort-down"></i>
             : <i className="bi bi-sort-up"></i>;
     };
 
@@ -287,8 +274,8 @@ function Classes() {
                                                             </span>
                                                         </td>
                                                         <td>
-                                                            <span className={`badge ${getClassStatusBadgeClass(classItem.class_status)}`}>
-                                                                {getClassStatusText(classItem.class_status)}
+                                                            <span className={`badge ${getDisplayStatusBadgeClass(classItem.display_status)}`}>
+                                                                {classItem.display_status || getClassStatusText(classItem.class_status)}
                                                             </span>
                                                         </td>
                                                         <td>
@@ -299,13 +286,6 @@ function Classes() {
                                                                 <Link to={`/admin/classes/${classItem.class_id}/edit`} className="btn-icon" title="Chỉnh sửa">
                                                                     <i className="bi bi-pencil"></i>
                                                                 </Link>
-                                                                <button
-                                                                    className="btn-icon text-danger"
-                                                                    title="Xóa lớp"
-                                                                    onClick={() => handleDeleteClass(classItem.class_id, classItem.class_name)}
-                                                                >
-                                                                    <i className="bi bi-trash"></i>
-                                                                </button>
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -316,7 +296,7 @@ function Classes() {
 
                                     {pagination.pages > 1 && (
                                         <div className="pagination-container">
-                                            <button 
+                                            <button
                                                 className="pagination-button"
                                                 disabled={!pagination.has_prev}
                                                 onClick={() => handleChangePage(pagination.page - 1)}
@@ -326,7 +306,7 @@ function Classes() {
                                             <span className="pagination-info">
                                                 Trang {pagination.page} / {pagination.pages}
                                             </span>
-                                            <button 
+                                            <button
                                                 className="pagination-button"
                                                 disabled={!pagination.has_next}
                                                 onClick={() => handleChangePage(pagination.page + 1)}
@@ -343,7 +323,7 @@ function Classes() {
                                     </div>
                                     <h3>Không tìm thấy lớp học nào</h3>
                                     <p>Không có lớp học nào phù hợp với tiêu chí tìm kiếm.</p>
-                                    <button 
+                                    <button
                                         className="btn btn-outline-primary"
                                         onClick={resetFilters}
                                     >

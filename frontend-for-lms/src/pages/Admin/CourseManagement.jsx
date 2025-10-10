@@ -126,7 +126,7 @@ function CourseManagement() {
             toast.warning('Vui lòng chọn ít nhất một khóa học');
             return;
         }
-        
+
         if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedCourses.length} khóa học đã chọn?`)) {
             console.log('Delete courses:', selectedCourses);
             toast.success(`Đã xóa ${selectedCourses.length} khóa học`);
@@ -203,21 +203,18 @@ function CourseManagement() {
                                 )}
                             </div>
 
-                            <div className="filters-grid">
-                                <div className="filter-item">
-                                    <label>
-                                        <i className="bi bi-search"></i>
-                                        Tìm kiếm
-                                    </label>
+                            <div className="filters-row">
+                                <div className="filter-item search-filter">
                                     <div className="search-input-wrapper">
+                                        <i className="bi bi-search search-icon"></i>
                                         <input
                                             type="text"
-                                            placeholder="Tìm theo tên, mã khóa học..."
+                                            placeholder="Tìm khóa học..."
                                             value={filters.search}
                                             onChange={(e) => handleFilterChange('search', e.target.value)}
                                         />
                                         {filters.search && (
-                                            <button 
+                                            <button
                                                 className="clear-search"
                                                 onClick={() => handleFilterChange('search', '')}
                                             >
@@ -228,15 +225,11 @@ function CourseManagement() {
                                 </div>
 
                                 <div className="filter-item">
-                                    <label>
-                                        <i className="bi bi-bar-chart-steps"></i>
-                                        Trình độ
-                                    </label>
                                     <select
                                         value={filters.level}
                                         onChange={(e) => handleFilterChange('level', e.target.value)}
                                     >
-                                        <option value="">Tất cả trình độ</option>
+                                        <option value="">Trình độ</option>
                                         <option value="BEGINNER">Cơ bản</option>
                                         <option value="INTERMEDIATE">Trung cấp</option>
                                         <option value="ADVANCED">Nâng cao</option>
@@ -244,15 +237,11 @@ function CourseManagement() {
                                 </div>
 
                                 <div className="filter-item">
-                                    <label>
-                                        <i className="bi bi-laptop"></i>
-                                        Hình thức
-                                    </label>
                                     <select
                                         value={filters.mode}
                                         onChange={(e) => handleFilterChange('mode', e.target.value)}
                                     >
-                                        <option value="">Tất cả hình thức</option>
+                                        <option value="">Hình thức</option>
                                         <option value="ONLINE">Online</option>
                                         <option value="OFFLINE">Offline</option>
                                         <option value="HYBRID">Hybrid</option>
@@ -260,15 +249,11 @@ function CourseManagement() {
                                 </div>
 
                                 <div className="filter-item">
-                                    <label>
-                                        <i className="bi bi-circle-fill"></i>
-                                        Trạng thái
-                                    </label>
                                     <select
                                         value={filters.status}
                                         onChange={(e) => handleFilterChange('status', e.target.value)}
                                     >
-                                        <option value="">Tất cả trạng thái</option>
+                                        <option value="">Trạng thái</option>
                                         <option value="OPEN">Đang mở</option>
                                         <option value="CLOSED">Đã đóng</option>
                                         <option value="UPCOMING">Sắp mở</option>
@@ -277,10 +262,6 @@ function CourseManagement() {
                                 </div>
 
                                 <div className="filter-item">
-                                    <label>
-                                        <i className="bi bi-sort-down"></i>
-                                        Sắp xếp
-                                    </label>
                                     <select
                                         value={getSelectedSort()}
                                         onChange={(e) => {
@@ -311,15 +292,21 @@ function CourseManagement() {
                                             }
                                         }}
                                     >
-                                        <option value="newest">Mới nhất</option>
-                                        <option value="oldest">Cũ nhất</option>
-                                        <option value="name_asc">Tên A-Z</option>
-                                        <option value="name_desc">Tên Z-A</option>
-                                        <option value="price_asc">Học phí tăng dần</option>
-                                        <option value="price_desc">Học phí giảm dần</option>
-                                        <option value="date_asc">Khai giảng gần nhất</option>
+                                        <option value="newest">Sắp xếp: Mới nhất</option>
+                                        <option value="oldest">Sắp xếp: Cũ nhất</option>
+                                        <option value="name_asc">Sắp xếp: A-Z</option>
+                                        <option value="name_desc">Sắp xếp: Z-A</option>
+                                        <option value="price_asc">Sắp xếp: Giá tăng</option>
+                                        <option value="price_desc">Sắp xếp: Giá giảm</option>
+                                        <option value="date_asc">Sắp xếp: Ngày gần</option>
                                     </select>
                                 </div>
+
+                                {hasActiveFilters() && (
+                                    <button className="filter-reset-btn" onClick={resetFilters}>
+                                        <i className="bi bi-x-circle"></i> Xóa lọc
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -348,7 +335,7 @@ function CourseManagement() {
                                         <span className="selected-count">
                                             Đã chọn {selectedCourses.length} khóa học
                                         </span>
-                                        <button 
+                                        <button
                                             className="btn-bulk-delete"
                                             onClick={handleDeleteSelected}
                                         >
@@ -447,16 +434,16 @@ function CourseManagement() {
                                                                 </td>
                                                                 <td>
                                                                     <div className="action-buttons">
-                                                                        <Link 
-                                                                            to={`/admin/courses/${course.course_id}`} 
-                                                                            className="btn-action view" 
+                                                                        <Link
+                                                                            to={`/admin/courses/${course.course_id}`}
+                                                                            className="btn-action view"
                                                                             title="Xem chi tiết"
                                                                         >
                                                                             <i className="bi bi-eye"></i>
                                                                         </Link>
-                                                                        <Link 
-                                                                            to={`/admin/courses/${course.course_id}/edit`} 
-                                                                            className="btn-action edit" 
+                                                                        <Link
+                                                                            to={`/admin/courses/${course.course_id}/edit`}
+                                                                            className="btn-action edit"
                                                                             title="Chỉnh sửa"
                                                                         >
                                                                             <i className="bi bi-pencil"></i>
@@ -531,15 +518,15 @@ function CourseManagement() {
                                                     </div>
 
                                                     <div className="card-footer">
-                                                        <Link 
-                                                            to={`/admin/courses/${course.course_id}`} 
+                                                        <Link
+                                                            to={`/admin/courses/${course.course_id}`}
                                                             className="btn-card view"
                                                         >
                                                             <i className="bi bi-eye"></i>
                                                             Chi tiết
                                                         </Link>
-                                                        <Link 
-                                                            to={`/admin/courses/${course.course_id}/edit`} 
+                                                        <Link
+                                                            to={`/admin/courses/${course.course_id}/edit`}
                                                             className="btn-card edit"
                                                         >
                                                             <i className="bi bi-pencil"></i>
@@ -624,7 +611,7 @@ function CourseManagement() {
                                     </div>
                                     <h3>Không tìm thấy khóa học nào</h3>
                                     <p>
-                                        {hasActiveFilters() 
+                                        {hasActiveFilters()
                                             ? 'Không có khóa học nào phù hợp với tiêu chí lọc.'
                                             : 'Chưa có khóa học nào trong hệ thống.'
                                         }

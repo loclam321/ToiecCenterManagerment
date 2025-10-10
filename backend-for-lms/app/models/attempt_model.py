@@ -24,7 +24,7 @@ class Attempt(db.Model):
     att_scaled_listening = db.Column(db.Integer)
     att_scaled_reading = db.Column(db.Integer)
     att_status = db.Column(db.String(12))
-    att_responses_json = db.Column(db.String(10))
+    att_responses_json = db.Column(db.String(2048))
 
     __table_args__ = (
         db.ForeignKeyConstraint(

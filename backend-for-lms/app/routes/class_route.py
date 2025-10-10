@@ -237,3 +237,47 @@ def get_class_enrollments(class_id):
 
     except Exception as e:
         return error_response(f"Error retrieving enrollments: {str(e)}")
+
+
+@class_bp.route("/list", methods=["GET"])
+def get_classes_list_route():
+    """Lấy danh sách lớp học không phân trang với trạng thái được xử lý"""
+    try:
+        # Xử lý các filter từ query params
+        filters = {}
+
+        if request.args.get("course_id"):
+            filters["course_id"] = request.args.get("course_id")
+
+        if request.args.get("status"):
+            filters["status"] = request.args.get("status")
+
+        if request.args.get("active_only") == "true":
+            filters["active_only"] = True
+
+        if request.args.get("available_only") == "true":
+            filters["available_only"] = True
+
+        if request.args.get("ongoing") == "true":
+            filters["ongoing"] = True
+
+        if request.args.get("search"):
+            filters["search"] = request.args.get("search")
+
+        if request.args.get("sort_by"):
+            filters["sort_by"] = request.args.get("sort_by")
+
+        if request.args.get("sort_dir"):
+            filters["sort_dir"] = request.args.get("sort_dir")
+
+        # Gọi hàm get_classes_list từ service
+        result = class_service.get_classes_list(filters)
+
+        if result["success"]:
+            return success_response(
+                data=result["data"],
+            )
+        return error_response(message=result["error"])
+
+    except Exception as e:
+        return error_response(f"Error retrieving classes list: {str(e)}")

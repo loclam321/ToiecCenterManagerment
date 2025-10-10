@@ -18,13 +18,24 @@ depends_on = None
 
 
 def upgrade():
-    # Kiểm tra xem bảng courses đã tồn tại chưa
-    connection = op.get_bind()
-    inspector = sa.inspect(connection)
-    tables = inspector.get_table_names()
+    # Bỏ đoạn kiểm tra inspector và thay bằng op.has_table
+
+    # Kiểm tra xem bảng courses đã tồn tại chưa bằng cách an toàn hơn
+    has_courses = False
+    has_classes = False
+    has_course = False
+    has_learning_paths = False
+
+    try:
+        has_courses = op.has_table("courses")
+        has_classes = op.has_table("classes")
+        has_course = op.has_table("course")
+        has_learning_paths = op.has_table("learning_paths")
+    except Exception as e:
+        print(f"Warning: Table existence check failed: {e}")
 
     # 1. Chỉ tạo bảng courses nếu chưa tồn tại
-    if "courses" not in tables:
+    if not has_courses:
         op.create_table(
             "courses",
             sa.Column("course_id", sa.String(length=10), nullable=False),
@@ -95,7 +106,7 @@ def upgrade():
         )
 
     # 2. Sửa foreign key constraint trong bảng classes nếu tồn tại
-    if "classes" in tables:
+    if has_classes:
         try:
             with op.batch_alter_table("classes", schema=None) as batch_op:
                 batch_op.drop_constraint("classes_ibfk_1", type_="foreignkey")
@@ -106,14 +117,14 @@ def upgrade():
             print(f"Warning: Could not update classes foreign key: {e}")
 
     # 3. Drop bảng course cũ nếu tồn tại
-    if "course" in tables:
+    if has_course:
         try:
             op.drop_table("course")
         except Exception as e:
             print(f"Warning: Could not drop old course table: {e}")
 
     # 4. Update learning_paths foreign key
-    if "learning_paths" in tables:
+    if has_learning_paths:
         try:
             with op.batch_alter_table("learning_paths", schema=None) as batch_op:
                 # Thử drop constraint cũ

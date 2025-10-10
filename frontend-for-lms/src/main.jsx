@@ -42,6 +42,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/*" element={<App />} />
         <Route path="/login" element={<AuthPage />} />
         <Route path="/teachers" element={<TeacherIntroduction />} />
+        
   <Route path="/logout" element={<Logout />} />
         {/* Admin area (teachers may share admin UI). Restrict to teacher for now. */}
         <Route
@@ -57,6 +58,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           element={
             <ProtectedRoute roles={["teacher", "admin"]}>
               <StudentManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/classes"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <Classes />
             </ProtectedRoute>
           }
         />
@@ -133,7 +142,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           }
         />
         <Route
-          path="/admin/courses/:courseId/add-class"
+          path="/admin/courses/:courseId/classes/add"
           element={
             <ProtectedRoute roles={["teacher", "admin"]}>
               <AddClassForm />

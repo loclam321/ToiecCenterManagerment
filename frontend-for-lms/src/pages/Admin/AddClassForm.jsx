@@ -33,16 +33,16 @@ function AddClassForm() {
         try {
             const courseData = await getCourseById(courseId);
             setCourse(courseData);
-            
+
             // Đề xuất tên lớp dựa trên mã khóa học
             if (courseData) {
                 // Lấy chuỗi trước dấu gạch ngang đầu tiên trong course_code
                 const baseCode = courseData.course_code.split('-')[0];
-                
+
                 // Đề xuất tên lớp dựa trên level của khóa học
                 let levelText = '';
                 switch (courseData.level) {
-                    case 'BEGINNER': 
+                    case 'BEGINNER':
                         levelText = '300+';
                         break;
                     case 'INTERMEDIATE':
@@ -54,20 +54,20 @@ function AddClassForm() {
                     default:
                         levelText = '';
                 }
-                
+
                 const suggestedName = `${baseCode.replace(/\d+/g, '')} ${levelText} (Sáng T2-4-6)`;
-                
+
                 // Chuẩn bị ngày bắt đầu và kết thúc theo định dạng YYYY-MM-DD
                 const today = new Date();
                 const startDate = courseData.start_date || today.toISOString().split('T')[0];
-                
+
                 // Ngày kết thúc mặc định 3 tháng sau ngày bắt đầu
                 const endDate = courseData.end_date || (() => {
                     const endDate = new Date(startDate);
                     endDate.setMonth(endDate.getMonth() + 3);
                     return endDate.toISOString().split('T')[0];
                 })();
-                
+
                 setFormData(prev => ({
                     ...prev,
                     class_name: suggestedName,
@@ -90,7 +90,7 @@ function AddClassForm() {
             ...prev,
             [name]: value
         }));
-        
+
         // Xóa lỗi khi người dùng bắt đầu nhập lại
         if (errors[name]) {
             setErrors(prev => ({
@@ -102,38 +102,55 @@ function AddClassForm() {
 
     const validateForm = () => {
         const newErrors = {};
-        
+
         if (!formData.class_name.trim()) {
             newErrors.class_name = 'Vui lòng nhập tên lớp';
         }
-        
+
         if (!formData.class_startdate) {
             newErrors.class_startdate = 'Vui lòng chọn ngày bắt đầu';
         }
-        
+
         if (!formData.class_enddate) {
             newErrors.class_enddate = 'Vui lòng chọn ngày kết thúc';
         } else if (new Date(formData.class_enddate) <= new Date(formData.class_startdate)) {
             newErrors.class_enddate = 'Ngày kết thúc phải sau ngày bắt đầu';
         }
-        
+
         if (!formData.class_maxstudents || formData.class_maxstudents <= 0) {
             newErrors.class_maxstudents = 'Sĩ số tối đa phải lớn hơn 0';
         }
-        
+
         return newErrors;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         const newErrors = validateForm();
+
+        // Kiểm tra ngày hợp lệ
+        const todayDate = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
+
+        // Kiểm tra ngày bắt đầu > ngày kết thúc
+        if (formData.class_startdate > formData.class_enddate) {
+            newErrors.class_startdate = 'Ngày bắt đầu không thể sau ngày kết thúc';
+        }
+
+        // Kiểm tra ngày bắt đầu < ngày hiện tại
+        if (formData.class_startdate < todayDate) {
+            newErrors.class_startdate = 'Ngày bắt đầu không thể trước ngày hiện tại';
+        }
+
+        // Nếu có lỗi, hiển thị và dừng submit
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             return;
         }
-        
+
+        // Nếu không có lỗi, tiếp tục submit
         setSubmitting(true);
+
         try {
             // Chuẩn bị dữ liệu theo cấu trúc API yêu cầu
             const classData = {
@@ -143,12 +160,12 @@ function AddClassForm() {
                 class_enddate: formData.class_enddate,
                 class_maxstudents: parseInt(formData.class_maxstudents),
                 class_currentenrollment: 0, // Lớp mới bắt đầu với 0 học viên
-                class_status: formData.class_status
+                class_status: "",
             };
-            
+
             // Gọi API tạo lớp học mới với cấu trúc đã cập nhật
             const result = await createClass(classData);
-            
+
             if (result.success) {
                 toast.success('Tạo lớp học thành công!');
                 navigate(`/admin/courses/${courseId}`);

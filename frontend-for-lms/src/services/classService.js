@@ -77,14 +77,35 @@ export const getAllClasses = async (params = {}) => {
 };
 
 /**
- * Lấy danh sách lớp học cho dropdown select
+ * Thêm hàm mới để gọi API mới tạo
+ */
+export const getClassesList = async (params = {}) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/classes/list`, {
+      headers: getAuthHeaders(),
+      params
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching classes list:', error);
+    return { success: false, data: [] };
+  }
+};
+
+/**
+ * Lấy danh sách lớp học cho dropdown select - chỉ lấy các lớp "Chưa lên lịch"
  */
 export const getClassesForSelect = async () => {
   try {
-    const response = await getAllClasses();
+    // Sử dụng API list mới thay vì getAllClasses
+    const response = await getClassesList();
     
     if (response.success && response.data) {
-      return response.data.map(cls => ({
+      // Lọc chỉ lấy các lớp có display_status là "Chưa lên lịch"
+      const filteredClasses = response.data.filter(cls => cls.display_status === "Chưa lên lịch");
+      
+      return filteredClasses.map(cls => ({
         value: cls.class_id,
         label: `${cls.class_name} (${cls.course_name})`,
         data: cls
@@ -228,16 +249,46 @@ export const getClassStatusBadgeClass = (status) => {
   }
 };
 
+/**
+ * Lấy class CSS cho badge hiển thị trạng thái chung
+ */
+export const getDisplayStatusBadgeClass = (status) => {
+  switch (status) {
+    case 'Đã xác nhận':
+      return 'bg-success';
+    case 'Đã lên lịch':
+      return 'bg-primary';
+    case 'Chưa lên lịch':
+      return 'bg-warning';
+    case 'Đã hoàn thành':
+      return 'bg-info';
+    case 'ACTIVE':
+      return 'bg-success';
+    case 'UPCOMING':
+      return 'bg-primary';
+    case 'COMPLETED':
+      return 'bg-info';
+    case 'CANCELLED':
+      return 'bg-danger';
+    case 'INACTIVE':
+      return 'bg-secondary';
+    default:
+      return 'bg-secondary';
+  }
+};
+
 export default {
   getClassById,
   createClass,
   updateClass,
   getAllClasses,
+  getClassesList, // Thêm hàm mới vào export
   getClassesForSelect,
   getClassesByCourseId,
   deleteClass,
   getClassEnrollments,
   removeStudentFromClass,
   getClassStatusText,
-  getClassStatusBadgeClass
+  getClassStatusBadgeClass,
+  getDisplayStatusBadgeClass
 };
