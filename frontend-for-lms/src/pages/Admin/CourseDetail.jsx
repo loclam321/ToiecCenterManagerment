@@ -3,9 +3,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import AdminSidebar from '../../components/admin/Adminsidebar';
 import PageDetailHeader from '../../components/common/PageDetailHeader';
-import ClassList from '../../components/admin/ClassList'; // Import component mới
+import ClassList from '../../components/admin/ClassList';
 import { getCourseById, deleteCourse, getStatusBadgeClass, getStatusText, getLevelText, formatCurrency, formatDate } from '../../services/courseService';
-import { getClassesByCourseId } from '../../services/classService'; // Import service
+import { getClassesByCourseId, getDisplayStatusBadgeClass } from '../../services/classService'; // Import hàm mới
 import './css/CourseDetail.css';
 
 function CourseDetail() {
@@ -50,7 +50,8 @@ function CourseDetail() {
             // Gọi API thực tế
             const classesData = await getClassesByCourseId(id);
             console.log('Dữ liệu lớp học nhận được từ API:', classesData);
-            // Map dữ liệu API sang cấu trúc mà component ClassList đang sử dụng
+
+            // Map dữ liệu API sang cấu trúc mới với display_status
             const formattedClasses = classesData.classes.map(cls => ({
                 id: cls.class_id,
                 className: cls.class_name,
@@ -60,7 +61,9 @@ function CourseDetail() {
                 endDate: cls.class_enddate,
                 capacity: cls.class_maxstudents,
                 enrolledCount: cls.class_currentenrollment,
-                status: cls.class_status.toLowerCase(),
+                status: cls.class_status || '',
+                displayStatus: cls.display_status || getStatusText(cls.class_status) || 'Chưa xác định', // Ưu tiên display_status
+                statusBadgeClass: getDisplayStatusBadgeClass(cls.display_status) || getStatusBadgeClass(cls.class_status),
                 createdAt: cls.created_at,
                 updatedAt: cls.updated_at,
                 // Các trường có thể không có trong API, sử dụng giá trị mặc định

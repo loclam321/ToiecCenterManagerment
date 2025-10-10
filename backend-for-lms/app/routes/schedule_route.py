@@ -42,6 +42,7 @@ def get_room_schedules(room_id):
         return success_response(result["data"])
     return error_response(result["error"], 404)
 
+
 # Lấy lịch học theo ngày
 @schedule_bp.route("/by-date/<date>", methods=["GET"])
 def get_schedules_by_date(date):
@@ -50,6 +51,7 @@ def get_schedules_by_date(date):
         return success_response(result["data"])
     return error_response(result["error"], 404)
 
+
 # Tạo lịch học mới
 @schedule_bp.route("", methods=["POST"])
 def create_schedule():
@@ -57,10 +59,93 @@ def create_schedule():
     if not data:
         return error_response("No data provided", 400)
 
-    result = schedule_service.create_schedule(data)
-    if result["success"]:
-        return success_response(result["data"], 201)
-    return error_response(result["error"], 400)
+    # Kiểm tra trường bắt buộc class_id
+    if not data.get("class_id"):
+        return error_response("class_id is required", 400)
+
+    # Lấy thông tin về lớp học từ class_id
+    from app.models.class_model import Class
+
+    class_obj = Class.query.get(data.get("class_id"))
+
+    if not class_obj:
+        return error_response(f"Class with ID {data.get('class_id')} not found", 404)
+
+    # Lấy ngày bắt đầu và kết thúc từ class
+    start_date = class_obj.class_startdate
+    end_date = class_obj.class_enddate
+
+    if not start_date or not end_date:
+        return error_response("Class does not have valid start_date or end_date", 400)
+
+    # Lấy các ngày trong tuần từ request (0: Chủ nhật, 1: Thứ 2, ..., 6: Thứ 7)
+    weekdays = data.get("weekdays")
+    if not weekdays or not isinstance(weekdays, list):
+        return error_response(
+            "weekdays must be a non-empty list of integers (0-6)", 400
+        )
+
+    # Validate weekdays
+    if not all(isinstance(day, int) and 0 <= day <= 6 for day in weekdays):
+        return error_response("weekdays must contain integers between 0 and 6", 400)
+
+    # Xóa weekdays khỏi dữ liệu gốc để tránh xung đột
+    schedule_data = {k: v for k, v in data.items() if k != "weekdays"}
+
+    # Tạo lịch học cho tất cả các ngày phù hợp
+    created_schedules = []
+    errors = []
+
+    # Import thư viện để xử lý ngày
+    from datetime import datetime, timedelta
+
+    # Tạo lịch cho mỗi ngày phù hợp trong khoảng thời gian
+    current_date = start_date
+    while current_date <= end_date:
+        # Kiểm tra ngày trong tuần (weekday() trả về 0 cho thứ hai, 6 cho chủ nhật)
+        # Chuyển đổi sang định dạng 0 cho chủ nhật, 1 cho thứ 2, ..., 6 cho thứ 7
+        current_weekday = current_date.weekday()
+        # Chuyển từ 0-6 (Mon-Sun) sang 1-7 (Mon-Sun)
+        current_weekday = (current_weekday + 1) % 7
+
+        # Nếu ngày này thuộc danh sách các ngày đã chọn
+        if current_weekday in weekdays:
+            # Tạo dữ liệu cho lịch học này
+            schedule_data_copy = schedule_data.copy()
+            schedule_data_copy["schedule_date"] = current_date.strftime("%Y-%m-%d")
+
+            # Gọi service để tạo lịch học
+            result = schedule_service.create_schedule(schedule_data_copy)
+
+            if result["success"]:
+                created_schedules.append(result["data"])
+            else:
+                errors.append(
+                    {
+                        "date": current_date.strftime("%Y-%m-%d"),
+                        "error": result["error"],
+                    }
+                )
+
+        # Chuyển sang ngày tiếp theo
+        current_date += timedelta(days=1)
+
+    # Trả về kết quả
+    if created_schedules:
+        return success_response(
+            {
+                "created_schedules": created_schedules,
+                "errors": errors if errors else None,
+                "total_created": len(created_schedules),
+                "total_errors": len(errors),
+            },
+            201,
+        )
+    else:
+        return error_response(
+            "No schedules were created. Check errors for details", 400, errors
+        )
+
 
 # Cập nhật lịch học
 @schedule_bp.route("/<int:schedule_id>", methods=["PUT", "PATCH"])
@@ -74,6 +159,7 @@ def update_schedule(schedule_id):
         return success_response(result["data"])
     return error_response(result["error"], 400)
 
+
 # Xóa lịch học
 @schedule_bp.route("/<int:schedule_id>", methods=["DELETE"])
 def delete_schedule(schedule_id):
@@ -81,6 +167,7 @@ def delete_schedule(schedule_id):
     if result["success"]:
         return success_response({"message": result["message"]})
     return error_response(result["error"], 404)
+
 
 # Tìm phòng trống
 @schedule_bp.route("/available-rooms", methods=["GET"])

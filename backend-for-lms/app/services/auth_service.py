@@ -28,6 +28,28 @@ class AuthService:
             Dict với access_token, user_info và role nếu thành công,
             Dict với error nếu thất bại
         """
+        # Kiểm tra admin (hardcoded)
+        admin_email = "admin@lms.com"
+        admin_password = "Admin@123"
+
+        if email == admin_email and password == admin_password:
+            # Tạo token với role admin
+            access_token = self._create_token("ADMIN001", "admin")
+            # Trả về thông tin admin
+            return {
+                "success": True,
+                "access_token": access_token,
+                "user": {
+                    "user_id": "ADMIN001",
+                    "user_email": admin_email,
+                    "user_full_name": "System Administrator",
+                    "is_active": True,
+                    "created_at": datetime.datetime.now().isoformat(),
+                    "role": "admin",
+                },
+                "role": "admin",
+            }
+
         # Kiểm tra teacher
         teacher = self.db.session.query(Teacher).filter_by(user_email=email).first()
         if teacher is not None and teacher.check_password(password):

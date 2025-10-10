@@ -1,5 +1,6 @@
+import axios from 'axios';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
-const BASE_URL = `${API_BASE_URL}/api/teachers`;
 
 /**
  * Helper function để lấy auth headers theo pattern của dự án
@@ -28,8 +29,8 @@ export const getTeachers = async (options = {}) => {
       page = 1,
       perPage = 10,
       search = '',
-      sortBy = '',
-      sortOrder = 'asc',
+      sortBy = 'created_at',
+      sortOrder = 'desc',
       status = ''
     } = options;
 
@@ -45,35 +46,15 @@ export const getTeachers = async (options = {}) => {
     }
     if (status) params.append('status', status);
 
-    const url = `${BASE_URL}/?${params.toString()}`;
-    
-    const response = await fetch(url, {
-      method: 'GET',
+    const response = await axios.get(`${API_BASE_URL}/api/teachers/?${params.toString()}`, {
       headers: getAuthHeaders()
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || 'Lấy danh sách giáo viên thất bại');
-    }
-
-    // Theo pattern của dự án, API response có structure với 'data' property
-    return {
-      teachers: (result.data?.teachers || []).map(teacher => mapTeacherFromApi(teacher)),
-      pagination: result.data?.pagination || {
-        page: 1,
-        pages: 1,
-        per_page: 10,
-        total: 0,
-        has_next: false,
-        has_prev: false
-      }
-    };
+    // Trả về response trực tiếp, TeacherManagement sẽ xử lý cấu trúc mới
+    return response.data;
   } catch (error) {
     console.error('Error fetching teachers:', error);
     
-    // Network error detection theo pattern dự án
     if (!navigator.onLine) {
       throw new Error('Không có kết nối mạng');
     }
@@ -84,23 +65,15 @@ export const getTeachers = async (options = {}) => {
 
 /**
  * Lấy thông tin chi tiết của giáo viên
- * @param {string} id - ID giáo viên (format: T00000001)
+ * @param {string} id - ID giáo viên (format: TCH001)
  */
 export const getTeacherById = async (id) => {
   try {
-    const response = await fetch(`${BASE_URL}/${id}`, {
-      method: 'GET',
+    const response = await axios.get(`${API_BASE_URL}/api/teachers/${id}`, {
       headers: getAuthHeaders()
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || 'Lấy thông tin giáo viên thất bại');
-    }
-
-    // Map teacher data từ API format sang frontend format
-    return result.data?.teacher ? mapTeacherFromApi(result.data.teacher) : null;
+    return response.data;
   } catch (error) {
     console.error(`Error fetching teacher ${id}:`, error);
     
@@ -121,25 +94,11 @@ export const createTeacher = async (teacherData) => {
     // Map từ frontend format sang API format
     const apiData = mapTeacherToApi(teacherData);
     
-    const response = await fetch(`${BASE_URL}/`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(apiData)
+    const response = await axios.post(`${API_BASE_URL}/api/teachers/`, apiData, {
+      headers: getAuthHeaders()
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      // Handle validation errors theo pattern dự án
-      if (response.status === 400 && result.errors) {
-        const errorMessages = Object.values(result.errors).flat().join(', ');
-        throw new Error(errorMessages);
-      }
-      throw new Error(result.message || 'Tạo giáo viên thất bại');
-    }
-
-    // Return mapped teacher data
-    return result.data?.teacher ? mapTeacherFromApi(result.data.teacher) : null;
+    return response.data;
   } catch (error) {
     console.error('Error creating teacher:', error);
     
@@ -153,7 +112,7 @@ export const createTeacher = async (teacherData) => {
 
 /**
  * Cập nhật thông tin giáo viên
- * @param {string} id - ID giáo viên (format: T00000001)
+ * @param {string} id - ID giáo viên (format: TCH001)
  * @param {Object} teacherData - Thông tin cập nhật
  */
 export const updateTeacher = async (id, teacherData) => {
@@ -161,24 +120,11 @@ export const updateTeacher = async (id, teacherData) => {
     // Map từ frontend format sang API format
     const apiData = mapTeacherToApi(teacherData);
     
-    const response = await fetch(`${BASE_URL}/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(apiData)
+    const response = await axios.put(`${API_BASE_URL}/api/teachers/${id}`, apiData, {
+      headers: getAuthHeaders()
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      // Handle validation errors
-      if (response.status === 400 && result.errors) {
-        const errorMessages = Object.values(result.errors).flat().join(', ');
-        throw new Error(errorMessages);
-      }
-      throw new Error(result.message || 'Cập nhật giáo viên thất bại');
-    }
-
-    return result.data?.teacher ? mapTeacherFromApi(result.data.teacher) : null;
+    return response.data;
   } catch (error) {
     console.error(`Error updating teacher ${id}:`, error);
     
@@ -192,22 +138,15 @@ export const updateTeacher = async (id, teacherData) => {
 
 /**
  * Xóa giáo viên
- * @param {string} id - ID giáo viên (format: T00000001)
+ * @param {string} id - ID giáo viên (format: TCH001)
  */
 export const deleteTeacher = async (id) => {
   try {
-    const response = await fetch(`${BASE_URL}/${id}`, {
-      method: 'DELETE',
+    const response = await axios.delete(`${API_BASE_URL}/api/teachers/${id}`, {
       headers: getAuthHeaders()
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || 'Xóa giáo viên thất bại');
-    }
-
-    return true;
+    return response.data;
   } catch (error) {
     console.error(`Error deleting teacher ${id}:`, error);
     
@@ -216,6 +155,54 @@ export const deleteTeacher = async (id) => {
     }
     
     throw error;
+  }
+};
+
+/**
+ * Lấy danh sách giáo viên cho dropdown/select options
+ */
+export const getTeachersForSelect = async () => {
+  try {
+    const result = await getTeachers({ 
+      page: 1, 
+      perPage: 100, // Lấy nhiều để có đủ options
+      sortBy: 'user_name', 
+      sortOrder: 'asc' // Sắp xếp theo tên để dễ tìm
+    });
+    
+    if (result.success && result.data?.teachers) {
+      return result.data.teachers.map(teacher => ({
+        value: teacher.user_id,
+        label: teacher.user_name,
+        email: teacher.user_email,
+        specialization: teacher.tch_specialization
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching teachers for select:', error);
+    return [];
+  }
+};
+
+/**
+ * Kiểm tra email đã tồn tại chưa (cho validation)
+ * @param {string} email - Email cần kiểm tra
+ * @param {string} excludeId - ID giáo viên cần loại trừ (khi update)
+ */
+export const checkEmailExists = async (email, excludeId = null) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/teachers/check-email`, {
+      email,
+      exclude_id: excludeId
+    }, {
+      headers: getAuthHeaders()
+    });
+
+    return response.data?.exists || false;
+  } catch (error) {
+    console.error('Error checking email:', error);
+    return false;
   }
 };
 
@@ -238,7 +225,6 @@ export const mapTeacherToApi = (teacherData) => {
     tch_specialization: teacherData.specialization,
     tch_qualification: teacherData.qualification,
     tch_hire_date: teacherData.hireDate,
-    tch_experience_years: teacherData.experience || 0,
     tch_status: teacherData.status || 'active'
   };
   
@@ -256,8 +242,8 @@ export const mapTeacherToApi = (teacherData) => {
 };
 
 /**
- * Map API response format sang frontend format
- * @param {Object} apiTeacher - Teacher data từ API
+ * Map dữ liệu từ API sang định dạng frontend 
+ * @param {Object} apiTeacher - Dữ liệu giáo viên từ API response
  */
 export const mapTeacherFromApi = (apiTeacher) => {
   const normalizeAvatarPath = (p) => {
@@ -278,22 +264,16 @@ export const mapTeacherFromApi = (apiTeacher) => {
   };
 
   return {
-    // ID theo pattern T00000001
-    id: apiTeacher.user_id || apiTeacher.tch_id,
-    
-    // User information
-    name: apiTeacher.user_name || '',
-    email: apiTeacher.user_email || '',
-    phone: apiTeacher.user_telephone || '',
-    birthday: apiTeacher.user_birthday || '',
+    id: apiTeacher.user_id,
+    name: apiTeacher.user_name,
+    email: apiTeacher.user_email,
+    phone: apiTeacher.user_telephone,
+    birthday: apiTeacher.user_birthday,
     gender: apiTeacher.user_gender === 'M' ? 'male' : 
             apiTeacher.user_gender === 'F' ? 'female' : 'other',
-    
-    // Teacher-specific information
-    specialization: apiTeacher.tch_specialization || '',
-    qualification: apiTeacher.tch_qualification || '',
-    hireDate: apiTeacher.tch_hire_date || '',
-    experience: apiTeacher.tch_experience_years || 0,
+    specialization: apiTeacher.tch_specialization,
+    qualification: apiTeacher.tch_qualification,
+    hireDate: apiTeacher.tch_hire_date,
     status: apiTeacher.tch_status || 'active',
     
   // Avatar (đã normalize về web path)
@@ -309,58 +289,7 @@ export const mapTeacherFromApi = (apiTeacher) => {
   };
 };
 
-/**
- * Lấy danh sách giáo viên cho dropdown/select options
- */
-export const getTeachersForSelect = async () => {
-  try {
-    const result = await getTeachers({ 
-      page: 1, 
-      perPage: 100, // Lấy nhiều để có đủ options
-      status: 'active' // Chỉ lấy giáo viên active
-    });
-    
-    return result.teachers.map(teacher => ({
-      value: teacher.id,
-      label: teacher.displayName,
-      email: teacher.email
-    }));
-  } catch (error) {
-    console.error('Error fetching teachers for select:', error);
-    return [];
-  }
-};
-
-/**
- * Kiểm tra email đã tồn tại chưa (cho validation)
- * @param {string} email - Email cần kiểm tra
- * @param {string} excludeId - ID giáo viên cần loại trừ (khi update)
- */
-export const checkEmailExists = async (email, excludeId = null) => {
-  try {
-    const response = await fetch(`${BASE_URL}/check-email`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ 
-        email,
-        exclude_id: excludeId 
-      })
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      return false; // Nếu API chưa có endpoint này, return false
-    }
-
-    return result.data?.exists || false;
-  } catch (error) {
-    console.error('Error checking email:', error);
-    return false;
-  }
-};
-
-// Export default object với tất cả methods
+// Cập nhật export default
 const teacherService = {
   getTeachers,
   getTeacherById,

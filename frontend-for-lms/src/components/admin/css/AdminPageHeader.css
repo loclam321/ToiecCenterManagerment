@@ -29,6 +29,13 @@
   letter-spacing: -0.5px;
 }
 
+.page-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0;
+  font-weight: normal;
+}
+
 .item-count {
   font-size: var(--text-sm);
   color: var(--text-secondary);
@@ -117,6 +124,20 @@
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-sm);
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.action-button i {
+  font-size: 0.875rem;
 }
 
 /* Responsive */
