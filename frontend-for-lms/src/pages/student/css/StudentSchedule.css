@@ -1,0 +1,238 @@
+.student-schedule-page {
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.schedule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.schedule-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.schedule-range {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.schedule-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedule-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #1f2937;
+  font-weight: 500;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.schedule-btn:hover {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.schedule-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.filter-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.filter-control label {
+  font-size: 13px;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.filter-control select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #111827;
+  font-weight: 500;
+}
+
+.schedule-table-wrapper {
+  overflow-x: auto;
+}
+
+.schedule-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 900px;
+}
+
+.schedule-table thead th {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 12px;
+  padding: 12px;
+  border-bottom: 1px solid #dbeafe;
+}
+
+.time-column {
+  width: 90px;
+  text-align: center;
+}
+
+.day-column {
+  min-width: 140px;
+  text-align: center;
+}
+
+.day-column.today {
+  background: #dbeafe;
+}
+
+.day-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.schedule-table tbody td {
+  border-bottom: 1px solid #f3f4f6;
+  border-right: 1px solid #f3f4f6;
+  vertical-align: top;
+  padding: 0;
+}
+
+.schedule-table tbody tr:nth-child(odd) td {
+  background: #fcfcfd;
+}
+
+.time-cell {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+  padding: 12px 8px;
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.empty-cell {
+  min-height: 70px;
+}
+
+.session-cell {
+  padding: 6px;
+}
+
+.session-card {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+
+.session-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.session-subtitle {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.session-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.session-time i {
+  font-size: 12px;
+}
+
+.session-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  opacity: 0.95;
+}
+
+.session-meta i {
+  margin-right: 6px;
+  font-size: 12px;
+}
+
+.schedule-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px;
+  border: 1px dashed #cbd5f5;
+  border-radius: 12px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.schedule-empty i {
+  font-size: 32px;
+  color: #9ca3af;
+}
+
+.schedule-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+@media (max-width: 992px) {
+  .student-schedule-page {
+    padding: 16px;
+  }
+
+  .schedule-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

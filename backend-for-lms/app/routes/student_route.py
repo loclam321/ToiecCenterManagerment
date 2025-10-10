@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.services.student_service import StudentService
+from app.services.schedule_service import ScheduleService
 from app.utils.response_utils import (
     success_response,
     error_response,
@@ -7,11 +8,12 @@ from app.utils.response_utils import (
     created_response,
     validation_error_response
 )
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.utils.auth_utils import admin_required, teacher_required
 
 student_bp = Blueprint("students", __name__, url_prefix="/api/students")
 student_service = StudentService()
+schedule_service = ScheduleService()
 
 @student_bp.route("", methods=["GET"])
 def get_students():
@@ -68,6 +70,65 @@ def get_student(student_id):
         return not_found_response(message=result["error"])
     except Exception as e:
         return error_response(message=f"Error retrieving student: {str(e)}")
+
+
+@student_bp.route("/<student_id>/schedules", methods=["GET"])
+@jwt_required()
+def get_student_schedules(student_id):
+    """Lấy lịch học của học viên trong khoảng thời gian nhất định"""
+    try:
+        identity = get_jwt_identity()
+        claims = {}
+        try:
+            claims = get_jwt()
+        except Exception:
+            claims = {}
+
+        token_user_id = None
+        token_role = None
+
+        if isinstance(identity, dict):
+            token_user_id = identity.get("user_id") or identity.get("sub")
+            token_role = identity.get("role")
+        elif isinstance(identity, str):
+            token_user_id = identity
+
+        if not token_role and isinstance(claims, dict):
+            token_role = claims.get("role")
+        if not token_user_id and isinstance(claims, dict):
+            token_user_id = claims.get("user_id") or claims.get("sub")
+
+        if not token_user_id:
+            return error_response(message="Authentication required", status_code=401)
+
+        # Chỉ cho phép chính học viên hoặc quản trị/giáo viên xem lịch
+        if token_role == "student" and token_user_id != student_id:
+            return error_response(message="Access denied", status_code=403)
+
+        start_date = request.args.get("start_date")
+        end_date = request.args.get("end_date")
+        class_id = request.args.get("class_id", type=int)
+        course_id = request.args.get("course_id")
+
+        if not start_date or not end_date:
+            return validation_error_response(message="start_date and end_date are required")
+
+        result = schedule_service.get_schedules_for_student(
+            student_id=student_id,
+            start_date_str=start_date,
+            end_date_str=end_date,
+            class_id=class_id,
+            course_id=course_id
+        )
+
+        if result["success"]:
+            return success_response(data=result["data"])
+        if "not found" in result.get("error", "").lower():
+            return not_found_response(message=result["error"])
+        return error_response(message=result["error"])
+
+    except Exception as e:
+        return error_response(message=f"Error retrieving student schedules: {str(e)}")
 
 @student_bp.route("", methods=["POST"])
 @jwt_required()
