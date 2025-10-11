@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import { getTeachers } from '../../services/teacherService';
+import { getTeachers, mapTeacherFromApi } from '../../services/teacherService';
 import '../../App.css';
 import './css/teacher.css';
 
@@ -25,13 +25,22 @@ const TeacherIntroduction = () => {
                 perPage: 20, 
                 status: 'active'
             });
-            
+
+            const apiTeachers = Array.isArray(result?.data?.teachers)
+                ? result.data.teachers
+                : Array.isArray(result?.teachers)
+                    ? result.teachers
+                    : [];
+
+            const mappedTeachers = apiTeachers.map(mapTeacherFromApi);
+
             // Filter senior teachers (có kinh nghiệm >= 5 năm hoặc hire_date >= 5 năm trước)
-            const seniorTeachers = result.teachers.filter(teacher => {
+            const seniorTeachers = mappedTeachers.filter(teacher => {
                 const yearsOfService = calculateYearsOfService(teacher.hireDate);
-                return yearsOfService >= 5 || teacher.experience >= 5;
+                const declaredExp = Number.isFinite(teacher.experience) ? teacher.experience : 0;
+                return yearsOfService >= 5 || declaredExp >= 5;
             });
-            
+
             setTeachers(seniorTeachers);
         } catch (err) {
             setError('Không thể tải thông tin giáo viên');
@@ -57,7 +66,10 @@ const TeacherIntroduction = () => {
                 throw new Error(result.message || 'Failed to fetch statistics');
             }
             
-            setStatistics(result.data?.statistics || {});
+            const statsPayload = result?.data?.statistics || result?.statistics;
+            if (statsPayload) {
+                setStatistics(statsPayload);
+            }
         } catch (err) {
             console.error('Error fetching statistics:', err);
             // Set default statistics nếu API chưa có

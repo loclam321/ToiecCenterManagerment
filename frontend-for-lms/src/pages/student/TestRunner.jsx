@@ -119,6 +119,34 @@ export default function TestRunner() {
   if (error) return <div className="alert alert-danger">{error}</div>;
 
   if (result) {
+    const totalQuestions = Number(result?.breakdown?.total ?? total ?? 0);
+    const correctAnswers = Number(result?.breakdown?.correct ?? 0);
+    const scorePerQuestion = totalQuestions > 0 ? 10 / totalQuestions : 0;
+    const currentScore10 = Number.isFinite(scorePerQuestion)
+      ? Number((correctAnswers * scorePerQuestion).toFixed(2))
+      : 0;
+    const attemptsWithScore = Array.isArray(result?.attempts)
+      ? result.attempts.map((attempt) => {
+          const attemptTotal = Number(attempt.att_total_questions ?? totalQuestions ?? 0);
+          const attemptCorrect = Number(attempt.att_correct_count ?? 0);
+          const perQuestion = attemptTotal > 0 ? 10 / attemptTotal : 0;
+          const score10 = Number.isFinite(perQuestion)
+            ? Number((attemptCorrect * perQuestion).toFixed(2))
+            : 0;
+          return {
+            ...attempt,
+            _score10: score10,
+            _attemptTotal: attemptTotal,
+            _attemptCorrect: attemptCorrect,
+          };
+        })
+      : [];
+    const bestScore10 = attemptsWithScore.length
+      ? attemptsWithScore.reduce((max, attempt) => (attempt._score10 > max ? attempt._score10 : max), 0)
+      : currentScore10;
+
+    const formatScore10 = (score) => (Number.isFinite(score) ? score.toFixed(score % 1 === 0 ? 0 : 2) : '-');
+
     return (
       <div className="card p-3">
         <h5 className="mb-3">🎯 Kết quả bài kiểm tra</h5>
@@ -135,7 +163,8 @@ export default function TestRunner() {
             <div className="card bg-light border-0">
               <div className="card-body text-center">
                 <div className="text-muted small mb-1">Điểm lần này</div>
-                <div className="fs-2 fw-bold text-primary">{result?.sc_score ?? '-'}</div>
+                <div className="fs-2 fw-bold text-primary">{formatScore10(currentScore10)}</div>
+                <div className="text-muted small">(thang điểm 10)</div>
               </div>
             </div>
           </div>
@@ -143,7 +172,8 @@ export default function TestRunner() {
             <div className="card bg-light border-0">
               <div className="card-body text-center">
                 <div className="text-muted small mb-1">🏆 Điểm cao nhất</div>
-                <div className="fs-2 fw-bold text-success">{result?.best_score ?? '-'}</div>
+                <div className="fs-2 fw-bold text-success">{formatScore10(bestScore10)}</div>
+                <div className="text-muted small">(thang điểm 10)</div>
               </div>
             </div>
           </div>
@@ -211,24 +241,24 @@ export default function TestRunner() {
         )}
 
         {/* Lịch sử làm bài */}
-        {Array.isArray(result?.attempts) && result.attempts.length > 0 && (
+        {attemptsWithScore.length > 0 && (
           <div className="mb-3">
-            <h6 className="mb-3">📊 Lịch sử làm bài ({result.attempts.length} lần)</h6>
+            <h6 className="mb-3">📊 Lịch sử làm bài ({attemptsWithScore.length} lần)</h6>
             <div className="table-responsive">
               <table className="table table-sm table-hover align-middle">
                 <thead className="table-light">
                   <tr>
                     <th style={{ width: '50px' }}>#</th>
                     <th>Thời gian nộp</th>
-                    <th style={{ width: '100px' }} className="text-center">Điểm</th>
+                    <th style={{ width: '120px' }} className="text-center">Điểm (0-10)</th>
                     <th style={{ width: '120px' }} className="text-center">Đúng/Tổng</th>
                     <th style={{ width: '100px' }} className="text-center">Tỷ lệ</th>
                     <th style={{ width: '120px' }} className="text-center">Trạng thái</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {result.attempts.map((a, idx) => {
-                    const isBest = typeof result.best_score === 'number' && a.att_raw_score === result.best_score;
+                  {attemptsWithScore.map((a, idx) => {
+                    const isBest = Math.abs(a._score10 - bestScore10) < 0.01;
                     const isCurrent = a.att_id === result.current_attempt_id;
                     return (
                       <tr key={a.att_id || idx} className={isCurrent ? 'table-info' : ''}>
@@ -243,11 +273,11 @@ export default function TestRunner() {
                           }) : '-'}</small>
                         </td>
                         <td className="text-center">
-                          <strong className="fs-6">{a.att_raw_score ?? '-'}</strong>
+                          <strong className="fs-6">{formatScore10(a._score10)}</strong>
                           {isBest && <div><span className="badge bg-warning text-dark">🏆 Best</span></div>}
                         </td>
                         <td className="text-center">
-                          {a.att_correct_count ?? '-'} / {a.att_total_questions ?? '-'}
+                          {a._attemptCorrect ?? '-'} / {a._attemptTotal ?? '-'}
                         </td>
                         <td className="text-center">
                           {typeof a.att_percentage === 'number' ? (
