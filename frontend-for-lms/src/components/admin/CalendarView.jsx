@@ -8,14 +8,14 @@ function CalendarView({ selectedDate, schedules, onEventClick }) {
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Tạo các khung giờ từ 7:00 đến 21:00
+    // Tạo các khung giờ với độ chi tiết 1 giờ
     useEffect(() => {
         const slots = [];
         for (let i = 7; i <= 21; i++) {
             slots.push({
                 startTime: `${String(i).padStart(2, '0')}:00`,
                 endTime: `${String(i + 1).padStart(2, '0')}:00`,
-                label: `${String(i).padStart(2, '0')}:00 - ${String(i + 1).padStart(2, '0')}:00`
+                label: `${String(i).padStart(2, '0')}:00`
             });
         }
         setTimeSlots(slots);
@@ -52,107 +52,112 @@ function CalendarView({ selectedDate, schedules, onEventClick }) {
     // Lọc lịch học theo ngày được chọn
     const getSchedulesForDate = () => {
         if (!schedules || !Array.isArray(schedules)) return [];
-
-        // Format selectedDate to YYYY-MM-DD
         const dateString = selectedDate.toISOString().split('T')[0];
-
-        return schedules.filter(schedule => {
-            return schedule.schedule_date === dateString;
-        });
+        return schedules.filter(schedule => schedule.schedule_date === dateString);
     };
 
-    // Lấy lớp học cho khung giờ và phòng cụ thể
-    const getClassForTimeAndRoom = (timeSlot, roomId) => {
+    // Kiểm tra xem một khung giờ có chứa lịch học nào không
+    const getClassForTimeSlot = (timeSlot, roomId) => {
         const schedulesForDate = getSchedulesForDate();
-        const slotStart = parseInt(timeSlot.startTime.split(':')[0]);
-        
-        // Convert roomId to number if needed
+
+        const slotStartHour = parseInt(timeSlot.startTime.split(':')[0]);
+        const slotStartMinute = parseInt(timeSlot.startTime.split(':')[1] || '0');
+        const slotStartTimeInMinutes = slotStartHour * 60 + slotStartMinute;
+
+        const slotEndHour = parseInt(timeSlot.endTime.split(':')[0]);
+        const slotEndMinute = parseInt(timeSlot.endTime.split(':')[1] || '0');
+        const slotEndTimeInMinutes = slotEndHour * 60 + slotEndMinute;
+
         const roomIdNum = typeof roomId === 'string' ? parseInt(roomId, 10) : roomId;
 
         return schedulesForDate.filter(schedule => {
-            // Xác định thời gian bắt đầu và kết thúc của lịch học
             const startTimeStr = schedule.schedule_startime;
             const endTimeStr = schedule.schedule_endtime;
-            
+
             if (!startTimeStr || !endTimeStr) return false;
-            
+
             const startHour = parseInt(startTimeStr.split(':')[0]);
             const startMin = parseInt(startTimeStr.split(':')[1] || '0');
-            
+            const startTimeInMinutes = startHour * 60 + startMin;
+
             const endHour = parseInt(endTimeStr.split(':')[0]);
             const endMin = parseInt(endTimeStr.split(':')[1] || '0');
-            
-            // Cộng thêm 1 giờ nếu phút > 0 (để hiển thị chính xác)
-            const adjustedEndHour = endHour + (endMin > 0 ? 1 : 0);
+            const endTimeInMinutes = endHour * 60 + endMin;
 
-            // Kiểm tra xem time slot có nằm trong khoảng thời gian của lịch học không
-            const isInTimeSlot = (startHour <= slotStart && adjustedEndHour > slotStart);
-            
-            // Kiểm tra đúng phòng học
-            const scheduleRoomId = typeof schedule.room_id === 'string' 
-                ? parseInt(schedule.room_id, 10) 
+            const hasOverlap = (
+                (startTimeInMinutes >= slotStartTimeInMinutes && startTimeInMinutes < slotEndTimeInMinutes) ||
+                (endTimeInMinutes > slotStartTimeInMinutes && endTimeInMinutes <= slotEndTimeInMinutes) ||
+                (startTimeInMinutes <= slotStartTimeInMinutes && endTimeInMinutes >= slotEndTimeInMinutes)
+            );
+
+            const scheduleRoomId = typeof schedule.room_id === 'string'
+                ? parseInt(schedule.room_id, 10)
                 : schedule.room_id;
-                
-            const isInRoom = scheduleRoomId === roomIdNum;
 
-            return isInTimeSlot && isInRoom;
+            return hasOverlap && scheduleRoomId === roomIdNum;
         });
     };
 
-    // Tính số ô (row) cần chiếm cho một lịch học dựa trên thời lượng
-    const getRowSpan = (startTime, endTime) => {
-        if (!startTime || !endTime) return 1;
-        
-        const startParts = startTime.split(':');
-        const endParts = endTime.split(':');
-        
-        if (startParts.length < 2 || endParts.length < 2) return 1;
-        
-        const startHour = parseInt(startParts[0]);
-        const startMin = parseInt(startParts[1]);
-        
-        const endHour = parseInt(endParts[0]);
-        const endMin = parseInt(endParts[1]);
-
-        // Tính tổng số phút của lịch học
-        const totalMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
-        
-        // Tính số giờ (làm tròn lên)
-        const rowSpan = Math.ceil(totalMinutes / 60);
-
-        return Math.max(1, rowSpan);
-    };
-
-    // Kiểm tra xem ô đã bị merge bởi lịch học ở time slot trước đó chưa
-    const isPreviouslyMerged = (timeSlotIndex, roomId) => {
-        if (timeSlotIndex === 0) return false;
-
-        const previousTimeSlot = timeSlots[timeSlotIndex - 1];
-        const previousClasses = getClassForTimeAndRoom(previousTimeSlot, roomId);
-
-        return previousClasses.some(schedule => {
-            const endTimeField = schedule.schedule_endtime;
-            const scheduleEndHour = parseInt(endTimeField.split(':')[0] || '0');
-            const scheduleEndMin = parseInt(endTimeField.split(':')[1] || '0');
-            
-            const currentHour = parseInt(timeSlots[timeSlotIndex].startTime.split(':')[0]);
-            
-            // Nếu có phút > 0, cần xét thêm giờ kế tiếp
-            const adjustedEndHour = scheduleEndHour + (scheduleEndMin > 0 ? 1 : 0);
-            
-            return adjustedEndHour > currentHour;
-        });
-    };
-
-    // Xác định class CSS dựa trên trạng thái lịch học
+    // Xác định class CSS dựa trên trạng thái
     const getStatusClass = (schedule) => {
-        const status = schedule.status || 'SCHEDULED';
+        // Nếu không có status, mặc định dùng gradient tím
+        if (!schedule.status) return ''; // Class mặc định (gradient tím)
+
+        if (schedule.is_makeup_class) return 'status-makeup';
+
+        const status = schedule.status.toUpperCase();
+
         switch (status) {
             case 'CONFIRMED': return 'status-confirmed';
             case 'CANCELLED': return 'status-cancelled';
             case 'COMPLETED': return 'status-completed';
-            default: return 'status-scheduled';
+            case 'SCHEDULED': return 'status-scheduled';
+            default: return ''; // Gradient tím mặc định
         }
+    };
+
+    // Lấy icon cho status
+    const getStatusIcon = (schedule) => {
+        if (schedule.is_makeup_class) return 'bi-arrow-repeat';
+
+        const status = schedule.status || 'SCHEDULED';
+        switch (status) {
+            case 'CONFIRMED': return 'bi-check-circle-fill';
+            case 'CANCELLED': return 'bi-x-circle-fill';
+            case 'COMPLETED': return 'bi-check-all';
+            default: return 'bi-circle-fill';
+        }
+    };
+
+    // Tính toán thời gian hiển thị của sự kiện
+    const getEventDisplayTiming = (schedule, timeSlot) => {
+        const slotStartHour = parseInt(timeSlot.startTime.split(':')[0]);
+        const slotStartMinute = parseInt(timeSlot.startTime.split(':')[1] || '0');
+        const slotStartTimeInMinutes = slotStartHour * 60 + slotStartMinute;
+
+        const slotEndHour = parseInt(timeSlot.endTime.split(':')[0]);
+        const slotEndMinute = parseInt(timeSlot.endTime.split(':')[1] || '0');
+        const slotEndTimeInMinutes = slotEndHour * 60 + slotEndMinute;
+
+        const startTimeStr = schedule.schedule_startime;
+        const endTimeStr = schedule.schedule_endtime;
+
+        const startHour = parseInt(startTimeStr.split(':')[0]);
+        const startMin = parseInt(startTimeStr.split(':')[1] || '0');
+        const startTimeInMinutes = startHour * 60 + startMin;
+
+        const endHour = parseInt(endTimeStr.split(':')[0]);
+        const endMin = parseInt(endTimeStr.split(':')[1] || '0');
+        const endTimeInMinutes = endHour * 60 + endMin;
+
+        const startPositionPercent = Math.max(0, (startTimeInMinutes - slotStartTimeInMinutes) / (slotEndTimeInMinutes - slotStartTimeInMinutes) * 100);
+        const endPositionPercent = Math.min(100, (endTimeInMinutes - slotStartTimeInMinutes) / (slotEndTimeInMinutes - slotStartTimeInMinutes) * 100);
+
+        return {
+            start: startPositionPercent,
+            end: endPositionPercent,
+            height: endPositionPercent - startPositionPercent
+        };
     };
 
     if (loading) {
@@ -170,69 +175,77 @@ function CalendarView({ selectedDate, schedules, onEventClick }) {
                 <table className="calendar-table">
                     <thead>
                         <tr>
-                            <th className="time-header">Thời gian</th>
+                            <th className="time-header">Giờ</th>
                             {rooms.map(room => (
                                 <th key={room.room_id} className="room-header">
                                     <i className="bi bi-door-open"></i>
                                     <span>{room.room_name}</span>
+                                    {room.room_capacity && (
+                                        <small className="room-capacity">
+                                            <i className="bi bi-people"></i> {room.room_capacity}
+                                        </small>
+                                    )}
                                 </th>
                             ))}
                         </tr>
                     </thead>
                     <tbody>
-                        {timeSlots.map((timeSlot, timeIndex) => (
+                        {timeSlots.map((timeSlot) => (
                             <tr key={timeSlot.startTime} className="time-row">
-                                <td className="time-cell">{timeSlot.label}</td>
+                                <td className="time-cell">
+                                    {timeSlot.label}
+                                </td>
                                 {rooms.map(room => {
-                                    const classes = getClassForTimeAndRoom(timeSlot, room.room_id);
-                                    const isMerged = isPreviouslyMerged(timeIndex, room.room_id);
-
-                                    // Nếu ô đã bị merge từ ô trước, không render
-                                    if (isMerged) {
-                                        return null;
-                                    }
-
+                                    const classes = getClassForTimeSlot(timeSlot, room.room_id);
                                     const hasClass = classes.length > 0;
-                                    
-                                    // Tính số row span dựa vào thời gian bắt đầu và kết thúc
-                                    const rowSpan = hasClass 
-                                        ? getRowSpan(
-                                            classes[0].schedule_startime, 
-                                            classes[0].schedule_endtime
-                                        ) : 1;
 
                                     return (
                                         <td
                                             key={`${room.room_id}-${timeSlot.startTime}`}
                                             className={`schedule-cell ${hasClass ? 'has-class' : ''}`}
-                                            rowSpan={rowSpan}
                                         >
-                                            {hasClass && classes.map(schedule => (
-                                                <div
-                                                    key={schedule.schedule_id}
-                                                    className={`class-card`}
-                                                    onClick={() => onEventClick && onEventClick(schedule)}
-                                                >
-                                                    <div className="class-header">
-                                                        <div className="class-name">
-                                                            {schedule.class_name || "Lớp học"}
-                                                        </div>
-                                                        <div className="class-time">
-                                                            <i className="bi bi-clock"></i>
-                                                            <span>
-                                                                {formatTimeDisplay(schedule.schedule_startime)} - 
-                                                                {formatTimeDisplay(schedule.schedule_endtime)}
-                                                            </span>
+                                            {hasClass && classes.map(schedule => {
+                                                const timing = getEventDisplayTiming(schedule, timeSlot);
+
+                                                // DEBUG: Xem status của schedule
+                                                console.log('Schedule:', {
+                                                    id: schedule.schedule_id,
+                                                    name: schedule.class_name,
+                                                    status: schedule.status,
+                                                    statusClass: getStatusClass(schedule)
+                                                });
+
+                                                if (timing.height < 10) return null;
+
+                                                return (
+                                                    <div
+                                                        key={schedule.schedule_id}
+                                                        className={`class-card ${getStatusClass(schedule)}`}
+                                                        style={{
+                                                            position: 'absolute',
+                                                            top: `${timing.start}%`,
+                                                            height: `${timing.height}%`,
+                                                            left: '2px',
+                                                            right: '2px'
+                                                        }}
+                                                        onClick={() => onEventClick && onEventClick(schedule)}
+                                                        title={`${schedule.class_name}\n${formatTimeDisplay(schedule.schedule_startime)} - ${formatTimeDisplay(schedule.schedule_endtime)}\nTrạng thái: ${schedule.status || 'SCHEDULED'}\nGiáo viên: ${schedule.teacher_name || 'Chưa có'}`}
+                                                    >
+                                                        {/* Status icon */}
+                                                        <i className={`class-status-icon bi ${getStatusIcon(schedule)}`}></i>
+
+                                                        {/* Nội dung */}
+                                                        <div className="class-content">
+                                                            <div className="class-name">
+                                                                {schedule.class_name || "Lớp học"}
+                                                            </div>
+                                                            <div className="class-time">
+                                                                {formatTimeDisplay(schedule.schedule_startime)}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <div className="class-info">
-                                                        <div className="class-teacher">
-                                                            <i className="bi bi-person"></i>
-                                                            <span>{schedule.teacher_name || 'Chưa có giáo viên'}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </td>
                                     );
                                 })}
@@ -241,7 +254,7 @@ function CalendarView({ selectedDate, schedules, onEventClick }) {
                     </tbody>
                 </table>
             </div>
-            
+
             {schedules && schedules.length > 0 && getSchedulesForDate().length === 0 && (
                 <div className="no-schedules-message">
                     <i className="bi bi-calendar2-x"></i>
