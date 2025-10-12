@@ -7,59 +7,99 @@ from .class_model import Class
 
 class Enrollment(db.Model):
     """Model cho bảng ENROLLMENT - quan hệ nhiều-nhiều giữa Student và Class"""
+
     __tablename__ = "enrollments"
-    
+
     # Composite primary key
-    user_id = db.Column(db.String(10), db.ForeignKey('students.user_id'), primary_key=True)
-    class_id = db.Column(db.Integer, db.ForeignKey('classes.class_id'), primary_key=True)
-    
+    user_id = db.Column(
+        db.String(10), db.ForeignKey("students.user_id"), primary_key=True
+    )
+    class_id = db.Column(
+        db.Integer, db.ForeignKey("classes.class_id"), primary_key=True
+    )
+
     # Thêm các trường để tracking
     enrolled_date = db.Column(db.DateTime(timezone=True), server_default=func.now())
     last_activity_date = db.Column(db.DateTime(timezone=True), onupdate=func.now())
     status = db.Column(db.String(20), default="ACTIVE")  # ACTIVE, COMPLETED, DROPPED
-    
+
     # Relationships
-    student = db.relationship('Student', backref=db.backref('enrollments', lazy='dynamic'))
-    class_obj = db.relationship('Class', backref=db.backref('enrollments', lazy='dynamic'))
-    
+    student = db.relationship(
+        "Student", backref=db.backref("enrollments", lazy="dynamic")
+    )
+    class_obj = db.relationship(
+        "Class", backref=db.backref("enrollments", lazy="dynamic")
+    )
+
     def __repr__(self):
         return f"<Enrollment: Student {self.user_id} in Class {self.class_id}>"
-    
+
     def to_dict(self):
-        """Chuyển đổi enrollment thành dict để trả về qua API"""
-        return {
-            'user_id': self.user_id,
-            'class_id': self.class_id,
-            'enrolled_date': self.enrolled_date.isoformat() if self.enrolled_date else None,
-            'last_activity_date': self.last_activity_date.isoformat() if self.last_activity_date else None,
-            'status': self.status,
-            # Thông tin bổ sung
-            'student_name': self.student.user_name if self.student else None,
-            'class_name': self.class_obj.class_name if self.class_obj else None,
-            'course_id': self.class_obj.course_id if self.class_obj else None
+        """Convert Enrollment object to dictionary"""
+        result = {
+            "enrollment_id": self.enrollment_id,
+            "user_id": self.user_id,
+            "class_id": self.class_id,
+            "status": self.status,
+            "enrolled_at": self.enrolled_at.isoformat() if self.enrolled_at else None,
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
-    
+
+        # Thêm thông tin student nếu có relationship
+        if hasattr(self, "student") and self.student:
+            result["student"] = {
+                "user_id": self.student.user_id,
+                "full_name": getattr(self.student, "full_name", None),
+                "email": getattr(self.student, "email", None),
+            }
+
+        # Thêm thông tin class nếu có relationship
+        if hasattr(self, "class_obj") and self.class_obj:
+            result["class"] = {
+                "class_id": self.class_obj.class_id,
+                "class_name": self.class_obj.class_name,
+                "course_id": self.class_obj.course_id,
+            }
+
+            # Thêm thông tin course
+            if hasattr(self.class_obj, "course") and self.class_obj.course:
+                result["course"] = {
+                    "course_id": self.class_obj.course.course_id,
+                    "course_code": self.class_obj.course.course_code,
+                    "course_name": self.class_obj.course.course_name,
+                    "level": self.class_obj.course.level,
+                    "mode": self.class_obj.course.mode,
+                }
+
+        return result
+
     @classmethod
     def get_student_enrollments(cls, user_id):
         """Lấy tất cả các lớp học mà sinh viên đã đăng ký"""
         return cls.query.filter_by(user_id=user_id).all()
-    
+
     @classmethod
     def get_class_enrollments(cls, class_id):
         """Lấy tất cả sinh viên đã đăng ký vào lớp học"""
         return cls.query.filter_by(class_id=class_id).all()
-    
+
     @classmethod
     def is_enrolled(cls, user_id, class_id):
         """Kiểm tra xem sinh viên đã đăng ký lớp học chưa"""
-        return cls.query.filter_by(user_id=user_id, class_id=class_id).first() is not None
-    
+        return (
+            cls.query.filter_by(user_id=user_id, class_id=class_id).first() is not None
+        )
+
     def mark_completed(self):
         """Đánh dấu hoàn thành khóa học"""
         self.status = "COMPLETED"
         self.last_activity_date = datetime.now()
         db.session.commit()
-    
+
     def drop_enrollment(self):
         """Đánh dấu đã rút khỏi khóa học"""
         self.status = "DROPPED"

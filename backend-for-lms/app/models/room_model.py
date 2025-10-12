@@ -24,16 +24,16 @@ class Room(db.Model):
         return f"<Room {self.room_id}: {room_name}>"
     
     def to_dict(self):
-        """Chuyển đổi room thành dict để trả về qua API"""
+        """Chuyển đổi object thành dictionary"""
         return {
-            'room_id': self.room_id,
-            'room_name': self.room_name,
-            'room_capacity': self.room_capacity,
-            'room_type': self.room_type,
-            'room_location': self.room_location,
-            'room_status': self.room_status,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            "room_id": self.room_id,
+            "room_name": self.room_name,
+            "room_capacity": int(self.room_capacity) if self.room_capacity is not None else None,
+            "room_type": self.room_type,
+            "room_location": self.room_location,
+            "room_status": self.room_status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
     
     def is_available(self):
