@@ -43,6 +43,15 @@ export default function TestRunner() {
 
   const total = questions.length;
   const currentQ = total > 0 ? questions[currentIdx] : null;
+  // Build a robust label for the current question's Part with sensible fallbacks
+  const currentPartLabel = currentQ ? (() => {
+    const prefix = [currentQ.part_section, currentQ.part_code].filter(Boolean).join(' ').trim();
+    if (currentQ.part_name && prefix) return `${prefix} — ${currentQ.part_name}`;
+    if (currentQ.part_name) return currentQ.part_name;
+    if (prefix) return prefix;
+    if (currentQ.part_id) return `Part ${currentQ.part_id}`;
+    return null;
+  })() : null;
 
   const onChoose = (itemId, choiceId) => {
     setAnswers(prev => ({ ...prev, [itemId]: choiceId }));
@@ -110,16 +119,202 @@ export default function TestRunner() {
   if (error) return <div className="alert alert-danger">{error}</div>;
 
   if (result) {
+    const totalQuestions = Number(result?.breakdown?.total ?? total ?? 0);
+    const correctAnswers = Number(result?.breakdown?.correct ?? 0);
+    const scorePerQuestion = totalQuestions > 0 ? 10 / totalQuestions : 0;
+    const currentScore10 = Number.isFinite(scorePerQuestion)
+      ? Number((correctAnswers * scorePerQuestion).toFixed(2))
+      : 0;
+    const attemptsWithScore = Array.isArray(result?.attempts)
+      ? result.attempts.map((attempt) => {
+          const attemptTotal = Number(attempt.att_total_questions ?? totalQuestions ?? 0);
+          const attemptCorrect = Number(attempt.att_correct_count ?? 0);
+          const perQuestion = attemptTotal > 0 ? 10 / attemptTotal : 0;
+          const score10 = Number.isFinite(perQuestion)
+            ? Number((attemptCorrect * perQuestion).toFixed(2))
+            : 0;
+          return {
+            ...attempt,
+            _score10: score10,
+            _attemptTotal: attemptTotal,
+            _attemptCorrect: attemptCorrect,
+          };
+        })
+      : [];
+    const bestScore10 = attemptsWithScore.length
+      ? attemptsWithScore.reduce((max, attempt) => (attempt._score10 > max ? attempt._score10 : max), 0)
+      : currentScore10;
+
+    const formatScore10 = (score) => (Number.isFinite(score) ? score.toFixed(score % 1 === 0 ? 0 : 2) : '-');
+
     return (
       <div className="card p-3">
-        <h5>Kết quả</h5>
-        <div className="mt-2">Điểm: {result?.sc_score ?? '-'}</div>
-        <div>
-          Đúng: {result?.breakdown?.correct ?? 0} / {result?.breakdown?.total ?? total}
-          {' '}({result?.breakdown?.percentage ?? 0}%)
+        <h5 className="mb-3">🎯 Kết quả bài kiểm tra</h5>
+        
+        {result?.low_score_warning && (
+          <div className="alert alert-warning my-2" role="alert">
+            <strong>⚠️ Lưu ý:</strong> Điểm của bạn đang dưới {result?.low_score_threshold_percent}% tổng số câu. Hãy ôn luyện thêm và thử lại nhé!
+          </div>
+        )}
+        
+        {/* Điểm số và trạng thái */}
+        <div className="row g-3 mb-3">
+          <div className="col-md-4">
+            <div className="card bg-light border-0">
+              <div className="card-body text-center">
+                <div className="text-muted small mb-1">Điểm lần này</div>
+                <div className="fs-2 fw-bold text-primary">{formatScore10(currentScore10)}</div>
+                <div className="text-muted small">(thang điểm 10)</div>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="card bg-light border-0">
+              <div className="card-body text-center">
+                <div className="text-muted small mb-1">🏆 Điểm cao nhất</div>
+                <div className="fs-2 fw-bold text-success">{formatScore10(bestScore10)}</div>
+                <div className="text-muted small">(thang điểm 10)</div>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="card bg-light border-0">
+              <div className="card-body text-center">
+                <div className="text-muted small mb-1">Kết quả</div>
+                <span className={`badge fs-5 ${result?.passed ? 'bg-success' : 'bg-secondary'}`}>
+                  {result?.passed ? '✓ Đạt' : '✗ Chưa đạt'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="mt-3">
-          <button className="btn btn-primary" onClick={() => navigate('/student/tests')}>Quay lại danh sách</button>
+
+        {/* Thống kê tổng quan */}
+        <div className="alert alert-info mb-3">
+          <div className="row text-center">
+            <div className="col-4">
+              <strong>Số câu đúng</strong>
+              <div className="fs-5">{result?.breakdown?.correct ?? 0} / {result?.breakdown?.total ?? total}</div>
+            </div>
+            <div className="col-4">
+              <strong>Tỷ lệ đúng</strong>
+              <div className="fs-5">{result?.breakdown?.percentage ?? 0}%</div>
+            </div>
+            <div className="col-4">
+              <strong>Số lần làm</strong>
+              <div className="fs-5">{result?.attempts?.length ?? 0}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Chi tiết từng câu */}
+        {Array.isArray(result?.detailed_responses) && result.detailed_responses.length > 0 && (
+          <div className="mb-4">
+            <h6 className="mb-3">📝 Chi tiết từng câu</h6>
+            <div className="table-responsive">
+              <table className="table table-sm table-bordered align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th style={{ width: '60px' }} className="text-center">Câu</th>
+                    <th>Phần thi</th>
+                    <th style={{ width: '120px' }} className="text-center">Kết quả</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.detailed_responses.map((resp, idx) => (
+                    <tr key={idx} className={resp.is_correct ? 'table-success' : 'table-danger'}>
+                      <td className="text-center fw-bold">{resp.question_number}</td>
+                      <td>{resp.part_name || `Part ${resp.part_id || '-'}`}</td>
+                      <td className="text-center">
+                        {resp.is_correct ? (
+                          <span className="badge bg-success">✓ Đúng</span>
+                        ) : (
+                          <span className="badge bg-danger">✗ Sai</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Lịch sử làm bài */}
+        {attemptsWithScore.length > 0 && (
+          <div className="mb-3">
+            <h6 className="mb-3">📊 Lịch sử làm bài ({attemptsWithScore.length} lần)</h6>
+            <div className="table-responsive">
+              <table className="table table-sm table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th style={{ width: '50px' }}>#</th>
+                    <th>Thời gian nộp</th>
+                    <th style={{ width: '120px' }} className="text-center">Điểm (0-10)</th>
+                    <th style={{ width: '120px' }} className="text-center">Đúng/Tổng</th>
+                    <th style={{ width: '100px' }} className="text-center">Tỷ lệ</th>
+                    <th style={{ width: '120px' }} className="text-center">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attemptsWithScore.map((a, idx) => {
+                    const isBest = Math.abs(a._score10 - bestScore10) < 0.01;
+                    const isCurrent = a.att_id === result.current_attempt_id;
+                    return (
+                      <tr key={a.att_id || idx} className={isCurrent ? 'table-info' : ''}>
+                        <td className="text-center">{idx + 1}</td>
+                        <td>
+                          <small>{a.att_submitted_at ? new Date(a.att_submitted_at).toLocaleString('vi-VN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : '-'}</small>
+                        </td>
+                        <td className="text-center">
+                          <strong className="fs-6">{formatScore10(a._score10)}</strong>
+                          {isBest && <div><span className="badge bg-warning text-dark">🏆 Best</span></div>}
+                        </td>
+                        <td className="text-center">
+                          {a._attemptCorrect ?? '-'} / {a._attemptTotal ?? '-'}
+                        </td>
+                        <td className="text-center">
+                          {typeof a.att_percentage === 'number' ? (
+                            <span className={`badge ${a.att_percentage >= 50 ? 'bg-success' : 'bg-warning text-dark'}`}>
+                              {a.att_percentage.toFixed(1)}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                        <td className="text-center">
+                          <span className={`badge ${a.att_status === 'COMPLETED' ? 'bg-success' : 'bg-secondary'}`}>
+                            {a.att_status || '—'}
+                          </span>
+                          {isCurrent && <div><span className="badge bg-info mt-1">Mới nhất</span></div>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div className="d-flex gap-2 justify-content-center">
+          <button className="btn btn-primary" onClick={() => navigate('/student/tests')}>
+            ← Quay lại danh sách
+          </button>
+          <button 
+            className="btn btn-outline-success" 
+            onClick={() => {
+              // Reload page to start fresh
+              window.location.reload();
+            }}
+          >
+            🔄 Làm lại bài test
+          </button>
         </div>
       </div>
     );
@@ -145,6 +340,13 @@ export default function TestRunner() {
           )}
         </div>
       </div>
+      {currentPartLabel && (
+        <div className="mt-2" aria-live="polite">
+          <div className="alert alert-info py-2 px-3 mb-0" role="status">
+            Bạn đang ở: <strong>{currentPartLabel}</strong>
+          </div>
+        </div>
+      )}
       {/* Question Navigator */}
       {total > 0 && (
         <div className="mt-3">
@@ -180,7 +382,12 @@ export default function TestRunner() {
       {currentQ && (
         <div key={currentQ.qs_index} className="mb-3">
           <div className="d-flex align-items-center justify-content-between mb-3">
-            <div className="fw-semibold">Câu {currentQ.order} / {total}</div>
+            <div className="d-flex align-items-center gap-2">
+              {currentPartLabel && (
+                <span className="badge bg-secondary">{currentPartLabel}</span>
+              )}
+              <div className="fw-semibold">Câu {currentQ.order} / {total}</div>
+            </div>
             <div className="text-muted small">
               {answers[currentQ.qs_index] ? 'Đã chọn' : 'Chưa trả lời'}
             </div>

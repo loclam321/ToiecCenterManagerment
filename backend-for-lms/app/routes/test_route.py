@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify
 from app.models.test_model import Test
 from app.models.item_model import Item
+from app.models.part_model import Part
 from app.models.choice_model import Choice
 from app.models.attempt_model import Attempt
+from app.models.enrollment_model import Enrollment
 from app.utils.response_helper import success_response, error_response, not_found_response
 from app.config import db
 from sqlalchemy import func
@@ -33,9 +35,13 @@ def get_test_questions(test_id):
             return not_found_response("Test not found", "Test", test_id)
         
         # Lấy các items (questions) cho test này
-        items = db.session.query(Item).filter(
-            Item.test_id == test_id
-        ).order_by(Item.item_order_in_part).all()
+        items = (
+            db.session.query(Item)
+            .join(Part, Item.part_id == Part.part_id)
+            .filter(Item.test_id == test_id)
+            .order_by(Part.part_order_in_test, Item.item_order_in_part)
+            .all()
+        )
         
         questions = []
         for idx, item in enumerate(items):
@@ -51,6 +57,12 @@ def get_test_questions(test_id):
                 "item_stimulus_text": item.item_stimulus_text,
                 "item_image_path": item.item_image_path,
                 "item_audio_path": item.item_audio_path,
+                # Part metadata for UI grouping and display
+                "part_id": item.part_id,
+                "part_order": item.part.part_order_in_test if item.part else None,
+                "part_code": item.part.part_code if item.part else None,
+                "part_name": item.part.part_name if item.part else None,
+                "part_section": item.part.part_section if item.part else None,
                 "answers": [
                     {
                         "as_index": choice.choice_id,  # Map to frontend naming
@@ -71,6 +83,8 @@ def get_test_questions(test_id):
 def submit_test(test_id):
     """Nộp bài kiểm tra"""
     try:
+        import json
+        
         test = Test.query.get(test_id)
         if not test:
             return not_found_response("Test not found", "Test", test_id)
@@ -80,13 +94,17 @@ def submit_test(test_id):
         class_id = payload.get("class_id")
         responses = payload.get("responses", [])
         
-        # Tính điểm
+        # Tính điểm và lưu chi tiết từng câu
         total_correct = 0
         total_questions = len(responses)
+        detailed_responses = []
         
-        for response in responses:
+        for idx, response in enumerate(responses):
             qs_index = response.get("qs_index")  # This is actually item_id
             as_index = response.get("as_index")  # This is actually choice_id
+            
+            # Lấy thông tin item
+            item = Item.query.get(qs_index)
             
             # Kiểm tra xem câu trả lời có đúng không
             choice = Choice.query.filter(
@@ -94,29 +112,124 @@ def submit_test(test_id):
                 Choice.item_id == qs_index
             ).first()
             
-            if choice and choice.choice_is_correct:
+            is_correct = choice and choice.choice_is_correct
+            if is_correct:
                 total_correct += 1
+            
+            # Lưu chi tiết câu trả lời
+            detailed_responses.append({
+                "question_number": idx + 1,
+                "item_id": qs_index,
+                "selected_choice_id": as_index,
+                "is_correct": is_correct,
+                "part_id": item.part_id if item else None,
+                "part_name": item.part.part_name if (item and item.part) else None
+            })
         
-        # Tính điểm (không dùng các field không tồn tại trong model)
+        # Tính điểm
         score_ratio = total_correct / total_questions if total_questions > 0 else 0
-        # Để đơn giản, lấy điểm thô = số câu đúng. Frontend sẽ hiển thị breakdown.
         final_score = total_correct
-        # Ngưỡng qua bài mặc định: 50% (có thể điều chỉnh sau)
+        percentage = round(score_ratio * 100, 2)
         passed = score_ratio >= 0.5
+        low_threshold_ratio = 0.3
+        low_score_warning = score_ratio < low_threshold_ratio
+        
+        # Tạo JSON data để lưu vào att_responses_json
+        responses_data = {
+            "total_questions": total_questions,
+            "correct_count": total_correct,
+            "percentage": percentage,
+            "responses": detailed_responses
+        }
         
         # Lưu attempt vào database (nếu có user)
+        current_attempt_id = None
         if user_id:
-            attempt = Attempt(
-                user_id=user_id,
-                test_id=test_id,
-                class_id=class_id or 1,  # Default class_id if not provided
-                att_started_at=datetime.datetime.now(),
-                att_submitted_at=datetime.datetime.now(),
-                att_raw_score=final_score,
-                att_status="COMPLETED"
+            # Nếu không có class_id, dùng class_id = 1 làm mặc định
+            if class_id is None:
+                class_id = 1
+                print(f"[INFO] No class_id provided, using default class_id = 1")
+            
+            json_str = json.dumps(responses_data, ensure_ascii=False)
+            json_length = len(json_str)
+            
+            print(f"\n{'='*60}")
+            print(f"[INFO] Saving attempt for user {user_id}, test {test_id}")
+            print(f"[INFO] Class ID: {class_id}")
+            print(f"[INFO] JSON data length: {json_length} characters")
+            print(f"[INFO] Score: {final_score}/{total_questions} ({percentage}%)")
+            
+            if json_length > 2048:
+                print(f"[WARNING] JSON length ({json_length}) exceeds VARCHAR(2048) limit!")
+                print(f"[WARNING] Data may be truncated!")
+                print(f"[WARNING] Consider reducing response data or increasing field size")
+            elif json_length > 100:
+                print(f"[OK] JSON size is within VARCHAR(2048) limit")
+            
+            try:
+                attempt = Attempt(
+                    user_id=user_id,
+                    test_id=test_id,
+                    class_id=class_id,  # Always has value now (default = 1)
+                    att_started_at=datetime.datetime.now(),
+                    att_submitted_at=datetime.datetime.now(),
+                    att_raw_score=final_score,
+                    att_status="COMPLETED",
+                    att_responses_json=json_str
+                )
+                db.session.add(attempt)
+                db.session.commit()
+                current_attempt_id = attempt.att_id
+                
+                print(f"[SUCCESS] Attempt saved with ID: {current_attempt_id}")
+                print(f"{'='*60}\n")
+            except Exception as e:
+                db.session.rollback()
+                print(f"[ERROR] Failed to save attempt: {str(e)}")
+                print(f"{'='*60}\n")
+                raise
+        
+        # Lấy lịch sử làm bài và điểm cao nhất của user cho test này
+        attempts_list = []
+        best_score = None
+        if user_id:
+            user_attempts = (
+                Attempt.query
+                .filter(Attempt.user_id == user_id, Attempt.test_id == test_id)
+                .order_by(Attempt.att_submitted_at.desc())
+                .all()
             )
-            db.session.add(attempt)
-            db.session.commit()
+            # Parse JSON data for each attempt
+            for a in user_attempts:
+                attempt_dict = a.to_dict()
+                
+                # Try to parse JSON if exists
+                if a.att_responses_json:
+                    try:
+                        parsed_data = json.loads(a.att_responses_json)
+                        attempt_dict["att_correct_count"] = parsed_data.get("correct_count")
+                        attempt_dict["att_total_questions"] = parsed_data.get("total_questions")
+                        attempt_dict["att_percentage"] = parsed_data.get("percentage")
+                    except Exception as e:
+                        # JSON parsing failed (probably truncated data from VARCHAR(10))
+                        print(f"[WARNING] Failed to parse JSON for attempt {a.att_id}: {str(e)}")
+                        # Fall back to calculating from raw score (if we know total questions)
+                        if total_questions > 0:
+                            attempt_dict["att_correct_count"] = a.att_raw_score
+                            attempt_dict["att_total_questions"] = total_questions
+                            attempt_dict["att_percentage"] = round((a.att_raw_score / total_questions) * 100, 2) if a.att_raw_score else 0
+                else:
+                    # No JSON data (old records or NULL)
+                    # Calculate based on raw score
+                    if a.att_raw_score is not None and total_questions > 0:
+                        attempt_dict["att_correct_count"] = a.att_raw_score
+                        attempt_dict["att_total_questions"] = total_questions
+                        attempt_dict["att_percentage"] = round((a.att_raw_score / total_questions) * 100, 2)
+                
+                attempts_list.append(attempt_dict)
+            
+            if user_attempts:
+                best_score = max((a.att_raw_score or 0) for a in user_attempts)
         
         result = {
             "sc_score": final_score,
@@ -124,8 +237,17 @@ def submit_test(test_id):
             "breakdown": {
                 "correct": total_correct,
                 "total": total_questions,
-                "percentage": round(score_ratio * 100, 2)
-            }
+                "percentage": percentage
+            },
+            # Lịch sử làm bài & điểm cao nhất
+            "attempts": attempts_list,
+            "best_score": best_score,
+            "current_attempt_id": current_attempt_id,
+            # Chi tiết câu trả lời của lần làm bài hiện tại
+            "detailed_responses": detailed_responses,
+            # Cảnh báo điểm thấp
+            "low_score_warning": low_score_warning,
+            "low_score_threshold_percent": int(low_threshold_ratio * 100)
         }
         
         return success_response(result)
@@ -143,3 +265,32 @@ def list_tests():
         return success_response([test.to_dict() for test in tests])
     except Exception as e:
         return error_response(f"Error retrieving tests: {str(e)}", 500)
+
+
+@test_bp.route("/<int:test_id>/attempts", methods=["GET"])
+def list_attempts_for_test(test_id):
+    """Lấy lịch sử làm bài cho một user và test: /api/tests/<id>/attempts?user_id=..."""
+    try:
+        test = Test.query.get(test_id)
+        if not test:
+            return not_found_response("Test not found", "Test", test_id)
+
+        user_id = request.args.get("user_id")
+        if not user_id:
+            return error_response("Missing user_id", 400)
+
+        attempts = (
+            Attempt.query
+            .filter(Attempt.user_id == user_id, Attempt.test_id == test_id)
+            .order_by(Attempt.att_submitted_at.desc())
+            .all()
+        )
+        best_score = max((a.att_raw_score or 0) for a in attempts) if attempts else None
+        return success_response({
+            "attempts": [a.to_dict() for a in attempts],
+            "best_score": best_score,
+            "count": len(attempts),
+            "last_submitted_at": attempts[0].att_submitted_at.isoformat() if attempts else None,
+        })
+    except Exception as e:
+        return error_response(f"Error retrieving attempts: {str(e)}", 500)

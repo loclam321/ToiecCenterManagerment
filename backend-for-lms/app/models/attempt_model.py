@@ -1,8 +1,6 @@
 from app.config import db
 from .test_model import Test
-from .enrollment_model import Enrollment
 from .class_model import Class
-from sqlalchemy import and_
 
 
 class Attempt(db.Model):
@@ -17,7 +15,7 @@ class Attempt(db.Model):
         nullable=False,
     )
     user_id = db.Column(db.String(10), nullable=False)
-    class_id = db.Column(db.Integer, nullable=False)
+    class_id = db.Column(db.Integer, nullable=True)  # Allow NULL for tests without class enrollment
     att_started_at = db.Column(db.DateTime)
     att_submitted_at = db.Column(db.DateTime)
     att_raw_score = db.Column(db.Integer)
@@ -26,17 +24,7 @@ class Attempt(db.Model):
     att_status = db.Column(db.String(12))
     att_responses_json = db.Column(db.String(2048))
 
-    __table_args__ = (
-        db.ForeignKeyConstraint(
-            [user_id, class_id],
-            [
-                f"{Enrollment.__tablename__}.user_id",
-                f"{Enrollment.__tablename__}.class_id",
-            ],
-            ondelete="RESTRICT",
-            onupdate="RESTRICT",
-        ),
-    )
+    # No composite foreign key - allow standalone tests without enrollment
 
     test = db.relationship("Test", backref=db.backref("attempts", lazy=True))
     class_ref = db.relationship(
@@ -46,14 +34,7 @@ class Attempt(db.Model):
         foreign_keys=[class_id],
         uselist=False,
     )
-    enrollment = db.relationship(
-        "Enrollment",
-        backref=db.backref("attempts", lazy=True),
-        primaryjoin=and_(
-            user_id == Enrollment.user_id, class_id == Enrollment.class_id
-        ),
-        viewonly=True,
-    )
+    # Removed enrollment relationship - no longer needed without FK constraint
 
     def __repr__(self):
         return f"<Attempt {self.att_id} - Test {self.test_id}>"

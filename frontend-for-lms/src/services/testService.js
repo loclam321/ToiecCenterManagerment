@@ -37,6 +37,12 @@ export const getTestQuestions = async (testId) => {
     item_stimulus_text: q.item_stimulus_text || '',
     item_image_path: q.item_image_path || null,
     item_audio_path: q.item_audio_path || null,
+    // Part metadata for UI context
+    part_id: q.part_id ?? null,
+    part_order: q.part_order ?? null,
+    part_code: q.part_code ?? '',
+    part_name: q.part_name ?? '',
+    part_section: q.part_section ?? '',
     answers: (q.answers || []).map((a, i) => ({
       as_index: a.as_index, // choice_id
       as_content: a.as_content || '',
@@ -54,5 +60,13 @@ export const submitTest = async (testId, { user_id, class_id, responses }) => {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || 'Nộp bài thất bại');
   return data.data || data;
+};
+
+export const getTestAttempts = async (testId, userId) => {
+  const url = `${BASE_URL}/${testId}/attempts?user_id=${encodeURIComponent(userId)}`;
+  const res = await fetch(url, { headers: getHeaders() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Không thể tải lịch sử làm bài');
+  return data.data || { attempts: [], best_score: null, count: 0 };
 };
 

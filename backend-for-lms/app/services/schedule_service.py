@@ -9,6 +9,9 @@ from app.models.schedule_model import Schedule
 from app.models.class_model import Class
 from app.models.teacher_model import Teacher
 from app.models.room_model import Room
+from app.models.enrollment_model import Enrollment
+from app.models.student_model import Student
+from sqlalchemy.orm import joinedload
 
 
 class ScheduleService:
@@ -432,6 +435,111 @@ class ScheduleService:
         except Exception as e:
             current_app.logger.error(f"Error in find_available_rooms: {str(e)}")
             return {"success": False, "error": f"Error finding available rooms: {str(e)}"}
+
+    def get_schedules_for_student(self, student_id: str, start_date_str: str, end_date_str: str,
+                                   class_id: Optional[int] = None, course_id: Optional[str] = None) -> Dict[str, Any]:
+        """Lấy lịch học của học viên trong khoảng thời gian xác định"""
+        if not student_id:
+            return {"success": False, "error": "student_id is required"}
+
+        try:
+            # Chuẩn hóa ngày đầu/cuối tuần để đảm bảo truy vấn chính xác
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
+
+            student = Student.query.get(student_id)
+            if not student:
+                return {"success": False, "error": f"Student with ID {student_id} not found"}
+
+            query = (
+                Schedule.query
+                .join(Class, Schedule.class_id == Class.class_id)
+                .join(Enrollment, Enrollment.class_id == Class.class_id)
+                .filter(Enrollment.user_id == student_id)
+                .options(
+                    joinedload(Schedule.room),
+                    joinedload(Schedule.class_obj).joinedload(Class.course),
+                    joinedload(Schedule.teacher)
+                )
+            )
+
+            if start_date:
+                query = query.filter(Schedule.schedule_date >= start_date)
+            if end_date:
+                query = query.filter(Schedule.schedule_date <= end_date)
+            if class_id:
+                query = query.filter(Schedule.class_id == class_id)
+            if course_id:
+                query = query.filter(Class.course_id == course_id)
+
+            # Loại bỏ các enrollment đã bị huỷ
+            query = query.filter(Enrollment.status != "DROPPED")
+
+            schedules = query.order_by(Schedule.schedule_date, Schedule.schedule_startime).all()
+
+            # Lấy danh sách lớp mà học viên đang theo học để hiển thị bộ lọc phía frontend
+            enrolled_classes = (
+                Enrollment.query
+                .join(Class, Enrollment.class_id == Class.class_id)
+                .filter(Enrollment.user_id == student_id, Enrollment.status != "DROPPED")
+                .options(joinedload(Enrollment.class_obj).joinedload(Class.course))
+                .all()
+            )
+
+            def serialize_schedule(schedule: Schedule) -> Dict[str, Any]:
+                class_info = schedule.class_obj
+                course_info = class_info.course if class_info else None
+                return {
+                    "schedule_id": schedule.schedule_id,
+                    "schedule_date": schedule.schedule_date.strftime("%Y-%m-%d") if schedule.schedule_date else None,
+                    "schedule_startime": schedule.schedule_startime.strftime("%H:%M:%S") if schedule.schedule_startime else None,
+                    "schedule_endtime": schedule.schedule_endtime.strftime("%H:%M:%S") if schedule.schedule_endtime else None,
+                    "room": {
+                        "room_id": schedule.room.room_id if schedule.room else schedule.room_id,
+                        "room_name": schedule.room.room_name if schedule.room else None,
+                        "room_location": schedule.room.room_location if schedule.room else None
+                    },
+                    "teacher": {
+                        "user_id": schedule.teacher.user_id if schedule.teacher else schedule.user_id,
+                        "user_name": schedule.teacher.user_name if schedule.teacher else None
+                    },
+                    "class": {
+                        "class_id": class_info.class_id if class_info else schedule.class_id,
+                        "class_name": class_info.class_name if class_info else None,
+                        "class_startdate": class_info.class_startdate.strftime("%Y-%m-%d") if class_info and class_info.class_startdate else None,
+                        "class_enddate": class_info.class_enddate.strftime("%Y-%m-%d") if class_info and class_info.class_enddate else None
+                    },
+                    "course": {
+                        "course_id": course_info.course_id if course_info else None,
+                        "course_name": course_info.course_name if course_info else None
+                    }
+                }
+
+            return {
+                "success": True,
+                "data": {
+                    "student": {
+                        "user_id": student.user_id,
+                        "user_name": student.user_name
+                    },
+                    "schedules": [serialize_schedule(schedule) for schedule in schedules],
+                    "available_classes": [
+                        {
+                            "class_id": enrollment.class_id,
+                            "class_name": enrollment.class_obj.class_name if enrollment.class_obj else None,
+                            "course_id": enrollment.class_obj.course.course_id if enrollment.class_obj and enrollment.class_obj.course else None,
+                            "course_name": enrollment.class_obj.course.course_name if enrollment.class_obj and enrollment.class_obj.course else None
+                        }
+                        for enrollment in enrolled_classes
+                    ]
+                }
+            }
+
+        except ValueError:
+            return {"success": False, "error": "Invalid date format. Use YYYY-MM-DD"}
+        except Exception as e:
+            current_app.logger.error(f"Error in get_schedules_for_student: {str(e)}")
+            return {"success": False, "error": f"Error retrieving student schedules: {str(e)}"}
 
     def create_recurring_schedule(self, base_data: Dict[str, Any], 
                                 recurrence_type: str, 
