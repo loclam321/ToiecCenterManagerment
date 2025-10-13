@@ -43,7 +43,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Routes>
         <Route path="/*" element={<App />} />
         <Route path="/login" element={<AuthPage />} />
-        <Route path="/teachers" element={<TeacherIntroduction />} />
+        <Route path="/Teacher_intro" element={<TeacherIntroduction />} />
         
   <Route path="/logout" element={<Logout />} />
         {/* Admin area (teachers may share admin UI). Restrict to teacher for now. */}
