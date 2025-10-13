@@ -27,9 +27,8 @@ export default function ProtectedRoute({ roles, redirectTo = '/login', children 
     const currentRole = currentRoleRaw.toLowerCase();
     if (!normalizedRoles.includes(currentRole)) {
       // If role mismatch, try redirecting to a sensible home per role
-      if (currentRole === 'teacher' || currentRole === 'admin') {
-        return <Navigate to="/admin" replace />;
-      }
+      if (currentRole === 'teacher') return <Navigate to="/teachers" replace />;
+      if (currentRole === 'admin') return <Navigate to="/admin" replace />;
       if (currentRole === 'student') return <Navigate to="/student" replace />;
       return <Navigate to="/" replace />;
     }

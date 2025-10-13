@@ -1,0 +1,30 @@
+.teacher-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.teacher-schedule .schedule-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.teacher-schedule .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.teacher-schedule .filter-group label {
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+}
+
+.teacher-schedule .schedule-table {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}

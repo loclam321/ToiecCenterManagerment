@@ -34,6 +34,11 @@ import TestRunner from './pages/student/TestRunner';
 import LessonList from './pages/student/LessonList';
 import LessonDetail from './pages/student/LessonDetail';
 import Logout from './pages/Logout';
+import TeacherPage from './pages/Teacher/TeacherPage';
+import TeacherDashboard from './pages/Teacher/TeacherDashboard';
+import TeacherSchedule from './pages/Teacher/TeacherSchedule';
+import TeacherClasses from './pages/Teacher/TeacherClasses';
+import TeacherResources from './pages/Teacher/TeacherResources';
 
 
 
@@ -46,7 +51,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/Teacher_intro" element={<TeacherIntroduction />} />
         
   <Route path="/logout" element={<Logout />} />
-        {/* Admin area (teachers may share admin UI). Restrict to teacher for now. */}
+        {/* Admin area (teachers may share admin UI). */}
         <Route
           path="/admin"
           element={
@@ -176,6 +181,21 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             </ProtectedRoute>
           }
         />
+
+        {/* Teacher area */}
+        <Route
+          path="/teachers"
+          element={
+            <ProtectedRoute roles={["teacher", "admin"]}>
+              <TeacherPage />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<TeacherDashboard />} />
+          <Route path="schedule" element={<TeacherSchedule />} />
+          <Route path="classes" element={<TeacherClasses />} />
+          <Route path="resources" element={<TeacherResources />} />
+        </Route>
 
         {/* Student area */}
         <Route

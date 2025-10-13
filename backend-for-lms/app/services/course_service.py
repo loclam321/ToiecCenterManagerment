@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from datetime import datetime, date
 from flask import current_app
 from sqlalchemy.exc import IntegrityError
@@ -13,6 +13,11 @@ class CourseService:
 
     def __init__(self, database=None):
         self.db = database or db
+        self.supports_soft_delete = hasattr(Course, "is_deleted")
+        self.has_mode = hasattr(Course, "mode")
+        self.has_teacher = hasattr(Course, "teacher_id")
+        self.has_campus = hasattr(Course, "campus_id")
+        self.has_learning_path_ref = hasattr(Course, "learning_path_id")
 
     def _generate_course_id(self) -> str:
         """Tạo course_id tự động theo format C0000001"""
@@ -46,19 +51,19 @@ class CourseService:
                     query = query.filter(Course.level == filters["level"])
 
                 # Filter theo mode
-                if filters.get("mode"):
+                if filters.get("mode") and self.has_mode:
                     query = query.filter(Course.mode == filters["mode"])
 
                 # Filter theo teacher_id
-                if filters.get("teacher_id"):
+                if filters.get("teacher_id") and self.has_teacher:
                     query = query.filter(Course.teacher_id == filters["teacher_id"])
 
                 # Filter theo campus_id
-                if filters.get("campus_id"):
+                if filters.get("campus_id") and self.has_campus:
                     query = query.filter(Course.campus_id == filters["campus_id"])
 
                 # Filter theo soft delete
-                if filters.get("include_deleted") != True:
+                if self.supports_soft_delete and filters.get("include_deleted") != True:
                     query = query.filter(Course.is_deleted == 0)
 
                 # Filter theo tên (tìm kiếm)
@@ -77,7 +82,7 @@ class CourseService:
                 sort_order = filters.get("sort_order", "desc")
 
                 # Đảm bảo sort_by là tên cột hợp lệ trong Course model
-                valid_sort_columns = [
+                candidate_sort_columns = [
                     "course_id",
                     "course_code",
                     "course_name",
@@ -88,6 +93,9 @@ class CourseService:
                     "end_date",
                     "created_at",
                     "updated_at",
+                ]
+                valid_sort_columns = [
+                    column for column in candidate_sort_columns if hasattr(Course, column)
                 ]
 
                 if sort_by in valid_sort_columns:
@@ -100,10 +108,10 @@ class CourseService:
                     # Sắp xếp mặc định nếu sort_by không hợp lệ
                     query = query.order_by(Course.course_id.desc())
             else:
-                # Sắp xếp mặc định và không hiển thị deleted
-                query = query.filter(Course.is_deleted == 0).order_by(
-                    Course.course_id.desc()
-                )
+                # Sắp xếp mặc định và không hiển thị deleted nếu hỗ trợ
+                if self.supports_soft_delete:
+                    query = query.filter(Course.is_deleted == 0)
+                query = query.order_by(Course.course_id.desc())
 
             # Phân trang
             pagination = query.paginate(page=page, per_page=per_page, error_out=False)
@@ -129,7 +137,7 @@ class CourseService:
     ) -> Dict[str, Any]:
         """Lấy thông tin chi tiết một khóa học"""
         query = Course.query.filter_by(course_id=course_id)
-        if not include_deleted:
+        if self.supports_soft_delete and not include_deleted:
             query = query.filter(Course.is_deleted == 0)
 
         course = query.first()
@@ -159,26 +167,33 @@ class CourseService:
                 elif isinstance(payload["end_date"], date):
                     end_date = payload["end_date"]
 
-            course = Course(
-                course_id=self._generate_course_id(),
-                course_code=payload.get("course_code"),
-                course_name=payload.get("course_name"),
-                course_description=payload.get("course_description"),
-                target_score=payload.get("target_score"),
-                level=payload.get("level"),
-                mode=payload.get("mode", "OFFLINE"),
-                schedule_text=payload.get("schedule_text"),
-                start_date=start_date,
-                end_date=end_date,
-                session_count=payload.get("session_count"),
-                total_hours=payload.get("total_hours"),
-                tuition_fee=payload.get("tuition_fee"),
-                capacity=payload.get("capacity"),
-                status=payload.get("status", "DRAFT"),
-                teacher_id=payload.get("teacher_id"),
-                learning_path_id=payload.get("learning_path_id"),
-                campus_id=payload.get("campus_id"),
-            )
+            course_kwargs = {
+                "course_id": self._generate_course_id(),
+                "course_code": payload.get("course_code"),
+                "course_name": payload.get("course_name"),
+                "course_description": payload.get("course_description"),
+                "target_score": payload.get("target_score"),
+                "level": payload.get("level"),
+                "schedule_text": payload.get("schedule_text"),
+                "start_date": start_date,
+                "end_date": end_date,
+                "session_count": payload.get("session_count"),
+                "total_hours": payload.get("total_hours"),
+                "tuition_fee": payload.get("tuition_fee"),
+                "capacity": payload.get("capacity"),
+                "status": payload.get("status", "DRAFT"),
+            }
+
+            if self.has_mode:
+                course_kwargs["mode"] = payload.get("mode", "OFFLINE")
+            if self.has_teacher:
+                course_kwargs["teacher_id"] = payload.get("teacher_id")
+            if self.has_learning_path_ref:
+                course_kwargs["learning_path_id"] = payload.get("learning_path_id")
+            if self.has_campus:
+                course_kwargs["campus_id"] = payload.get("campus_id")
+
+            course = Course(**course_kwargs)
 
             self.db.session.add(course)
             self.db.session.commit()
@@ -195,7 +210,10 @@ class CourseService:
 
     def update_course(self, course_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Cập nhật thông tin khóa học"""
-        course = Course.query.filter_by(course_id=course_id, is_deleted=0).first()
+        query = Course.query.filter_by(course_id=course_id)
+        if self.supports_soft_delete:
+            query = query.filter_by(is_deleted=0)
+        course = query.first()
         if not course:
             return {"success": False, "error": "Course not found"}
 
@@ -203,24 +221,29 @@ class CourseService:
             # Cập nhật các trường cơ bản
             basic_fields = [
                 "course_code",
-                "course_name", 
+                "course_name",
                 "course_description",
                 "target_score",
                 "level",
-                "mode",
                 "schedule_text",
                 "session_count",
                 "total_hours",
                 "tuition_fee",
                 "capacity",
                 "status",
-                "teacher_id",
-                "learning_path_id",
-                "campus_id",
             ]
 
+            if self.has_mode:
+                basic_fields.append("mode")
+            if self.has_teacher:
+                basic_fields.append("teacher_id")
+            if self.has_learning_path_ref:
+                basic_fields.append("learning_path_id")
+            if self.has_campus:
+                basic_fields.append("campus_id")
+
             for field in basic_fields:
-                if field in payload:
+                if field in payload and hasattr(course, field):
                     setattr(course, field, payload[field])
 
             # Xử lý date fields đặc biệt
@@ -260,16 +283,30 @@ class CourseService:
 
     def delete_course(self, course_id: str, soft_delete: bool = True) -> Dict[str, Any]:
         """Xóa khóa học (soft delete hoặc hard delete)"""
-        course = Course.query.filter_by(course_id=course_id, is_deleted=0).first()
+        query = Course.query.filter_by(course_id=course_id)
+        if self.supports_soft_delete:
+            query = query.filter_by(is_deleted=0)
+        course = query.first()
         if not course:
             return {"success": False, "error": "Course not found"}
 
         try:
             if soft_delete:
-                # Soft delete - chỉ đánh dấu is_deleted = 1
-                course.is_deleted = 1
+                if self.supports_soft_delete:
+                    # Soft delete - chỉ đánh dấu is_deleted = 1
+                    course.is_deleted = 1
+                    self.db.session.commit()
+                    return {
+                        "success": True,
+                        "message": "Course soft deleted successfully",
+                    }
+                # Nếu không hỗ trợ soft delete thì xóa hẳn dữ liệu
+                self.db.session.delete(course)
                 self.db.session.commit()
-                return {"success": True, "message": "Course soft deleted successfully"}
+                return {
+                    "success": True,
+                    "message": "Soft delete unavailable, course permanently deleted",
+                }
             else:
                 # Hard delete - xóa hoàn toàn
                 self.db.session.delete(course)
@@ -290,6 +327,12 @@ class CourseService:
 
     def restore_course(self, course_id: str) -> Dict[str, Any]:
         """Khôi phục khóa học đã bị soft delete"""
+        if not self.supports_soft_delete:
+            return {
+                "success": False,
+                "error": "Soft delete not supported for courses",
+            }
+
         course = Course.query.filter_by(course_id=course_id, is_deleted=1).first()
         if not course:
             return {"success": False, "error": "Deleted course not found"}
@@ -317,11 +360,13 @@ class CourseService:
                     Course.status,  # Sử dụng 'status' thay vì 'course_status'
                     func.count(LearningPath.lp_id).label("learning_path_count"),
                 )
-                .filter(Course.is_deleted == 0)  # Chỉ lấy course chưa bị xóa
                 .outerjoin(LearningPath, LearningPath.course_id == Course.course_id)
                 .group_by(Course.course_id, Course.course_name, Course.status)
                 .order_by(Course.course_id)
             )
+
+            if self.supports_soft_delete:
+                query = query.filter(Course.is_deleted == 0)
 
             results = query.all()
 
@@ -372,7 +417,17 @@ class CourseService:
     def get_courses_by_teacher(self, teacher_id: str) -> Dict[str, Any]:
         """Lấy danh sách khóa học theo teacher_id"""
         try:
-            courses = Course.query.filter_by(teacher_id=teacher_id, is_deleted=0).all()
+            if not self.has_teacher:
+                return {
+                    "success": True,
+                    "data": [],
+                    "message": "Course model không còn trường teacher_id",
+                }
+
+            query = Course.query.filter_by(teacher_id=teacher_id)
+            if self.supports_soft_delete:
+                query = query.filter_by(is_deleted=0)
+            courses = query.all()
 
             return {"success": True, "data": [course.to_dict() for course in courses]}
         except Exception as e:
@@ -386,7 +441,10 @@ class CourseService:
             if status not in valid_statuses:
                 return {"success": False, "error": "Invalid status"}
 
-            courses = Course.query.filter_by(status=status, is_deleted=0).all()
+            query = Course.query.filter_by(status=status)
+            if self.supports_soft_delete:
+                query = query.filter_by(is_deleted=0)
+            courses = query.all()
 
             return {"success": True, "data": [course.to_dict() for course in courses]}
         except Exception as e:

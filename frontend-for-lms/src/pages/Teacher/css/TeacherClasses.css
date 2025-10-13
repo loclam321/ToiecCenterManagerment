@@ -1,0 +1,70 @@
+.teacher-classes .classes-grid {
+  display: grid;
+  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.teacher-classes .class-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.teacher-classes .class-header h3 {
+  margin-top: var(--spacing-sm);
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+}
+
+.teacher-classes .class-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.teacher-classes .meta-label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.teacher-classes .meta-value {
+  margin: 0;
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.teacher-classes .progress-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.teacher-classes .progress-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.teacher-classes .progress {
+  background: var(--gray-100);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  height: 10px;
+}
+
+.teacher-classes .progress-bar {
+  background: var(--gradient-primary);
+  height: 100%;
+}
+
+.teacher-classes .class-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
