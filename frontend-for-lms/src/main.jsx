@@ -15,7 +15,7 @@ import TeacherDetail from './pages/Admin/TeacherDetail';
 import TeacherForm from './pages/Admin/TeacherForm';
 import CourseManagement from './pages/Admin/CourseManagement';
 import CourseDetail from './pages/Admin/CourseDetail';
-import TeacherIntroduction from './pages/Teacher/TeacherIntroduction';
+import TeacherIntroduction from './pages/teacher/TeacherIntroduction';
 import CourseIntroduction from './pages/Courses/CourseIntroduction';
 import AddClassForm from './pages/Admin/AddClassForm';
 import ClassDetail from './pages/Admin/ClassDetail'; // Thêm import
@@ -34,11 +34,12 @@ import TestRunner from './pages/student/TestRunner';
 import LessonList from './pages/student/LessonList';
 import LessonDetail from './pages/student/LessonDetail';
 import Logout from './pages/Logout';
-import TeacherPage from './pages/Teacher/TeacherPage';
-import TeacherDashboard from './pages/Teacher/TeacherDashboard';
-import TeacherSchedule from './pages/Teacher/TeacherSchedule';
-import TeacherClasses from './pages/Teacher/TeacherClasses';
-import TeacherResources from './pages/Teacher/TeacherResources';
+import TeacherPage from './pages/teacher/TeacherPage';
+import TeacherDashboard from './pages/teacher/TeacherDashboard';
+import TeacherSchedule from './pages/teacher/TeacherSchedule';
+import TeacherClasses from './pages/teacher/TeacherClasses';
+import TeacherResources from './pages/teacher/TeacherResources';
+import TeacherLessons from './pages/teacher/TeacherLessons';
 
 
 
@@ -194,6 +195,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route index element={<TeacherDashboard />} />
           <Route path="schedule" element={<TeacherSchedule />} />
           <Route path="classes" element={<TeacherClasses />} />
+          <Route path="lessons" element={<TeacherLessons />} />
           <Route path="resources" element={<TeacherResources />} />
         </Route>
 

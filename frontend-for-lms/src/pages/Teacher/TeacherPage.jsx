@@ -18,6 +18,11 @@ const teacherMenu = [
     label: 'Lớp phụ trách'
   },
   {
+    path: '/teachers/lessons',
+    icon: 'bi bi-journal-text',
+    label: 'Bài học'
+  },
+  {
     path: '/teachers/resources',
     icon: 'bi bi-folder',
     label: 'Tài nguyên'
@@ -33,6 +38,9 @@ const resolveTitle = (pathname) => {
   }
   if (pathname.startsWith('/teachers/classes')) {
     return 'Lớp phụ trách';
+  }
+  if (pathname.startsWith('/teachers/lessons')) {
+    return 'Quản lý bài học';
   }
   if (pathname.startsWith('/teachers/resources')) {
     return 'Tài nguyên giảng dạy';
