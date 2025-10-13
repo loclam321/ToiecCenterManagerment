@@ -1,6 +1,7 @@
 from app.config import db
-from sqlalchemy import func, CheckConstraint, Enum, Date, Text
+from sqlalchemy import func, CheckConstraint, Enum, Date, Text, ForeignKey
 from sqlalchemy.dialects.mysql import SMALLINT, DECIMAL, TINYINT
+from sqlalchemy.orm import relationship
 
 
 class Course(db.Model):
@@ -20,11 +21,6 @@ class Course(db.Model):
         Enum("BEGINNER", "INTERMEDIATE", "ADVANCED", name="course_level_enum"),
         nullable=True,
     )
-    mode = db.Column(
-        Enum("ONLINE", "OFFLINE", "HYBRID", name="course_mode_enum"),
-        nullable=True,
-        default="OFFLINE",
-    )
 
     # Schedule & duration
     schedule_text = db.Column(db.String(120), nullable=True)
@@ -39,27 +35,49 @@ class Course(db.Model):
 
     # Lifecycle & soft-delete
     status = db.Column(
-        Enum("DRAFT", "OPEN", "RUNNING", "CLOSED", "ARCHIVED", name="course_status_enum"),
+        Enum(
+            "DRAFT", "OPEN", "RUNNING", "CLOSED", "ARCHIVED", name="course_status_enum"
+        ),
         nullable=False,
         server_default="OPEN",
     )
-    is_deleted = db.Column(TINYINT(unsigned=True), nullable=False, server_default="0")
 
     # Links (nullable for incremental rollout)
-    teacher_id = db.Column(db.String(10), nullable=True)
-    learning_path_id = db.Column(db.String(10), nullable=True)
-    campus_id = db.Column(db.String(10), nullable=True)
+
+    # Prerequisite course - Self-referencing foreign key
+    cou_course_id = db.Column(
+        db.String(10),
+        ForeignKey("courses.course_id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=True,
+        comment="ID của khóa học tiên quyết (prerequisite course)",
+    )
 
     # Audit
-    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    # Khóa học tiên quyết (prerequisite) - self-referencing
+    prerequisite_course = relationship(
+        "Course",
+        remote_side=[course_id],
+        backref="dependent_courses",
+        foreign_keys=[cou_course_id],
+    )
 
     __table_args__ = (
         CheckConstraint("tuition_fee >= 0", name="chk_course_tuition_nonneg"),
-        CheckConstraint("capacity IS NULL OR capacity >= 0", name="chk_course_capacity_nonneg"),
+        CheckConstraint(
+            "capacity IS NULL OR capacity >= 0", name="chk_course_capacity_nonneg"
+        ),
         CheckConstraint(
             "(start_date IS NULL AND end_date IS NULL) OR (start_date <= end_date)",
             name="chk_course_dates_valid",
+        ),
+        CheckConstraint(
+            "cou_course_id != course_id", name="chk_course_not_self_prerequisite"
         ),
     )
 
@@ -68,7 +86,7 @@ class Course(db.Model):
     def course_status(self):
         """Alias cho trường status để tương thích với code cũ"""
         return self.status
-    
+
     @course_status.setter
     def course_status(self, value):
         """Setter cho course_status để có thể set giá trị"""
@@ -77,29 +95,60 @@ class Course(db.Model):
     def __repr__(self):
         return f"<Course(course_id='{self.course_id}', code='{self.course_code}', name='{self.course_name}')>"
 
-    def to_dict(self):
-        return {
+    def to_dict(self, include_prerequisite=False):
+        """
+        Chuyển đổi object Course thành dictionary
+
+        Args:
+            include_prerequisite: Có include thông tin khóa học tiên quyết không
+        """
+        result = {
+            # Keys & identifiers
             "course_id": self.course_id,
             "course_code": self.course_code,
+            # Display info
             "course_name": self.course_name,
             "course_description": self.course_description,
-            "target_score": int(self.target_score) if self.target_score is not None else None,
+            # Academic & classification
+            "target_score": (
+                int(self.target_score) if self.target_score is not None else None
+            ),
             "level": self.level,
-            "mode": self.mode,
+            # Schedule & duration
             "schedule_text": self.schedule_text,
             "start_date": self.start_date.isoformat() if self.start_date else None,
             "end_date": self.end_date.isoformat() if self.end_date else None,
-            "session_count": int(self.session_count) if self.session_count is not None else None,
-            "total_hours": int(self.total_hours) if self.total_hours is not None else None,
-            "tuition_fee": float(self.tuition_fee) if self.tuition_fee is not None else None,
+            "session_count": (
+                int(self.session_count) if self.session_count is not None else None
+            ),
+            "total_hours": (
+                int(self.total_hours) if self.total_hours is not None else None
+            ),
+            # Fee & capacity
+            "tuition_fee": (
+                float(self.tuition_fee) if self.tuition_fee is not None else None
+            ),
             "capacity": int(self.capacity) if self.capacity is not None else None,
-            # Back-compat key
+            # Lifecycle & status
             "status": self.status,
-            "course_status": self.status,
-            "is_deleted": bool(int(self.is_deleted)) if self.is_deleted is not None else False,
+            "course_status": self.status,  # Alias để tương thích với code cũ
+            # Links
             "teacher_id": self.teacher_id,
             "learning_path_id": self.learning_path_id,
-            "campus_id": self.campus_id,
+            "cou_course_id": self.cou_course_id,  # Prerequisite course ID
+            # Audit
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+        # Include prerequisite course info nếu được yêu cầu
+        if include_prerequisite and self.prerequisite_course:
+            result["prerequisite_course"] = {
+                "course_id": self.prerequisite_course.course_id,
+                "course_code": self.prerequisite_course.course_code,
+                "course_name": self.prerequisite_course.course_name,
+                "level": self.prerequisite_course.level,
+                "status": self.prerequisite_course.status,
+            }
+
+        return result
