@@ -11,9 +11,10 @@ function StudentPage() {
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === '/student') return 'Tổng quan';
-    if (path.startsWith('/student/courses')) return 'Khóa học của tôi';
-    if (path.startsWith('/student/schedule')) return 'Lịch học';
-    if (path.startsWith('/student/tests')) return 'Bài kiểm tra';
+  if (path.startsWith('/student/courses')) return 'Khóa học của tôi';
+  if (path.startsWith('/student/lessons')) return 'Bài học hàng tuần';
+  if (path.startsWith('/student/schedule')) return 'Lịch học';
+  if (path.startsWith('/student/tests')) return 'Bài kiểm tra';
     if (path.startsWith('/student/profile')) return 'Hồ sơ cá nhân';
     return 'Khu vực học viên';
   };

@@ -31,6 +31,8 @@ import StudentSchedule from './pages/student/Schedule';
 import StudentTests from './pages/student/Tests';
 import StudentProfile from './pages/student/Profile';
 import TestRunner from './pages/student/TestRunner';
+import LessonList from './pages/student/LessonList';
+import LessonDetail from './pages/student/LessonDetail';
 import Logout from './pages/Logout';
 
 
@@ -186,6 +188,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         >
           <Route index element={<StudentDashboard />} />
           <Route path="courses" element={<MyCourses />} />
+          <Route path="lessons" element={<LessonList />} />
+          <Route path="lessons/:lessonId" element={<LessonDetail />} />
           <Route path="schedule" element={<StudentSchedule />} />
           <Route path="tests" element={<StudentTests />} />
           <Route path="tests/:testId" element={<TestRunner />} />
