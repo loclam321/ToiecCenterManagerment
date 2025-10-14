@@ -21,7 +21,6 @@ export const getCourses = async (options = {}) => {
     if (sortOrder) url += `&sort_order=${sortOrder}`;
     if (status) url += `&status=${status}`;
     if (level) url += `&level=${level}`;
-    if (mode) url += `&mode=${mode}`;
 
     const response = await fetch(url);
     const result = await response.json();

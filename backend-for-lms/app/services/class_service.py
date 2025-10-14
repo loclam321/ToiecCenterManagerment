@@ -255,7 +255,7 @@ class ClassService:
                 class_enddate=end_date,
                 class_maxstudents=data.get("class_maxstudents"),
                 class_currentenrollment=data.get("class_currentenrollment", 0),
-                class_status=data.get("class_status", "ACTIVE"),
+                class_status=data.get("class_status", ""),
             )
 
             self.db.session.add(class_obj)
@@ -425,6 +425,31 @@ class ClassService:
             existing_enrollment = Enrollment.query.filter_by(
                 user_id=student_id, class_id=class_id
             ).first()
+            from app.models.course_model import Course
+            
+            course = Course.query.get(class_obj.course_id)
+            if course:
+                pre_course_id = course.get_cou_course_id()
+                if pre_course_id:
+                    # Kiểm tra khóa học tiên quyết
+                    pre_course = Course.query.get(pre_course_id)
+                    if pre_course:
+                        # Lấy danh sách lớp học đã hoàn thành của sinh viên
+                        completed_classes = (
+                            db.session.query(Class)
+                            .join(Enrollment, Enrollment.class_id == Class.class_id)
+                            .filter(
+                                Enrollment.user_id == student_id,
+                                Class.class_status == "COMPLETED",
+                                Class.course_id == pre_course_id,
+                            )
+                            .all()
+                        )
+                        if not completed_classes:
+                            return {
+                                "success": False,
+                                "error": f"Học viên phải hoàn thành khóa học {pre_course.course_name} trước khi đăng ký.",
+                            }
 
             if existing_enrollment:
                 # Nếu đã drop, có thể re-enroll

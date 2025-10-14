@@ -87,6 +87,10 @@ class Course(db.Model):
         """Alias cho trường status để tương thích với code cũ"""
         return self.status
 
+    def get_cou_course_id(self):
+        """Lấy cou_course_id (khóa học tiên quyết)"""
+        return self.cou_course_id
+
     @course_status.setter
     def course_status(self, value):
         """Setter cho course_status để có thể set giá trị"""
@@ -132,9 +136,7 @@ class Course(db.Model):
             # Lifecycle & status
             "status": self.status,
             "course_status": self.status,  # Alias để tương thích với code cũ
-            # Links
-            "teacher_id": self.teacher_id,
-            "learning_path_id": self.learning_path_id,
+            
             "cou_course_id": self.cou_course_id,  # Prerequisite course ID
             # Audit
             "created_at": self.created_at.isoformat() if self.created_at else None,

@@ -15,7 +15,6 @@ function CourseManagement() {
         search: '',
         status: '',
         level: '',
-        mode: '',
         sortBy: 'created_at',
         sortOrder: 'desc'
     });
@@ -41,8 +40,7 @@ function CourseManagement() {
                 sortBy: filters.sortBy,
                 sortOrder: filters.sortOrder,
                 status: filters.status,
-                level: filters.level,
-                mode: filters.mode
+                level: filters.level
             };
 
             const result = await getCourses(options);
@@ -146,7 +144,6 @@ function CourseManagement() {
             search: '',
             status: '',
             level: '',
-            mode: '',
             sortBy: 'created_at',
             sortOrder: 'desc'
         });
@@ -157,7 +154,7 @@ function CourseManagement() {
     };
 
     const hasActiveFilters = () => {
-        return filters.search || filters.status || filters.level || filters.mode;
+        return filters.search || filters.status || filters.level;
     };
 
     return (
@@ -233,18 +230,6 @@ function CourseManagement() {
                                         <option value="BEGINNER">Cơ bản</option>
                                         <option value="INTERMEDIATE">Trung cấp</option>
                                         <option value="ADVANCED">Nâng cao</option>
-                                    </select>
-                                </div>
-
-                                <div className="filter-item">
-                                    <select
-                                        value={filters.mode}
-                                        onChange={(e) => handleFilterChange('mode', e.target.value)}
-                                    >
-                                        <option value="">Hình thức</option>
-                                        <option value="ONLINE">Online</option>
-                                        <option value="OFFLINE">Offline</option>
-                                        <option value="HYBRID">Hybrid</option>
                                     </select>
                                 </div>
 
@@ -378,7 +363,6 @@ function CourseManagement() {
                                                             <th>Mã khóa học</th>
                                                             <th>Thông tin khóa học</th>
                                                             <th>Trình độ</th>
-                                                            <th>Hình thức</th>
                                                             <th>Lịch học</th>
                                                             <th>Thời gian</th>
                                                             <th>Học phí</th>
@@ -407,9 +391,6 @@ function CourseManagement() {
                                                                 </td>
                                                                 <td>
                                                                     <span className="level-badge">{getLevelText(course.level)}</span>
-                                                                </td>
-                                                                <td>
-                                                                    <span className="mode-badge">{course.mode}</span>
                                                                 </td>
                                                                 <td>
                                                                     <div className="schedule-info">
@@ -488,10 +469,6 @@ function CourseManagement() {
                                                             <div className="meta-item">
                                                                 <i className="bi bi-bar-chart-steps"></i>
                                                                 <span>{getLevelText(course.level)}</span>
-                                                            </div>
-                                                            <div className="meta-item">
-                                                                <i className="bi bi-laptop"></i>
-                                                                <span>{course.mode}</span>
                                                             </div>
                                                             <div className="meta-item">
                                                                 <i className="bi bi-calendar-week"></i>
