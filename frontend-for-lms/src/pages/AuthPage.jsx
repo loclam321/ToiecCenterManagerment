@@ -32,9 +32,18 @@ function AuthPage() {
   }
 
   useEffect(() => {
-    // Nếu đã đăng nhập thì chuyển hướng về trang chính
+    // Nếu đã đăng nhập thì chuyển hướng về trang phù hợp với vai trò
     if (isAuthenticated()) {
-      navigate('/');
+      const role = (localStorage.getItem('role') || '').toLowerCase();
+      if (role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else if (role === 'teacher') {
+        navigate('/teachers', { replace: true });
+      } else if (role === 'student') {
+        navigate('/student', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
       return;
     }
 
@@ -88,12 +97,12 @@ function AuthPage() {
       setMessage(result.message || 'Đăng nhập thành công');
 
       // Chuyển hướng người dùng dựa vào role
-      const role = localStorage.getItem('role');
+      const role = (localStorage.getItem('role') || '').toLowerCase();
       setTimeout(() => {
         if (role === 'admin') {
           navigate('/admin');
         } else if (role === 'teacher') {
-          navigate('/admin');
+          navigate('/teachers');
         } else if (role === 'student') {
           navigate('/student');
         } else {

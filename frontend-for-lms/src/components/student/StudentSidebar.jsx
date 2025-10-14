@@ -35,9 +35,10 @@ function StudentSidebar() {
 
   const menuItems = [
     { path: '/student', icon: 'bi bi-grid-1x2', label: 'Tổng quan' },
-    { path: '/student/courses', icon: 'bi bi-journal-text', label: 'Khóa học của tôi' },
-    { path: '/student/schedule', icon: 'bi bi-calendar3', label: 'Lịch học' },
-    { path: '/student/tests', icon: 'bi bi-check2-circle', label: 'Bài kiểm tra' },
+  { path: '/student/courses', icon: 'bi bi-journal-text', label: 'Khóa học của tôi' },
+  { path: '/student/lessons', icon: 'bi bi-collection-play', label: 'Bài học hàng tuần' },
+  { path: '/student/schedule', icon: 'bi bi-calendar3', label: 'Lịch học' },
+  { path: '/student/tests', icon: 'bi bi-check2-circle', label: 'Bài kiểm tra' },
     // Hồ sơ sẽ được truy cập bằng cách click vào user-section phía trên, không còn là nav item nữa
   ];
 

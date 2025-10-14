@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from datetime import datetime, date
 from flask import current_app
 from sqlalchemy.exc import IntegrityError
@@ -13,6 +13,11 @@ class CourseService:
 
     def __init__(self, database=None):
         self.db = database or db
+        self.supports_soft_delete = hasattr(Course, "is_deleted")
+        self.has_mode = hasattr(Course, "mode")
+        self.has_teacher = hasattr(Course, "teacher_id")
+        self.has_campus = hasattr(Course, "campus_id")
+        self.has_learning_path_ref = hasattr(Course, "learning_path_id")
 
     def _generate_course_id(self) -> str:
         """Tạo course_id tự động theo format C0000001"""
@@ -86,7 +91,7 @@ class CourseService:
                 sort_order = filters.get("sort_order", "desc")
 
                 # Đảm bảo sort_by là tên cột hợp lệ trong Course model
-                valid_sort_columns = [
+                candidate_sort_columns = [
                     "course_id",
                     "course_code",
                     "course_name",
@@ -99,6 +104,9 @@ class CourseService:
                     "tuition_fee",  # ✅ Thêm
                     "capacity",  # ✅ Thêm
                     "target_score",  # ✅ Thêm
+                ]
+                valid_sort_columns = [
+                    column for column in candidate_sort_columns if hasattr(Course, column)
                 ]
 
                 if sort_by in valid_sort_columns:
@@ -254,8 +262,17 @@ class CourseService:
                 # ❌ REMOVED: teacher_id, learning_path_id, campus_id
             ]
 
+            if self.has_mode:
+                basic_fields.append("mode")
+            if self.has_teacher:
+                basic_fields.append("teacher_id")
+            if self.has_learning_path_ref:
+                basic_fields.append("learning_path_id")
+            if self.has_campus:
+                basic_fields.append("campus_id")
+
             for field in basic_fields:
-                if field in payload:
+                if field in payload and hasattr(course, field):
                     setattr(course, field, payload[field])
 
             # Xử lý date fields đặc biệt
@@ -363,6 +380,9 @@ class CourseService:
                 )
                 .order_by(Course.course_id)
             )
+
+            if self.supports_soft_delete:
+                query = query.filter(Course.is_deleted == 0)
 
             results = query.all()
 

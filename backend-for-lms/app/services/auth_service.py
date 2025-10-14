@@ -10,6 +10,7 @@ from app.models.teacher_model import Teacher
 from werkzeug.security import check_password_hash
 from app.config import mail
 from flask_mail import Message
+from flask_jwt_extended import create_access_token
 
 
 class AuthService:
@@ -458,22 +459,20 @@ class AuthService:
         """Tạo JWT token với thông tin user"""
         from flask import current_app
 
-        # Lấy JWT_SECRET_KEY từ config
-        secret_key = current_app.config.get("JWT_SECRET_KEY")
-        if not secret_key:
-            raise ValueError("JWT_SECRET_KEY not configured")
+        configured_exp = current_app.config.get("JWT_ACCESS_TOKEN_EXPIRES")
+        if configured_exp is False:
+            expires_delta = False
+        elif configured_exp:
+            expires_delta = configured_exp
+        else:
+            expires_delta = datetime.timedelta(hours=24)
 
-        payload = {
-            "sub": user_id,  # subject (user_id)
-            "role": role,  # role (teacher/student)
-            "iat": datetime.datetime.utcnow(),  # issued at
-            "exp": datetime.datetime.utcnow()
-            + datetime.timedelta(hours=24),  # hết hạn sau 24h
-        }
-
-        token = jwt.encode(payload, secret_key, algorithm="HS256")
-
-        return token
+        additional_claims = {"role": role}
+        return create_access_token(
+            identity=user_id,
+            additional_claims=additional_claims,
+            expires_delta=expires_delta,
+        )
 
     def _check_email_exists(self, email: str) -> bool:
         """Kiểm tra email đã tồn tại chưa"""

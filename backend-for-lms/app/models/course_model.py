@@ -138,6 +138,7 @@ class Course(db.Model):
             "course_status": self.status,  # Alias để tương thích với code cũ
             
             "cou_course_id": self.cou_course_id,  # Prerequisite course ID
+            "campus_id": getattr(self, "campus_id", None),
             # Audit
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

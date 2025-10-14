@@ -97,7 +97,7 @@ function Header() {
                 </div>
               )}
             </div>
-            <a href="/teachers" className="nav-link">Giảng viên</a>
+            <a href="/Teacher_intro" className="nav-link">Giảng viên</a>
             <a href="/facility" className="nav-link">Cơ sở vật chất</a>
             <a href="/test" className="nav-link">Kiểm tra đầu vào</a>
           </nav>

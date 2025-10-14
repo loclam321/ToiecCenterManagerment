@@ -63,11 +63,27 @@
   border-bottom: 1px solid var(--border-primary);
 }
 
+.user-section .user-banner {
+  display: none;
+}
+
+.user-section .user-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
 .user-avatar {
   position: relative;
   width: 40px;
   height: 40px;
   flex-shrink: 0;
+}
+
+.user-avatar.large {
+  width: 48px;
+  height: 48px;
 }
 
 .user-avatar img {

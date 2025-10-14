@@ -1,0 +1,72 @@
+.lesson-list-wrapper .lesson-card {
+  border-radius: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lesson-list-wrapper .lesson-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+}
+
+.lesson-list-wrapper .lesson-card.locked {
+  opacity: 0.72;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-pill.unlocked {
+  background-color: #e8f7ef;
+  color: #0c7a3d;
+}
+
+.status-pill.locked {
+  background-color: #f6f6f6;
+  color: #5e6470;
+}
+
+.lesson-detail video {
+  border-radius: 12px;
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  background: #000;
+}
+
+.lesson-detail .question-card {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 1.25rem;
+  background-color: #fff;
+}
+
+.lesson-detail .question-card + .question-card {
+  margin-top: 1rem;
+}
+
+.lesson-detail .choice-item {
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.lesson-detail .choice-item input[type='radio'] {
+  margin-right: 0.75rem;
+}
+
+.lesson-detail .choice-item:hover {
+  background-color: #f5f7fb;
+}
+
+.lesson-detail .summary-card {
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+}
