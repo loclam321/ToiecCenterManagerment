@@ -62,3 +62,50 @@ export const uploadTeacherMedia = async (type, file) => {
   }
   return data.data || {};
 };
+
+export const fetchTeacherLessonHistory = async (classId) => {
+  const res = await fetch(`${BASE_URL}/history/${encodeURIComponent(classId)}`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'Không thể tải lịch sử bài học');
+  }
+  return data.data || { lessons: [], class: {} };
+};
+
+export const fetchTeacherLessonDetail = async (lessonId) => {
+  const res = await fetch(`${BASE_URL}/${encodeURIComponent(lessonId)}`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'Không thể tải chi tiết bài học');
+  }
+  return data.data || { lesson: {}, part: {}, items: [] };
+};
+
+export const updateTeacherLesson = async (lessonId, payload) => {
+  const res = await fetch(`${BASE_URL}/${encodeURIComponent(lessonId)}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'Không thể cập nhật bài học');
+  }
+  return data.data || {};
+};
+
+export const deleteTeacherLesson = async (lessonId) => {
+  const res = await fetch(`${BASE_URL}/${encodeURIComponent(lessonId)}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'Không thể xóa bài học');
+  }
+  return data.data || {};
+};

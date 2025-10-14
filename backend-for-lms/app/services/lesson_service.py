@@ -623,6 +623,408 @@ class LessonService:
             result[item.item_id] = (item, choice_map)
         return result
 
+    def get_teacher_lesson_history(self, teacher_id: str, class_id: int) -> Dict[str, Any]:
+        """Lấy danh sách bài học theo class_id cho giáo viên."""
+        
+        # Xác thực giáo viên có lịch với lớp này
+        schedule_exists = (
+            Schedule.query.filter(
+                Schedule.class_id == class_id, Schedule.user_id == teacher_id
+            ).first()
+            is not None
+        )
+
+        if not schedule_exists:
+            return {
+                "success": False,
+                "error": "Teacher does not have permission for this class",
+                "status": 403,
+            }
+
+        class_obj: Class | None = Class.query.options(
+            joinedload(Class.course).joinedload(Course.learning_path)
+        ).filter(Class.class_id == class_id).first()
+
+        if not class_obj or not class_obj.course:
+            return {"success": False, "error": "Class not found", "status": 404}
+
+        learning_path: LearningPath | None = getattr(class_obj.course, "learning_path", None)
+        if not learning_path:
+            return {
+                "success": False,
+                "error": "Class does not have learning path",
+                "status": 404,
+            }
+
+        lessons = (
+            Lesson.query.options(joinedload(Lesson.part))
+            .filter(Lesson.lp_id == learning_path.lp_id)
+            .order_by(Lesson.ls_date.asc(), Lesson.ls_id.desc())
+            .all()
+        )
+
+        lessons_payload: List[Dict[str, Any]] = []
+        for lesson in lessons:
+            part = lesson.part
+            group_key = self._lesson_group_key(lesson.ls_id)
+            item_count = (
+                Item.query.filter(Item.item_group_key == group_key)
+                .with_entities(Item.item_id)
+                .count()
+            )
+
+            lessons_payload.append({
+                "lesson_id": lesson.ls_id,
+                "lesson_name": lesson.ls_name,
+                "available_from": lesson.ls_date.isoformat() if lesson.ls_date else None,
+                "video_link": lesson.ls_link,
+                "item_count": item_count,
+                "part": {
+                    "part_id": part.part_id if part else None,
+                    "part_code": part.part_code if part else None,
+                    "part_name": part.part_name if part else None,
+                    "part_section": part.part_section if part else None,
+                },
+            })
+
+        return {
+            "success": True,
+            "data": {
+                "lessons": lessons_payload,
+                "class": {
+                    "class_id": class_obj.class_id,
+                    "class_name": class_obj.class_name,
+                    "course_id": class_obj.course.course_id,
+                    "course_name": class_obj.course.course_name,
+                },
+            },
+        }
+
+    def get_teacher_lesson_detail(self, teacher_id: str, lesson_id: int) -> Dict[str, Any]:
+        """Lấy chi tiết bài học kèm items và choices cho giáo viên."""
+        
+        lesson: Lesson | None = (
+            Lesson.query.options(joinedload(Lesson.part), joinedload(Lesson.learning_path))
+            .filter(Lesson.ls_id == lesson_id)
+            .first()
+        )
+        if not lesson:
+            return {"success": False, "error": "Lesson not found", "status": 404}
+
+        learning_path = lesson.learning_path
+        if not learning_path:
+            return {
+                "success": False,
+                "error": "Lesson does not have learning path",
+                "status": 404,
+            }
+
+        # Tìm class_id thông qua course_id
+        target_course_id = getattr(learning_path, "course_id", None)
+        class_obj = None
+        if target_course_id:
+            class_obj = Class.query.filter(Class.course_id == target_course_id).first()
+
+        # Xác thực giáo viên có quyền
+        if class_obj:
+            schedule_exists = (
+                Schedule.query.filter(
+                    Schedule.class_id == class_obj.class_id,
+                    Schedule.user_id == teacher_id
+                ).first()
+                is not None
+            )
+            if not schedule_exists:
+                return {
+                    "success": False,
+                    "error": "Teacher does not have permission for this lesson",
+                    "status": 403,
+                }
+
+        group_key = self._lesson_group_key(lesson.ls_id)
+        items: List[Item] = (
+            Item.query.options(joinedload(Item.choices))
+            .filter(Item.item_group_key == group_key)
+            .order_by(Item.item_order_in_part.asc(), Item.item_id.asc())
+            .all()
+        )
+
+        items_payload: List[Dict[str, Any]] = []
+        for idx, item in enumerate(items, start=1):
+            items_payload.append({
+                "item_id": item.item_id,
+                "order": idx,
+                "stimulus_text": item.item_stimulus_text,
+                "question_text": item.item_question_text,
+                "image_path": item.item_image_path,
+                "audio_path": item.item_audio_path,
+                "choices": [
+                    {
+                        "choice_id": choice.choice_id,
+                        "label": choice.choice_label,
+                        "content": choice.choice_content,
+                        "is_correct": choice.choice_is_correct,
+                    }
+                    for choice in sorted(item.choices, key=lambda c: c.choice_label)
+                ],
+            })
+
+        part = lesson.part
+        return {
+            "success": True,
+            "data": {
+                "lesson": {
+                    "lesson_id": lesson.ls_id,
+                    "lesson_name": lesson.ls_name,
+                    "available_from": lesson.ls_date.isoformat() if lesson.ls_date else None,
+                    "video_link": lesson.ls_link,
+                    "part_id": part.part_id if part else None,
+                    "lp_id": lesson.lp_id,
+                },
+                "part": {
+                    "part_id": part.part_id if part else None,
+                    "part_code": part.part_code if part else None,
+                    "part_name": part.part_name if part else None,
+                    "part_section": part.part_section if part else None,
+                },
+                "items": items_payload,
+            },
+        }
+
+    def update_lesson_for_teacher(
+        self, teacher_id: str, lesson_id: int, payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Cập nhật bài học và items/choices cho giáo viên."""
+        
+        lesson: Lesson | None = (
+            Lesson.query.options(joinedload(Lesson.learning_path))
+            .filter(Lesson.ls_id == lesson_id)
+            .first()
+        )
+        if not lesson:
+            return {"success": False, "error": "Lesson not found", "status": 404}
+
+        learning_path = lesson.learning_path
+        if not learning_path:
+            return {
+                "success": False,
+                "error": "Lesson does not have learning path",
+                "status": 404,
+            }
+
+        target_course_id = getattr(learning_path, "course_id", None)
+        class_obj = None
+        if target_course_id:
+            class_obj = Class.query.filter(Class.course_id == target_course_id).first()
+
+        if class_obj:
+            schedule_exists = (
+                Schedule.query.filter(
+                    Schedule.class_id == class_obj.class_id,
+                    Schedule.user_id == teacher_id
+                ).first()
+                is not None
+            )
+            if not schedule_exists:
+                return {
+                    "success": False,
+                    "error": "Teacher does not have permission to update this lesson",
+                    "status": 403,
+                }
+
+        session = self.db.session
+
+        try:
+            # Cập nhật thông tin bài học
+            if "lesson_name" in payload:
+                lesson.ls_name = payload["lesson_name"]
+            if "available_from" in payload:
+                lesson.ls_date = self._parse_date(payload.get("available_from"))
+            if "video_link" in payload:
+                lesson.ls_link = self._validate_media_path(
+                    payload.get("video_link"), self._VIDEO_PREFIXES, "video_link"
+                )
+
+            # Xóa tất cả items và choices cũ
+            group_key = self._lesson_group_key(lesson.ls_id)
+            old_items = Item.query.filter(Item.item_group_key == group_key).all()
+            for old_item in old_items:
+                Choice.query.filter(Choice.item_id == old_item.item_id).delete()
+                session.delete(old_item)
+
+            # Thêm items và choices mới
+            items_payload = payload.get("items") or []
+            if not isinstance(items_payload, list):
+                raise ValueError("items must be a list")
+
+            if not items_payload:
+                raise ValueError("At least one item is required")
+
+            created_items: List[Dict[str, Any]] = []
+            for idx, item_data in enumerate(items_payload, start=1):
+                try:
+                    stimulus_text = item_data.get("stimulus_text")
+                    question_text = item_data.get("question_text")
+                    image_path = self._validate_media_path(
+                        item_data.get("image_path"),
+                        self._IMAGE_PREFIXES,
+                        "item.image_path",
+                    )
+                    audio_path = self._validate_media_path(
+                        item_data.get("audio_path"),
+                        self._AUDIO_PREFIXES,
+                        "item.audio_path",
+                    )
+                    choices_payload = item_data.get("choices") or []
+                    if not isinstance(choices_payload, list) or not choices_payload:
+                        raise ValueError("Each item must include choices")
+                except ValueError as exc:
+                    raise ValueError(f"Item {idx}: {exc}") from exc
+
+                order_raw = item_data.get("order")
+                try:
+                    order_in_part = int(order_raw) if order_raw is not None else idx
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(f"Item {idx}: order must be an integer") from exc
+
+                item = Item(
+                    part_id=lesson.part_id,
+                    test_id=item_data.get("test_id"),
+                    item_group_key=group_key,
+                    item_stimulus_text=stimulus_text,
+                    item_question_text=question_text,
+                    item_image_path=image_path,
+                    item_audio_path=audio_path,
+                    item_order_in_part=order_in_part,
+                )
+                session.add(item)
+                session.flush()
+
+                created_choices: List[Dict[str, Any]] = []
+                has_correct_choice = False
+                for choice_idx, choice_data in enumerate(choices_payload, start=1):
+                    label = choice_data.get("label")
+                    content = choice_data.get("content")
+                    is_correct = bool(choice_data.get("is_correct"))
+                    if not label or not content:
+                        raise ValueError(
+                            f"Item {idx}: Choice {choice_idx} must include label and content"
+                        )
+                    if is_correct:
+                        has_correct_choice = True
+                    choice = Choice(
+                        item_id=item.item_id,
+                        choice_label=label,
+                        choice_content=content,
+                        choice_is_correct=is_correct,
+                    )
+                    session.add(choice)
+                    session.flush()
+                    created_choices.append(choice.to_dict())
+
+                if not has_correct_choice:
+                    raise ValueError(f"Item {idx} must have at least one correct choice")
+
+                created_items.append({
+                    "item": item.to_dict(),
+                    "choices": created_choices,
+                })
+
+            session.commit()
+
+            lesson_payload = lesson.to_dict()
+            item_payloads: List[Dict[str, Any]] = []
+            for bundle in created_items:
+                item_payload = bundle["item"]
+                item_payload["choices"] = bundle["choices"]
+                item_payloads.append(item_payload)
+
+            return {
+                "success": True,
+                "data": {
+                    "lesson": lesson_payload,
+                    "items": item_payloads,
+                },
+            }
+        except ValueError as exc:
+            session.rollback()
+            return {"success": False, "error": str(exc), "status": 400}
+        except Exception as exc:
+            session.rollback()
+            return {
+                "success": False,
+                "error": f"Failed to update lesson: {exc}",
+                "status": 500,
+            }
+
+    def delete_lesson_for_teacher(self, teacher_id: str, lesson_id: int) -> Dict[str, Any]:
+        """Xóa bài học và tất cả items/choices liên quan cho giáo viên."""
+        
+        lesson: Lesson | None = (
+            Lesson.query.options(joinedload(Lesson.learning_path))
+            .filter(Lesson.ls_id == lesson_id)
+            .first()
+        )
+        if not lesson:
+            return {"success": False, "error": "Lesson not found", "status": 404}
+
+        learning_path = lesson.learning_path
+        if not learning_path:
+            return {
+                "success": False,
+                "error": "Lesson does not have learning path",
+                "status": 404,
+            }
+
+        target_course_id = getattr(learning_path, "course_id", None)
+        class_obj = None
+        if target_course_id:
+            class_obj = Class.query.filter(Class.course_id == target_course_id).first()
+
+        if class_obj:
+            schedule_exists = (
+                Schedule.query.filter(
+                    Schedule.class_id == class_obj.class_id,
+                    Schedule.user_id == teacher_id
+                ).first()
+                is not None
+            )
+            if not schedule_exists:
+                return {
+                    "success": False,
+                    "error": "Teacher does not have permission to delete this lesson",
+                    "status": 403,
+                }
+
+        session = self.db.session
+
+        try:
+            # Xóa tất cả items và choices
+            group_key = self._lesson_group_key(lesson.ls_id)
+            items = Item.query.filter(Item.item_group_key == group_key).all()
+            for item in items:
+                Choice.query.filter(Choice.item_id == item.item_id).delete()
+                session.delete(item)
+
+            # Xóa bài học
+            session.delete(lesson)
+            session.commit()
+
+            return {
+                "success": True,
+                "data": {
+                    "lesson_id": lesson_id,
+                    "message": "Lesson deleted successfully",
+                },
+            }
+        except Exception as exc:
+            session.rollback()
+            return {
+                "success": False,
+                "error": f"Failed to delete lesson: {exc}",
+                "status": 500,
+            }
+
     def submit_lesson_quiz(self, user_id: str, lesson_id: int, responses: List[Dict[str, Any]]):
         lesson: Lesson | None = Lesson.query.filter(Lesson.ls_id == lesson_id).first()
         if not lesson:

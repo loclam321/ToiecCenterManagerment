@@ -1,0 +1,182 @@
+.student-test-results-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem 1rem;
+  z-index: 1100;
+  overflow-y: auto;
+  animation: fadeInBackdrop 0.25s ease;
+}
+
+.student-test-results-modal {
+  width: min(900px, 100%);
+  border-radius: 1rem;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+  max-height: calc(100vh - 4rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.student-test-results-modal .card-header {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border-bottom: none;
+}
+
+.student-test-results-modal .card-header .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.student-test-results-modal .card-body {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 16rem);
+}
+
+.test-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.test-result-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  background: white;
+}
+
+.test-result-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -12px rgba(15, 23, 42, 0.25);
+}
+
+.test-result-card.completed {
+  border-left: 4px solid #22c55e;
+}
+
+.test-result-card.pending {
+  border-left: 4px solid #cbd5e1;
+}
+
+.test-header {
+  padding: 1rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.test-name {
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.test-description {
+  margin-bottom: 0;
+  line-height: 1.4;
+}
+
+.test-body {
+  padding: 1rem;
+}
+
+.score-box {
+  text-align: center;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.score-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.score-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.score-detail {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.stat-box {
+  text-align: center;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.test-footer {
+  padding: 0.75rem 1rem;
+  background: #fafafa;
+  border-top: 1px solid #e2e8f0;
+}
+
+@keyframes fadeInBackdrop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .student-test-results-backdrop {
+    padding: 1rem 0.5rem;
+  }
+
+  .student-test-results-modal {
+    max-height: calc(100vh - 2rem);
+  }
+
+  .test-body .row {
+    row-gap: 0.75rem !important;
+  }
+
+  .score-value {
+    font-size: 1.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+}

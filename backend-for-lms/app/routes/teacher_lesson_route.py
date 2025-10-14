@@ -118,3 +118,101 @@ def teacher_upload_media():
     if status == 400:
         return validation_error_response(message=error_message)
     return error_response(message=error_message, status_code=status)
+
+
+@teacher_lesson_bp.route("/history/<int:class_id>", methods=["GET"])
+@jwt_required()
+def teacher_lesson_history(class_id: int):
+    """Lấy danh sách bài học theo class_id cho giáo viên."""
+    auth = _ensure_teacher_role()
+    if auth is None:
+        return error_response(message="Permission denied", status_code=403)
+
+    teacher_id, _ = auth
+    result = lesson_service.get_teacher_lesson_history(teacher_id, class_id)
+    if result.get("success"):
+        return success_response(data=result.get("data", {}))
+
+    status = result.get("status", 400)
+    error_message = result.get("error", "Unable to fetch lesson history")
+    if status == 404:
+        return not_found_response(message=error_message)
+    if status == 403:
+        return error_response(message=error_message, status_code=403)
+    return error_response(message=error_message, status_code=status)
+
+
+@teacher_lesson_bp.route("/<int:lesson_id>", methods=["GET"])
+@jwt_required()
+def teacher_lesson_detail(lesson_id: int):
+    """Lấy chi tiết bài học kèm items và choices cho giáo viên."""
+    auth = _ensure_teacher_role()
+    if auth is None:
+        return error_response(message="Permission denied", status_code=403)
+
+    teacher_id, _ = auth
+    result = lesson_service.get_teacher_lesson_detail(teacher_id, lesson_id)
+    if result.get("success"):
+        return success_response(data=result.get("data", {}))
+
+    status = result.get("status", 400)
+    error_message = result.get("error", "Unable to fetch lesson detail")
+    if status == 404:
+        return not_found_response(message=error_message)
+    if status == 403:
+        return error_response(message=error_message, status_code=403)
+    return error_response(message=error_message, status_code=status)
+
+
+@teacher_lesson_bp.route("/<int:lesson_id>", methods=["PUT"])
+@jwt_required()
+def teacher_update_lesson(lesson_id: int):
+    """Cập nhật bài học và items/choices cho giáo viên."""
+    auth = _ensure_teacher_role()
+    if auth is None:
+        return error_response(message="Permission denied", status_code=403)
+
+    teacher_id, _ = auth
+    payload = request.get_json(silent=True) or {}
+
+    result = lesson_service.update_lesson_for_teacher(teacher_id, lesson_id, payload)
+    if result.get("success"):
+        return success_response(
+            data=result.get("data", {}),
+            message="Lesson updated successfully"
+        )
+
+    status = result.get("status", 400)
+    error_message = result.get("error", "Unable to update lesson")
+    if status == 404:
+        return not_found_response(message=error_message)
+    if status == 403:
+        return error_response(message=error_message, status_code=403)
+    if status == 400:
+        return validation_error_response(message=error_message)
+    return error_response(message=error_message, status_code=status)
+
+
+@teacher_lesson_bp.route("/<int:lesson_id>", methods=["DELETE"])
+@jwt_required()
+def teacher_delete_lesson(lesson_id: int):
+    """Xóa bài học và tất cả items/choices liên quan cho giáo viên."""
+    auth = _ensure_teacher_role()
+    if auth is None:
+        return error_response(message="Permission denied", status_code=403)
+
+    teacher_id, _ = auth
+    result = lesson_service.delete_lesson_for_teacher(teacher_id, lesson_id)
+    if result.get("success"):
+        return success_response(
+            data=result.get("data", {}),
+            message="Lesson deleted successfully"
+        )
+
+    status = result.get("status", 400)
+    error_message = result.get("error", "Unable to delete lesson")
+    if status == 404:
+        return not_found_response(message=error_message)
+    if status == 403:
+        return error_response(message=error_message, status_code=403)
+    return error_response(message=error_message, status_code=status)
