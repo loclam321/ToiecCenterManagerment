@@ -30,15 +30,12 @@ def get_courses():
     if request.args.get("level"):
         filters["level"] = request.args.get("level")
 
-    if request.args.get("mode"):
-        filters["mode"] = request.args.get("mode")
-
     if request.args.get("status"):
         filters["status"] = request.args.get("status")
 
     if request.args.get("teacher_id"):
-        filters["teacher_id"] = request.args.get("teacher_id")
-
+        filters["user_id"] = request.args.get("teacher_id")
+    
     if request.args.get("search"):
         filters["search"] = request.args.get("search")
 

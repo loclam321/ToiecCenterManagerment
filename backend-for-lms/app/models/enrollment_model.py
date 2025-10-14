@@ -37,16 +37,11 @@ class Enrollment(db.Model):
     def to_dict(self):
         """Convert Enrollment object to dictionary"""
         result = {
-            "enrollment_id": self.enrollment_id,
             "user_id": self.user_id,
             "class_id": self.class_id,
             "status": self.status,
-            "enrolled_at": self.enrolled_at.isoformat() if self.enrolled_at else None,
-            "completed_at": (
-                self.completed_at.isoformat() if self.completed_at else None
-            ),
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+
+      
         }
 
         # Thêm thông tin student nếu có relationship
@@ -72,7 +67,6 @@ class Enrollment(db.Model):
                     "course_code": self.class_obj.course.course_code,
                     "course_name": self.class_obj.course.course_name,
                     "level": self.class_obj.course.level,
-                    "mode": self.class_obj.course.mode,
                 }
 
         return result

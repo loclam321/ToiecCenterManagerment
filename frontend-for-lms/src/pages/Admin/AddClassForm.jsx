@@ -17,7 +17,7 @@ function AddClassForm() {
         class_startdate: '',
         class_enddate: '',
         class_maxstudents: 30,
-        class_status: 'ACTIVE'
+        class_status: ''
     });
     const [errors, setErrors] = useState({});
 

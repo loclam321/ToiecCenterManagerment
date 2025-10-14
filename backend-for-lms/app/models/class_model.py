@@ -60,7 +60,6 @@ class Class(db.Model):
                 "course_code": self.course.course_code,
                 "course_name": self.course.course_name,
                 "level": self.course.level,
-                "mode": self.course.mode,
                 "status": self.course.status,
             }
 
