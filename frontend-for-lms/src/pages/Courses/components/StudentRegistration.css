@@ -1,0 +1,742 @@
+.student-registration {
+  width: 100%;
+}
+
+.registration-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.12);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  transition: all 0.3s ease;
+}
+
+.registration-card:hover {
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.18);
+}
+
+/* Form Header */
+.form-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.form-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.header-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.header-icon i {
+  font-size: 1.5rem;
+  color: white;
+}
+
+.header-text h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-text p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Alert */
+.alert {
+  margin: 16px 24px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  animation: slideDown 0.3s ease;
+}
+
+.alert-danger {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.alert i {
+  font-size: 1rem;
+}
+
+/* Form Body */
+.form-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.required {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.optional {
+  color: #94a3b8;
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+/* Input Wrapper */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.input-wrapper:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+.input-wrapper:focus-within {
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.input-wrapper.filled {
+  border-color: #667eea;
+  background: white;
+}
+
+.input-wrapper.error {
+  border-color: #ef4444;
+  background: #fef2f2;
+  animation: shake 0.3s ease;
+}
+
+.input-icon {
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.input-icon i {
+  font-size: 1.1rem;
+  color: #94a3b8;
+  transition: all 0.3s ease;
+}
+
+.input-wrapper:focus-within .input-icon i,
+.input-wrapper.filled .input-icon i {
+  color: #667eea;
+}
+
+.input-wrapper.error .input-icon i {
+  color: #ef4444;
+}
+
+.input-wrapper input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 12px 12px 12px 0;
+  font-size: 0.9rem;
+  color: #1e293b;
+  outline: none;
+}
+
+.input-wrapper input::placeholder {
+  color: #94a3b8;
+}
+
+.input-wrapper input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.input-check {
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.input-check i {
+  font-size: 1.1rem;
+  color: #10b981;
+  animation: scaleIn 0.3s ease;
+}
+
+/* Error Message */
+.error-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
+.error-msg i {
+  font-size: 0.85rem;
+}
+
+/* Course Info */
+.course-info {
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 4px;
+}
+
+.course-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.course-label i {
+  font-size: 0.9rem;
+  color: #667eea;
+}
+
+.course-label span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #667eea;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.course-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+  padding-left: 22px;
+}
+
+/* Form Footer */
+.form-footer {
+  padding: 0 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 13px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-submit::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7689f0 0%, #8656b5 100%);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-submit:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.btn-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-submit i {
+  font-size: 1.1rem;
+}
+
+.spinner-border {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Form Note */
+.form-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.form-note i {
+  font-size: 0.95rem;
+  color: #10b981;
+}
+
+/* Success State */
+.registration-success {
+  text-align: center;
+  padding: 50px 24px;
+}
+
+.success-animation {
+  margin-bottom: 24px;
+  animation: bounceIn 0.6s ease;
+}
+
+.success-checkmark {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+}
+
+.checkmark {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: block;
+  stroke-width: 2;
+  stroke: white;
+  stroke-miterlimit: 10;
+  box-shadow: inset 0px 0px 0px #10b981;
+  animation: fill 0.4s ease-in-out 0.4s forwards, scale 0.3s ease-in-out 0.9s both;
+}
+
+.checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 2;
+  stroke-miterlimit: 10;
+  stroke: #10b981;
+  fill: none;
+  animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark-check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  stroke: white;
+  stroke-width: 3;
+  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+.registration-success h3 {
+  color: #10b981;
+  font-size: 1.5rem;
+  margin: 0 0 12px 0;
+  font-weight: 700;
+}
+
+.registration-success p {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0 auto;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+.success-decoration {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.success-decoration span {
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  animation: wave 1.5s ease infinite;
+}
+
+.success-decoration span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.success-decoration span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Select Dropdown Styling */
+.select-wrapper {
+  position: relative;
+}
+
+.select-wrapper select {
+  width: 100%;
+  height: 48px;
+  padding: 12px 48px 12px 48px;
+  border: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: #64748b;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.select-wrapper select:focus {
+  color: #1e293b;
+}
+
+.select-wrapper select.selected {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.select-wrapper select option {
+  padding: 12px;
+  background: white;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.select-wrapper select option:first-child {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.select-wrapper select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Custom Arrow */
+.select-arrow {
+  position: absolute;
+  right: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  transition: all 0.3s ease;
+}
+
+.select-arrow i {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  transition: all 0.3s ease;
+}
+
+.select-wrapper.filled .select-arrow i {
+  color: #667eea;
+}
+
+.select-wrapper:hover .select-arrow i {
+  color: #667eea;
+  transform: translateY(2px);
+}
+
+.select-wrapper.error .select-arrow i {
+  color: #ef4444;
+}
+
+/* Icon thay đổi theo giới tính */
+.select-wrapper .input-icon i {
+  transition: all 0.3s ease;
+}
+
+.select-wrapper.filled .input-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Animation khi chọn */
+.select-wrapper select:focus + .select-arrow i {
+  transform: rotate(180deg);
+}
+
+/* Hover effect */
+.select-wrapper:hover {
+  border-color: #cbd5e1;
+}
+
+.select-wrapper.filled:hover {
+  border-color: #667eea;
+}
+
+.select-wrapper.error:hover {
+  border-color: #ef4444;
+}
+
+/* Remove old gender-options styles nếu có */
+.gender-options,
+.gender-option,
+.gender-icon,
+.gender-check {
+  display: none;
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes stroke {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fill {
+  100% {
+    box-shadow: inset 0px 0px 0px 40px #10b981;
+  }
+}
+
+@keyframes scale {
+  0%, 100% {
+    transform: none;
+  }
+  50% {
+    transform: scale3d(1.1, 1.1, 1);
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+  .form-header {
+    padding: 20px;
+  }
+
+  .header-icon {
+    width: 46px;
+    height: 46px;
+  }
+
+  .header-text h3 {
+    font-size: 1.1rem;
+  }
+
+  .form-body {
+    padding: 20px;
+    gap: 14px;
+  }
+
+  .form-footer {
+    padding: 0 20px 20px;
+  }
+
+  .registration-success {
+    padding: 40px 20px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .form-header {
+    padding: 16px;
+  }
+
+  .header-content {
+    gap: 10px;
+  }
+
+  .header-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .header-icon i {
+    font-size: 1.3rem;
+  }
+
+  .header-text h3 {
+    font-size: 1rem;
+  }
+
+  .header-text p {
+    font-size: 0.8rem;
+  }
+
+  .form-body {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .form-group label {
+    font-size: 0.8rem;
+  }
+
+  .input-wrapper input {
+    font-size: 0.85rem;
+  }
+
+  .form-footer {
+    padding: 0 16px 16px;
+  }
+
+  .btn-submit {
+    font-size: 0.9rem;
+  }
+
+  .registration-success {
+    padding: 32px 16px;
+  }
+
+  .success-checkmark {
+    width: 70px;
+    height: 70px;
+  }
+
+  .checkmark {
+    width: 70px;
+    height: 70px;
+  }
+
+  .registration-success h3 {
+    font-size: 1.3rem;
+  }
+
+  .registration-success p {
+    font-size: 0.85rem;
+  }
+
+  .select-wrapper select {
+    font-size: 0.9rem;
+    padding: 10px 44px 10px 44px;
+  }
+
+  .select-arrow {
+    right: 44px;
+  }
+
+  .select-arrow i {
+    font-size: 0.85rem;
+  }
+}

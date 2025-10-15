@@ -18,7 +18,7 @@ class Course(db.Model):
     # Academic & classification
     target_score = db.Column(SMALLINT(unsigned=True), nullable=True)
     level = db.Column(
-        Enum("BEGINNER", "INTERMEDIATE", "ADVANCED", name="course_level_enum"),
+        db.Enum("300–450", "450–600", "600–750", "750–900", name="course_levels"),
         nullable=True,
     )
 
