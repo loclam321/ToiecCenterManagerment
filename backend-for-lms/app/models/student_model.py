@@ -1,3 +1,4 @@
+import enum
 from app.config import db
 from sqlalchemy import func
 from datetime import date
@@ -16,7 +17,10 @@ class Student(db.Model):
     user_email = db.Column(db.String(100), nullable=True)
     user_birthday = db.Column(db.Date, nullable=True)
     user_telephone = db.Column(db.String(15), nullable=True)
-    sd_startlv = db.Column(db.String(100), nullable=True)  # Cấp độ bắt đầu
+    sd_startlv = db.Column(
+        db.Enum("300–450", "450–600", "600–750", "750–900", name="student_levels"),
+        nullable=True
+    )  # Cấp độ bắt đầu
     sd_enrollmenttdate = db.Column(db.Date, nullable=True)  # Ngày đăng ký
     
     # Thêm các trường tracking

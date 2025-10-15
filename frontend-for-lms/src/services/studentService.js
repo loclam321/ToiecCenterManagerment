@@ -323,7 +323,7 @@ export const mapStudentToApi = (studentData) => {
     user_birthday: studentData.birthday,
     user_gender: studentData.gender === 'male' ? 'M' : 
                  studentData.gender === 'female' ? 'F' : 'O',
-    sd_startlv: studentData.startLevel || 'BEGINNER',
+    sd_startlv: studentData.startLevel || '',
     sd_enrollmenttdate: studentData.enrollmentDate || null
     // Không gửi user_id vì sẽ được tạo bởi backend
   };

@@ -4,6 +4,7 @@ import Footer from '../../components/layout/Footer';
 import { useParams } from 'react-router-dom';
 import { fetchLearningPathsByCourse } from '../../services/courseService';
 import './css/CourseIntroduction.css';
+import StudentRegistration from './components/StudentRegistration';
 
 const CourseIntroduction = () => {
   const { courseId } = useParams();
@@ -161,12 +162,7 @@ const CourseIntroduction = () => {
                       <td>{data.course.target_score}</td>
                     </tr>
                   )}
-                  {!!data.course?.schedule_text && (
-                    <tr>
-                      <th>Lịch học</th>
-                      <td>{data.course.schedule_text}</td>
-                    </tr>
-                  )}
+
                   {!!(data.course?.start_date || data.course?.end_date) && (
                     <tr>
                       <th>Thời gian</th>
@@ -193,7 +189,7 @@ const CourseIntroduction = () => {
                     const embedUrl = isYoutube ? toYouTubeEmbed(lp.intro_video_url) : lp.intro_video_url;
                     return (
                       <div key={lp.lp_id || lp.course_id || idx} className="lp-card">
-                        
+
                         {lp.lp_desciption ? (
                           <div className="lp-desc">{lp.lp_desciption}</div>
                         ) : null}
@@ -286,35 +282,16 @@ const CourseIntroduction = () => {
                                   <video src={embedUrl} controls />
                                 )}
                               </div>
-                              <form
-                                className="vr-form"
-                                onSubmit={(e) => {
-                                  e.preventDefault();
-                                }}
-                              >
-                                <div className="vr-title">Đăng ký tư vấn khóa học</div>
-                                <label className="vr-field">
-                                  <span>Họ và tên *</span>
-                                  <input type="text" name="fullName" required placeholder="Nguyễn Văn A" />
-                                </label>
-                                <label className="vr-field">
-                                  <span>Số điện thoại *</span>
-                                  <input type="tel" name="phone" required placeholder="09xxxxxxxx" />
-                                </label>
-                                <label className="vr-field">
-                                  <span>Email</span>
-                                  <input type="email" name="email" placeholder="email@domain.com" />
-                                </label>
-                                <label className="vr-field">
-                                  <span>Khóa đăng ký</span>
-                                  <input type="text" name="course" defaultValue={data.course?.course_name || ''} />
-                                </label>
-                                <button className="vr-submit" type="submit">Đăng ký</button>
-                                <div className="vr-note">Bằng việc đăng ký, bạn đồng ý nhận tư vấn từ trung tâm.</div>
-                              </form>
+
+                              {/* Replace old form with StudentRegistration component */}
+                              <StudentRegistration
+                                courseName={data.course?.course_name || ''}
+                                courseId={courseId}
+                              />
                             </div>
                           </section>
                         ) : null}
+
                         <div className="lp-meta-inline">
                           <span className="muted">Mã khóa:</span> {lp.course_id}
                           {lp.published_at && (

@@ -1,4 +1,6 @@
+from enum import verify
 from typing import Dict, Any, List, Optional
+from app.routes.auth_route import verify_email
 from sqlalchemy.exc import IntegrityError
 from flask import current_app
 from app.config import db
@@ -6,6 +8,7 @@ from app.models.student_model import Student
 from datetime import datetime, date
 from werkzeug.security import generate_password_hash
 from werkzeug.exceptions import NotFound, BadRequest, Conflict
+from app.utils.email_utils import send_email, generate_email_verification_token
 
 
 class StudentService:
@@ -73,18 +76,9 @@ class StudentService:
             return {"success": False, "error": f"Error retrieving student: {str(e)}"}
 
     def create_student(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Create a new student
-
-        Args:
-            data: Student data
-
-        Returns:
-            Dict with created student data
-        """
         try:
             # Validate required fields
-            required_fields = ["user_name", "user_email", "user_password"]
+            required_fields = ["user_name", "user_email"]
             for field in required_fields:
                 if field not in data or not data[field]:
                     return {
@@ -96,14 +90,8 @@ class StudentService:
             if Student.query.filter_by(user_email=data["user_email"]).first():
                 return {"success": False, "error": "Email already exists"}
 
-            # Generate student ID
-            last_student = Student.query.order_by(Student.user_id.desc()).first()
-            if last_student:
-                # Extract number from last ID and increment
-                last_id = int(last_student.user_id[1:])
-                new_id = f"S{(last_id + 1):08d}"
-            else:
-                new_id = "S00000001"
+            # Generate new ID
+            new_id = self.generate_student_id()
 
             # Process birthday if provided
             if "user_birthday" in data and data["user_birthday"]:
@@ -118,27 +106,30 @@ class StudentService:
                         "error": "Invalid date format for birthday (use YYYY-MM-DD)",
                     }
 
-            # Create student instance
-            student_data = {
-                "user_id": new_id,
-                "user_name": data["user_name"],
-                "user_email": data["user_email"],
-                "user_gender": data.get("user_gender"),
-                "user_birthday": data.get("user_birthday"),
-                "user_telephone": data.get("user_telephone"),
-                "sd_startlv": data.get("sd_startlv", "BEGINNER"),
-                "sd_enrollmenttdate": data.get("sd_enrollmenttdate", date.today()),
-                "is_email_verified": data.get("is_email_verified", False),
-            }
+            # ✅ CÁCH 2: Tạo object trực tiếp (bớt 10 dòng code)
+            student = Student(
+                user_id=new_id,
+                user_name=data["user_name"],
+                user_email=data["user_email"],
+                user_gender=data.get("user_gender"),
+                user_birthday=data.get("user_birthday"),
+                user_telephone=data.get("user_telephone"),
+                sd_startlv=data.get("sd_startlv", ""),
+                sd_enrollmenttdate=data.get("sd_enrollmenttdate", date.today()),
+                is_email_verified=data.get("is_email_verified", False),
+            )
 
-            student = Student(**student_data)
-
-            # Set password
-            if "user_password" in data:
-                student.set_password(data["user_password"])
+            verify_email_token = generate_email_verification_token()
+            try:
+                send_email(
+                     student.user_email, new_id, verify_email_token
+                )
+            except Exception as e:
+                current_app.logger.error(f"Error sending verification email: {e}")
 
             self.db.session.add(student)
             self.db.session.commit()
+            
 
             return {
                 "success": True,
@@ -420,3 +411,24 @@ class StudentService:
         except Exception as e:
             current_app.logger.error(f"Error filtering students: {str(e)}")
             return {"success": False, "error": f"Error filtering students: {str(e)}"}
+
+    def generate_student_id(self) -> str:
+        """
+        Generate a new unique student ID
+
+        Returns:
+            New student ID
+        """
+        try:
+            last_student = Student.query.order_by(Student.user_id.desc()).first()
+            if last_student:
+                # Extract number from last ID and increment
+                last_id = int(last_student.user_id[1:])
+                new_id = f"S{(last_id + 1):08d}"
+            else:
+                new_id = "S00000001"
+
+            return new_id
+        except Exception as e:
+            current_app.logger.error(f"Error generating student ID: {str(e)}")
+            raise Exception(f"Error generating student ID: {str(e)}")
