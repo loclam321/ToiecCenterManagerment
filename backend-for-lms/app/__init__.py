@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from app.config import db, migrate, jwt, mail, config
 from .routes.auth_route import auth_bp
 from .routes.teacher_route import teacher_bp
@@ -55,12 +55,22 @@ def create_app(config_name="default"):
                     "http://localhost:5176",
                     "http://localhost:5177",
                 ],
-                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
                 "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+                "expose_headers": ["Content-Type", "Authorization"],
             }
         },
         supports_credentials=True,
+        send_wildcard=False,
+        always_send=True,
     )
+    
+    # Thêm handler để đảm bảo OPTIONS request được xử lý
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = app.make_default_options_response()
+            return response
 
     # Ensure database exists before initializing extensions
     _ensure_database_exists(config[config_name].SQLALCHEMY_DATABASE_URI)
