@@ -12,7 +12,6 @@ const ConfirmRegistration = ({
     const [course, setCourse] = useState({});
     const [preCourse, setPreCourse] = useState({});
     const [selectedOption, setSelectedOption] = useState('current');
-
     const handleOverlayClick = (e) => {
         if (e.target === e.currentTarget) {
             onClose();
@@ -55,10 +54,10 @@ const ConfirmRegistration = ({
     const handleConfirm = () => {
         // ✅ Tính startLevel dựa trên lựa chọn
         let startLevel = '';
-        
+
         if (selectedOption === 'current') {
             // Nếu chỉ học khóa hiện tại → startLevel = level của preCourse
-            startLevel = preCourse.course_level || '';
+            startLevel = preCourse.level || '';
         } else {
             // Nếu học cả preCourse → startLevel = '' (bắt đầu từ đầu)
             startLevel = '';
@@ -74,8 +73,8 @@ const ConfirmRegistration = ({
 
         console.log('📦 Confirm Data:', {
             ...confirmData,
-            logic: selectedOption === 'current' 
-                ? `Bỏ qua preCourse → startLevel = ${preCourse.course_level}`
+            logic: selectedOption === 'current'
+                ? `Bỏ qua preCourse → startLevel = ${preCourse.level}`
                 : 'Học cả preCourse → startLevel = "" (bắt đầu từ đầu)'
         });
 
@@ -131,8 +130,8 @@ const ConfirmRegistration = ({
                         <div className="info-item">
                             <div className="info-label">
                                 <i className={`bi ${formData.gender === 'male' ? 'bi-gender-male' :
-                                        formData.gender === 'female' ? 'bi-gender-female' :
-                                            'bi-gender-ambiguous'
+                                    formData.gender === 'female' ? 'bi-gender-female' :
+                                        'bi-gender-ambiguous'
                                     }`}></i>
                                 <span>Giới tính</span>
                             </div>
@@ -174,7 +173,7 @@ const ConfirmRegistration = ({
                                 </div>
                                 <div className="info-value course-name">
                                     {preCourse.course_name}
-                                    <span className="level-badge">Level: {preCourse.course_level}</span>
+                                    <span className="level-badge">Level: {preCourse.level}</span>
                                 </div>
                             </div>
                         )}
