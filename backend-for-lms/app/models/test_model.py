@@ -11,10 +11,20 @@ class Test(db.Model):
     test_duration_min = db.Column(db.Integer, nullable=True)
 
     # ✅ SỬA: Từ DateTime thành Integer (số lượng câu hỏi)
-    test_total_questions = db.Column(db.Integer, nullable=True)
+    test_total_questions = db.Column(
+        db.Integer,
+        nullable=True,
+        default=0,
+        server_default="0",
+    )
 
     # ✅ SỬA: Từ DateTime thành String (trạng thái: ACTIVE, INACTIVE, DRAFT, etc.)
-    test_status = db.Column(db.String(20), nullable=True, default="DRAFT")
+    test_status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="DRAFT",
+        server_default="DRAFT",
+    )
 
     # Liên kết tới lớp và giáo viên phụ trách
     class_id = db.Column(
@@ -31,7 +41,12 @@ class Test(db.Model):
     # Thiết lập thời gian mở/đóng, giới hạn lượt và thời lượng làm bài
     available_from = db.Column(db.DateTime(timezone=True))
     due_at = db.Column(db.DateTime(timezone=True))
-    max_attempts = db.Column(db.Integer, nullable=True, default=2)
+    max_attempts = db.Column(
+        db.Integer,
+        nullable=False,
+        default=2,
+        server_default="2",
+    )
     time_limit_min = db.Column(db.Integer, nullable=True)
 
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())

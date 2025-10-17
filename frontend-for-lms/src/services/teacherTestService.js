@@ -23,17 +23,6 @@ export const fetchTeacherTestSetup = async () => {
   return data.data || { classes: [], parts: [] };
 };
 
-export const listTeacherTests = async (classId) => {
-  const res = await fetch(`${BASE_URL}/history/${encodeURIComponent(classId)}`, {
-    headers: authHeaders(),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || 'Không thể tải danh sách bài kiểm tra');
-  }
-  return data.data || { tests: [], class: {} };
-};
-
 export const createTeacherTest = async (payload) => {
   const res = await fetch(`${BASE_URL}`, {
     method: 'POST',

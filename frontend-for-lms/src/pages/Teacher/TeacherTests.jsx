@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   fetchTeacherTestSetup,
-  listTeacherTests,
   createTeacherTest,
   fetchTeacherTestDetail,
   updateTeacherTest,
@@ -67,8 +66,6 @@ function TeacherTests() {
 
   const [classes, setClasses] = useState([]);
   const [parts, setParts] = useState([]);
-  const [history, setHistory] = useState({ tests: [], class: null });
-
   const [selectedClassId, setSelectedClassId] = useState('');
 
   const [items, setItems] = useState([]);
@@ -103,11 +100,6 @@ function TeacherTests() {
         setParts(setup.parts || []);
         const initialClassId = String(setup.classes?.[0]?.class_id || '');
         setSelectedClassId(initialClassId);
-        if (initialClassId) {
-          const historyData = await listTeacherTests(initialClassId);
-          if (!mounted) return;
-          setHistory(historyData);
-        }
       } catch (err) {
         if (!mounted) return;
         setError(err.message || 'Không thể tải dữ liệu');
@@ -119,25 +111,6 @@ function TeacherTests() {
       mounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (!selectedClassId) return;
-    let mounted = true;
-    (async () => {
-      try {
-        setError('');
-        const historyData = await listTeacherTests(selectedClassId);
-        if (!mounted) return;
-        setHistory(historyData);
-      } catch (err) {
-        if (!mounted) return;
-        setError(err.message || 'Không thể tải danh sách bài kiểm tra');
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [selectedClassId]);
 
   const resetForm = () => {
     setForm({
@@ -304,8 +277,6 @@ function TeacherTests() {
         setSuccessMessage('Tạo bài kiểm tra thành công');
       }
       resetForm();
-      const historyData = await listTeacherTests(payload.class_id);
-      setHistory(historyData);
     } catch (err) {
       setError(err.message || (editingTestId ? 'Không thể cập nhật bài kiểm tra' : 'Không thể tạo bài kiểm tra mới'));
     } finally {
@@ -360,8 +331,6 @@ function TeacherTests() {
     try {
       await deleteTeacherTest(testId);
       setSuccessMessage('Đã xóa bài kiểm tra');
-      const historyData = await listTeacherTests(selectedClassId);
-      setHistory(historyData);
     } catch (err) {
       setError(err.message || 'Không thể xóa bài kiểm tra');
     }
@@ -396,13 +365,7 @@ function TeacherTests() {
                 'Thêm bài kiểm tra mới'
               )}
             </h5>
-            {history.class ? (
-              <small className="text-muted">
-                Lớp {history.class.class_name || history.class.class_id}
-              </small>
-            ) : (
-              <small className="text-muted">Chọn lớp phụ trách để bắt đầu</small>
-            )}
+            <small className="text-muted">Chọn lớp phụ trách để bắt đầu</small>
           </div>
           <div className="d-flex gap-2">
             <button type="button" className="btn btn-outline-secondary btn-sm" onClick={resetForm} disabled={submitting}>
@@ -679,55 +642,7 @@ function TeacherTests() {
         </div>
       </form>
 
-      <div className="card test-history mt-4">
-        <div className="card-header">
-          <h5 className="mb-0">Danh sách bài kiểm tra ({history.tests?.length || 0})</h5>
-          <small className="text-muted">Hiển thị các bài kiểm tra đã tạo cho lớp {history.class?.class_name || selectedClassId}</small>
-        </div>
-        <div className="card-body">
-          {!history.tests?.length ? (
-            <div className="text-muted">Chưa có bài kiểm tra nào.</div>
-          ) : (
-            <div className="row g-3">
-              {history.tests.map((test) => (
-                <div key={test.test_id} className="col-md-6 col-lg-4">
-                  <div className="card shadow-sm h-100">
-                    <div className="card-body d-flex flex-column">
-                      <h6 className="card-title mb-2">{test.test_name || `Bài kiểm tra #${test.test_id}`}</h6>
-                      <div className="text-muted small mb-2">Trạng thái: <strong>{test.test_status || '—'}</strong></div>
-                      <div className="test-meta text-muted small mb-3">
-                        <div>Thời lượng: {test.test_duration_min ?? '—'} phút</div>
-                        <div>Số câu hỏi: {test.total_questions ?? test.test_total_questions ?? '—'}</div>
-                        <div>Lượt làm: {test.attempt_count ?? 0}</div>
-                        {typeof test.best_score_10 === 'number' && (
-                          <div>Điểm cao nhất: {test.best_score_10.toFixed(test.best_score_10 % 1 === 0 ? 0 : 2)}/10</div>
-                        )}
-                        {test.last_submitted_at && (
-                          <div>Lần nộp gần nhất: {new Date(test.last_submitted_at).toLocaleString('vi-VN')}</div>
-                        )}
-                      </div>
-                      <div className="mt-auto d-flex flex-wrap gap-2">
-                        <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => openDetail(test.test_id, 'view')}>
-                          Xem chi tiết
-                        </button>
-                        <button type="button" className="btn btn-sm btn-outline-success" onClick={() => openScoreboard(test.test_id)}>
-                          Bảng điểm
-                        </button>
-                        <button type="button" className="btn btn-sm btn-outline-warning" onClick={() => openDetail(test.test_id, 'edit')}>
-                          Chỉnh sửa
-                        </button>
-                        <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(test.test_id)}>
-                          Xóa
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* History section removed per latest requirements */}
 
       {detailModalOpen && detailData && (
         <div className="tests-modal-backdrop" role="dialog" aria-modal="true">

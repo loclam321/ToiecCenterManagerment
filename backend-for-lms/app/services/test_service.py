@@ -576,8 +576,15 @@ class TeacherTestService:
     # ------------------------------------------------------------------
     # Internal item persistence helper
     # ------------------------------------------------------------------
-    def _persist_items(self, session, items_payload: List[Dict[str, Any]], group_key: str, test_id: int) -> List[Dict[str, Any]]:
+    def _persist_items(
+        self,
+        session,
+        items_payload: List[Dict[str, Any]],
+        group_key: str,
+        test_id: int,
+    ) -> List[Dict[str, Any]]:
         created_items: List[Dict[str, Any]] = []
+
         for idx, item_data in enumerate(items_payload, start=1):
             part_id = item_data.get("part_id")
             if not part_id:
@@ -641,4 +648,3 @@ class TeacherTestService:
             created_items.append(item_payload)
 
         return created_items
-*** End Patch

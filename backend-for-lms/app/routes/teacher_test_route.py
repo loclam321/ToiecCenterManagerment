@@ -35,31 +35,6 @@ def teacher_test_setup():
     return success_response(data=result.get("data", {}))
 
 
-@teacher_test_bp.route("/history/<int:class_id>", methods=["GET"])
-@jwt_required()
-def teacher_test_history(class_id: int):
-    auth = _ensure_teacher_role()
-    if auth is None:
-        return error_response(message="Permission denied", status_code=403)
-
-    teacher_id, role = auth
-    allow_all = role == "admin"
-    try:
-        result = service.list_tests_for_class(teacher_id, class_id, allow_all=allow_all)
-    except PermissionError as exc:
-        return error_response(message=str(exc), status_code=403)
-
-    if not result.get("success"):
-        status = result.get("status", 400)
-        if status == 404:
-            return not_found_response(message=result.get("error", "Not found"))
-        if status == 403:
-            return error_response(message=result.get("error", "Permission denied"), status_code=403)
-        return error_response(message=result.get("error", "Unable to fetch tests"), status_code=status)
-
-    return success_response(data=result.get("data", {}))
-
-
 @teacher_test_bp.route("", methods=["POST"])
 @jwt_required()
 def teacher_create_test():
