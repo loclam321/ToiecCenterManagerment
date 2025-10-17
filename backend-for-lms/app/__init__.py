@@ -10,6 +10,7 @@ from flask_cors import CORS
 from .routes.room_route import room_bp
 from .routes.student_lesson_route import student_lesson_bp
 from .routes.teacher_lesson_route import teacher_lesson_bp
+from .routes.teacher_test_route import teacher_test_bp
 from .routes.teacher_class_route import teacher_class_bp
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine.url import make_url
@@ -98,6 +99,7 @@ def create_app(config_name="default"):
     app.register_blueprint(student_lesson_bp)
     app.register_blueprint(teacher_lesson_bp)
     app.register_blueprint(teacher_class_bp)
+    app.register_blueprint(teacher_test_bp)
     
 
     return app

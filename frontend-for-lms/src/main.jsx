@@ -40,6 +40,7 @@ import TeacherSchedule from './pages/Teacher/TeacherSchedule';
 import TeacherClasses from './pages/Teacher/TeacherClasses';
 import TeacherResources from './pages/Teacher/TeacherResources';
 import TeacherLessons from './pages/Teacher/TeacherLessons';
+import TeacherTests from './pages/Teacher/TeacherTests';
 
 
 
@@ -196,6 +197,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="schedule" element={<TeacherSchedule />} />
           <Route path="classes" element={<TeacherClasses />} />
           <Route path="lessons" element={<TeacherLessons />} />
+          <Route path="tests" element={<TeacherTests />} />
           <Route path="resources" element={<TeacherResources />} />
         </Route>
 
