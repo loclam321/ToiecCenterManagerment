@@ -87,17 +87,17 @@ const StudentRegistration = ({ courseName = '', courseId = '' }) => {
                 user_email: formData.email,
                 user_telephone: formData.phone,
                 user_birthday: formData.birthday,
-                user_gender: formData.gender === 'male' ? 'M' : 
-                            formData.gender === 'female' ? 'F' : 'O',
-                
+                user_gender: formData.gender === 'male' ? 'M' :
+                    formData.gender === 'female' ? 'F' : 'O',
+
                 // Thông tin học viên
                 sd_startlv: confirmData.startLevel || '', // Từ ConfirmRegistration
                 sd_enrollmenttdate: new Date().toISOString().split('T')[0], // Ngày hiện tại
-                
+
                 // Thông tin khóa học
                 courseId: courseId,
                 courseName: courseName,
-                
+
                 // Options từ ConfirmRegistration
                 selectedOption: confirmData.selectedOption,
                 includePreCourse: confirmData.includePreCourse,
@@ -109,17 +109,17 @@ const StudentRegistration = ({ courseName = '', courseId = '' }) => {
 
             // TODO: Gọi API
             // await submitRegistration(apiData);
-            
+
             await new Promise(resolve => setTimeout(resolve, 1500));
 
             setSubmitted(true);
             setTimeout(() => {
-                setFormData({ 
-                    name: '', 
-                    phone: '', 
-                    email: '', 
+                setFormData({
+                    name: '',
+                    phone: '',
+                    email: '',
                     gender: '',
-                    birthday: '' 
+                    birthday: ''
                 });
                 setSubmitted(false);
             }, 3000);
@@ -245,12 +245,11 @@ const StudentRegistration = ({ courseName = '', courseId = '' }) => {
                                     </label>
                                     <div className={`input-wrapper select-wrapper ${errors.gender ? 'error' : ''} ${formData.gender ? 'filled' : ''}`}>
                                         <div className="input-icon">
-                                            <i className={`bi ${
-                                                formData.gender === 'male' ? 'bi-gender-male' : 
-                                                formData.gender === 'female' ? 'bi-gender-female' : 
-                                                formData.gender === 'other' ? 'bi-gender-ambiguous' :
-                                                'bi-person-fill'
-                                            }`}></i>
+                                            <i className={`bi ${formData.gender === 'male' ? 'bi-gender-male' :
+                                                    formData.gender === 'female' ? 'bi-gender-female' :
+                                                        formData.gender === 'other' ? 'bi-gender-ambiguous' :
+                                                            'bi-person-fill'
+                                                }`}></i>
                                         </div>
                                         <select
                                             id="gender"

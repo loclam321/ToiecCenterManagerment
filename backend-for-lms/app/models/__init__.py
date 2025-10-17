@@ -21,6 +21,7 @@ from .attempt_model import Attempt
 from .words_model import Word
 from .student_words_model import StudentWords
 from .vocabulary_model import Vocabulary
+from .consult_registration_model import ConsultRegistration
 
 # Cung cấp danh sách tất cả các models cho việc tạo bảng
 __all__ = [
@@ -42,4 +43,5 @@ __all__ = [
     "Word",
     "StudentWords",
     "Vocabulary",
+    "ConsultRegistration",
 ]
