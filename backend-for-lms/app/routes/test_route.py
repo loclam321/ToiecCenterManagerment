@@ -1,3 +1,5 @@
+from datetime import timezone, timedelta
+
 from flask import Blueprint, request, jsonify
 from app.models.test_model import Test
 from app.models.item_model import Item
@@ -5,12 +7,42 @@ from app.models.part_model import Part
 from app.models.choice_model import Choice
 from app.models.attempt_model import Attempt
 from app.models.enrollment_model import Enrollment
-from app.utils.response_helper import success_response, error_response, not_found_response
+from app.utils.response_utils import success_response, error_response, not_found_response
 from app.config import db
 from sqlalchemy import func
 import datetime
 
 test_bp = Blueprint("tests", __name__, url_prefix="/api/tests")
+
+
+LOCAL_TIMEZONE = timezone(timedelta(hours=7))
+
+
+def _as_utc(dt_value):
+    if not dt_value:
+        return None
+    if dt_value.tzinfo is None:
+        localized = dt_value.replace(tzinfo=LOCAL_TIMEZONE)
+    else:
+        localized = dt_value
+    return localized.astimezone(timezone.utc)
+
+
+def _check_test_window(test_obj):
+    now = datetime.datetime.now(timezone.utc)
+    available_from = _as_utc(test_obj.available_from)
+    due_at = _as_utc(test_obj.due_at)
+
+    if available_from and available_from > now:
+        return False, "Bài kiểm tra chưa mở"
+    if due_at and due_at < now:
+        return False, "Bài kiểm tra đã đóng"
+
+    status = (test_obj.test_status or '').upper()
+    if status in {"INACTIVE", "ARCHIVED"}:
+        return False, "Bài kiểm tra không khả dụng"
+
+    return True, None
 
 
 @test_bp.route("/<int:test_id>", methods=["GET"])
@@ -20,6 +52,10 @@ def get_test_meta(test_id):
         test = Test.query.get(test_id)
         if not test:
             return not_found_response("Test not found", "Test", test_id)
+
+        is_open, message = _check_test_window(test)
+        if not is_open:
+            return error_response(message, 403)
         
         return success_response(test.to_dict())
     except Exception as e:
@@ -37,6 +73,10 @@ def check_test_eligibility(test_id):
         test = Test.query.get(test_id)
         if not test:
             return not_found_response("Test not found", "Test", test_id)
+
+        is_open, message = _check_test_window(test)
+        if not is_open:
+            return error_response(message, 403)
         
         user_id = request.args.get("user_id")
         if not user_id:
@@ -73,6 +113,10 @@ def get_test_questions(test_id):
         test = Test.query.get(test_id)
         if not test:
             return not_found_response("Test not found", "Test", test_id)
+
+        is_open, message = _check_test_window(test)
+        if not is_open:
+            return error_response(message, 403)
         
         # Lấy các items (questions) cho test này
         items = (
@@ -128,6 +172,10 @@ def submit_test(test_id):
         test = Test.query.get(test_id)
         if not test:
             return not_found_response("Test not found", "Test", test_id)
+
+        is_open, message = _check_test_window(test)
+        if not is_open:
+            return error_response(message, 403)
         
         payload = request.get_json() or {}
         user_id = payload.get("user_id")
@@ -315,9 +363,13 @@ def submit_test(test_id):
 def list_tests():
     """Lấy danh sách tất cả tests"""
     try:
-        # Model hiện tại test_status là DateTime, tránh lọc gây sai kiểu → trả tất cả test
         tests = Test.query.all()
-        return success_response([test.to_dict() for test in tests])
+        visible_tests = []
+        for test in tests:
+            is_open, _ = _check_test_window(test)
+            if is_open:
+                visible_tests.append(test.to_dict())
+        return success_response(visible_tests)
     except Exception as e:
         return error_response(f"Error retrieving tests: {str(e)}", 500)
 

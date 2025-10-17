@@ -23,6 +23,8 @@ class TeacherTestService:
     """Domain service xử lý nghiệp vụ bài kiểm tra cho giáo viên."""
 
     _TEST_GROUP_PREFIX = "test"
+    VALID_STATUSES = {"ACTIVE", "INACTIVE", "ARCHIVED"}
+    DEFAULT_STATUS = "ACTIVE"
 
     def __init__(self, database=None) -> None:
         self.db = database or db
@@ -289,6 +291,12 @@ class TeacherTestService:
 
         session = self.db.session
         try:
+            status = (payload.get("test_status") or self.DEFAULT_STATUS).upper()
+            if status == "DRAFT":
+                status = "INACTIVE"
+            if status not in self.VALID_STATUSES:
+                raise ValueError("Trạng thái bài kiểm tra không hợp lệ")
+
             available_from = self._parse_datetime(payload.get("available_from"))
             due_at = self._parse_datetime(payload.get("due_at"))
 
@@ -296,7 +304,7 @@ class TeacherTestService:
                 test_name=payload.get("test_name"),
                 test_description=payload.get("test_description"),
                 test_duration_min=payload.get("test_duration_min"),
-                test_status=payload.get("test_status") or "DRAFT",
+                test_status=status,
                 class_id=class_id,
                 teacher_id=teacher_id,
                 available_from=available_from,
@@ -359,7 +367,12 @@ class TeacherTestService:
             if "test_duration_min" in payload:
                 test.test_duration_min = payload.get("test_duration_min")
             if "test_status" in payload:
-                test.test_status = payload.get("test_status") or test.test_status
+                status = (payload.get("test_status") or test.test_status or self.DEFAULT_STATUS).upper()
+                if status == "DRAFT":
+                    status = "INACTIVE"
+                if status not in self.VALID_STATUSES:
+                    raise ValueError("Trạng thái bài kiểm tra không hợp lệ")
+                test.test_status = status
             if "class_id" in payload and payload.get("class_id"):
                 try:
                     new_class_id = int(payload.get("class_id"))

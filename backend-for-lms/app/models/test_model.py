@@ -1,5 +1,10 @@
 from app.config import db
-from sqlalchemy import Enum, func
+from sqlalchemy import func
+from sqlalchemy.orm import validates
+
+
+ALLOWED_TEST_STATUSES = ("ACTIVE", "INACTIVE", "ARCHIVED")
+DEFAULT_TEST_STATUS = "ACTIVE"
 
 
 class Test(db.Model):
@@ -18,12 +23,12 @@ class Test(db.Model):
         server_default="0",
     )
 
-    # ✅ SỬA: Từ DateTime thành String (trạng thái: ACTIVE, INACTIVE, DRAFT, etc.)
+    # Trạng thái bài kiểm tra (giới hạn ở ACTIVE/INACTIVE/ARCHIVED)
     test_status = db.Column(
         db.String(20),
         nullable=False,
-        default="DRAFT",
-        server_default="DRAFT",
+        default=DEFAULT_TEST_STATUS,
+        server_default=DEFAULT_TEST_STATUS,
     )
 
     # Liên kết tới lớp và giáo viên phụ trách
@@ -61,15 +66,19 @@ class Test(db.Model):
         "Teacher", backref=db.backref("tests", lazy="dynamic")
     )
 
-    # Hoặc dùng Enum cho test_status nếu muốn chặt chẽ hơn:
-    # test_status = db.Column(
-    #     Enum('DRAFT', 'ACTIVE', 'INACTIVE', 'ARCHIVED', name='test_status_enum'),
-    #     nullable=True,
-    #     default='DRAFT'
-    # )
-
     def __repr__(self):
         return f"<Test {self.test_id}: {self.test_name}>"
+
+    @validates("test_status")
+    def _validate_status(self, key, value):
+        if not value:
+            return DEFAULT_TEST_STATUS
+        normalized = value.upper()
+        if normalized == "DRAFT":
+            normalized = "INACTIVE"
+        if normalized not in ALLOWED_TEST_STATUSES:
+            raise ValueError("Trạng thái bài kiểm tra không hợp lệ")
+        return normalized
 
     def to_dict(self):
         """Chuyển đổi Test object thành dictionary"""

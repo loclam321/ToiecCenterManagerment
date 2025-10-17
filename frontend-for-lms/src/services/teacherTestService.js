@@ -1,3 +1,5 @@
+import { fetchTeacherMedia as fetchLessonMedia, uploadTeacherMedia as uploadLessonMedia } from './teacherLessonService';
+
 const BASE_URL = 'http://localhost:5000/api/teacher/tests';
 
 const authHeaders = (options = {}) => {
@@ -82,3 +84,19 @@ export const fetchTeacherTestScoreboard = async (testId) => {
   }
   return data.data || { scoreboard: [], test: {}, total_questions: 0 };
 };
+
+export const fetchTeacherTestHistory = async (classId) => {
+  if (!classId) return { tests: [], class: null };
+  const res = await fetch(`${BASE_URL}/history/${encodeURIComponent(classId)}`, {
+    headers: authHeaders({ json: false }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'Không thể tải lịch sử bài kiểm tra');
+  }
+  return data.data || { tests: [], class: null };
+};
+
+export const fetchTeacherMedia = fetchLessonMedia;
+
+export const uploadTeacherMedia = uploadLessonMedia;
