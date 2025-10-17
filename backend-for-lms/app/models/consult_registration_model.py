@@ -6,7 +6,7 @@ from datetime import datetime
 class ConsultRegistration(db.Model):
     """
     Model cho đăng ký tư vấn khóa học
-    
+
     Attributes:
         cr_id: ID đăng ký tư vấn (Primary Key, Auto Increment)
         course_id: ID khóa học (Foreign Key -> Course)
@@ -22,7 +22,7 @@ class ConsultRegistration(db.Model):
     __tablename__ = "consult_registration"
 
     # Primary Key
-    cr_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    cr_id = db.Column(db.Integer, primary_key=True)
 
     # Foreign Key
     course_id = db.Column(
@@ -92,10 +92,10 @@ class ConsultRegistration(db.Model):
     def to_dict(self, include_course=False):
         """
         Convert model instance to dictionary
-        
+
         Args:
             include_course: Có bao gồm thông tin khóa học không
-            
+
         Returns:
             Dictionary chứa thông tin đăng ký tư vấn
         """
@@ -133,6 +133,7 @@ class ConsultRegistration(db.Model):
     def validate_email(email):
         """Validate email format (basic)"""
         import re
+
         if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             raise ValueError("Invalid email format")
         return email
@@ -141,6 +142,9 @@ class ConsultRegistration(db.Model):
     def validate_phone(phone):
         """Validate phone number (basic)"""
         import re
+
         if phone and not re.match(r"^\d{10,15}$", phone):
             raise ValueError("Phone must be 10-15 digits")
         return phone
+    
+    
