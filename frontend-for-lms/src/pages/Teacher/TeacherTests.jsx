@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   fetchTeacherTestSetup,
   createTeacherTest,
@@ -6,6 +6,9 @@ import {
   updateTeacherTest,
   deleteTeacherTest,
   fetchTeacherTestScoreboard,
+  fetchTeacherTestHistory,
+  fetchTeacherMedia,
+  uploadTeacherMedia,
 } from '../../services/teacherTestService';
 import './css/TeacherTests.css';
 
@@ -35,27 +38,72 @@ const buildEmptyItem = (partId, order) => ({
   choices: defaultChoiceLabels.map((_, idx) => buildEmptyChoice(idx)),
 });
 
+const ISO_MINUTES_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+const ISO_SECONDS_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
+const HAS_TZ_INFO_REGEX = /([zZ]|[+-]\d{2}:?\d{2})$/;
+
+const padTwoDigits = (num) => String(num).padStart(2, '0');
+
+const formatLocalDateTime = (date, includeSeconds = false) => {
+  const year = date.getFullYear();
+  const month = padTwoDigits(date.getMonth() + 1);
+  const day = padTwoDigits(date.getDate());
+  const hours = padTwoDigits(date.getHours());
+  const minutes = padTwoDigits(date.getMinutes());
+  if (!includeSeconds) {
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+  const seconds = padTwoDigits(date.getSeconds());
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+};
+
 const normalizeDateTimeInput = (value) => {
   if (!value) return '';
-  try {
-    const dt = new Date(value);
-    if (Number.isNaN(dt.getTime())) return '';
-    const iso = dt.toISOString();
-    return iso.slice(0, 16);
-  } catch (err) {
+  const raw = typeof value === 'string' ? value.trim() : value;
+  if (!raw) return '';
+
+  if (typeof raw === 'string') {
+    if (ISO_MINUTES_REGEX.test(raw)) {
+      return raw;
+    }
+    if (ISO_SECONDS_REGEX.test(raw) && !HAS_TZ_INFO_REGEX.test(raw)) {
+      return raw.slice(0, 16);
+    }
+  }
+
+  const dt = new Date(raw);
+  if (Number.isNaN(dt.getTime())) {
     return '';
   }
+  return formatLocalDateTime(dt);
 };
 
 const toIsoOrNull = (value) => {
   if (!value) return null;
-  try {
-    const dt = new Date(value);
-    if (Number.isNaN(dt.getTime())) return null;
-    return dt.toISOString();
-  } catch (err) {
+  const raw = typeof value === 'string' ? value.trim() : value;
+  if (!raw) return null;
+
+  if (typeof raw === 'string') {
+    if (ISO_MINUTES_REGEX.test(raw)) {
+      return `${raw}:00`;
+    }
+    if (ISO_SECONDS_REGEX.test(raw) && !HAS_TZ_INFO_REGEX.test(raw)) {
+      return raw;
+    }
+  }
+
+  const dt = new Date(raw);
+  if (Number.isNaN(dt.getTime())) {
     return null;
   }
+  return formatLocalDateTime(dt, true);
+};
+
+const formatDateTime = (value) => {
+  if (!value) return 'Không thiết lập';
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return 'Không hợp lệ';
+  return dt.toLocaleString('vi-VN');
 };
 
 function TeacherTests() {
@@ -69,7 +117,6 @@ function TeacherTests() {
   const [selectedClassId, setSelectedClassId] = useState('');
 
   const [items, setItems] = useState([]);
-  const [expandedItems, setExpandedItems] = useState([]);
   const [editingTestId, setEditingTestId] = useState(null);
   const [form, setForm] = useState({
     test_name: '',
@@ -79,15 +126,43 @@ function TeacherTests() {
     time_limit_min: '',
     available_from: '',
     due_at: '',
-    test_status: 'DRAFT',
+  test_status: 'ACTIVE',
   });
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailData, setDetailData] = useState(null);
   const [scoreboardModalOpen, setScoreboardModalOpen] = useState(false);
   const [scoreboardData, setScoreboardData] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState('');
+  const [mediaLibrary, setMediaLibrary] = useState({ image: [], audio: [] });
+  const [uploadingTarget, setUploadingTarget] = useState(null);
 
   const defaultPartId = useMemo(() => (parts.length ? parts[0].part_id : ''), [parts]);
+
+  const loadHistory = useCallback(async () => {
+    if (!selectedClassId) {
+      setHistory([]);
+      return;
+    }
+    setHistoryError('');
+    setHistoryLoading(true);
+    try {
+      const data = await fetchTeacherTestHistory(selectedClassId);
+      const tests = Array.isArray(data?.tests)
+        ? data.tests
+        : Array.isArray(data)
+          ? data
+          : [];
+      setHistory(tests);
+    } catch (err) {
+      setHistory([]);
+      setHistoryError(err.message || 'Không thể tải lịch sử bài kiểm tra');
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [selectedClassId]);
 
   useEffect(() => {
     let mounted = true;
@@ -121,14 +196,37 @@ function TeacherTests() {
       time_limit_min: '',
       available_from: '',
       due_at: '',
-      test_status: 'DRAFT',
+  test_status: 'ACTIVE',
     });
     setItems([]);
-    setExpandedItems([]);
     setEditingTestId(null);
     setDetailData(null);
     setDetailModalOpen(false);
   };
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [imageFiles, audioFiles] = await Promise.all([
+          fetchTeacherMedia('image'),
+          fetchTeacherMedia('audio'),
+        ]);
+        if (!mounted) return;
+        setMediaLibrary({ image: imageFiles, audio: audioFiles });
+      } catch (err) {
+        if (!mounted) return;
+        setError((prev) => prev || err.message || 'Không thể tải thư viện media');
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const updateFormField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -143,9 +241,6 @@ function TeacherTests() {
     setItems((prev) => prev.filter((item) => item.id !== itemId));
   };
 
-  const toggleExpandedItem = (itemId) => {
-    setExpandedItems((prev) => (prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]));
-  };
 
   const updateItemField = (itemId, field, value) => {
     setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)));
@@ -198,6 +293,118 @@ function TeacherTests() {
         })),
       };
     }));
+  };
+
+  const refreshMediaType = async (type) => {
+    try {
+      const list = await fetchTeacherMedia(type);
+      setMediaLibrary((prev) => ({ ...prev, [type]: list }));
+    } catch (err) {
+      setError((prev) => prev || err.message || `Không thể làm mới thư viện ${type}`);
+    }
+  };
+
+  const handleFileUpload = async (mediaType, file, itemId = null) => {
+    if (!file) return;
+    setError('');
+    setSuccessMessage('');
+    const targetKey = { mediaType, itemId };
+    try {
+      setUploadingTarget(targetKey);
+      const result = await uploadTeacherMedia(mediaType, file);
+      const appliedPath = result.path;
+      if (mediaType === 'image' && itemId) {
+        updateItemField(itemId, 'image_path', appliedPath);
+      }
+      if (mediaType === 'audio' && itemId) {
+        updateItemField(itemId, 'audio_path', appliedPath);
+      }
+      await refreshMediaType(mediaType);
+      setSuccessMessage(`Đã tải lên "${result.original_name || file.name}". Đường dẫn: ${appliedPath}`);
+    } catch (err) {
+      setError(err.message || 'Không thể tải tệp lên');
+    } finally {
+      setUploadingTarget(null);
+    }
+  };
+
+  const renderMediaInputs = (item) => {
+    const imageListId = `test-image-options-${item.id}`;
+    const audioListId = `test-audio-options-${item.id}`;
+    return (
+      <div className="row g-3 mb-3">
+        <div className="col-md-6">
+          <label className="form-label">Hình minh hoạ (đường dẫn /img-test/...)</label>
+          <div className="input-group input-group-sm">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="/img-test/hinh.png"
+              list={imageListId}
+              value={item.image_path}
+              onChange={(e) => updateItemField(item.id, 'image_path', e.target.value)}
+            />
+            <label className="btn btn-outline-secondary mb-0" style={{ minWidth: '110px' }}>
+              {uploadingTarget?.mediaType === 'image' && uploadingTarget?.itemId === item.id ? 'Đang tải...' : 'Chọn tệp'}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                hidden
+                disabled={uploadingTarget?.mediaType === 'image' && uploadingTarget?.itemId === item.id}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  handleFileUpload('image', file, item.id);
+                  if (e.target) e.target.value = '';
+                }}
+              />
+            </label>
+          </div>
+          <small className="text-muted">Ảnh được lưu tại frontend-for-lms/public/img-test</small>
+          <datalist id={imageListId}>
+            {mediaLibrary.image.map((file) => (
+              <option key={file.path} value={file.path}>
+                {file.name}
+              </option>
+            ))}
+          </datalist>
+        </div>
+        <div className="col-md-6">
+          <label className="form-label">Audio luyện nghe (đường dẫn /audio-for-test/...)</label>
+          <div className="input-group input-group-sm">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="/audio-for-test/file.mp3"
+              list={audioListId}
+              value={item.audio_path}
+              onChange={(e) => updateItemField(item.id, 'audio_path', e.target.value)}
+            />
+            <label className="btn btn-outline-secondary mb-0" style={{ minWidth: '110px' }}>
+              {uploadingTarget?.mediaType === 'audio' && uploadingTarget?.itemId === item.id ? 'Đang tải...' : 'Chọn tệp'}
+              <input
+                type="file"
+                accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/m4a,audio/aac"
+                hidden
+                disabled={uploadingTarget?.mediaType === 'audio' && uploadingTarget?.itemId === item.id}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  handleFileUpload('audio', file, item.id);
+                  if (e.target) e.target.value = '';
+                }}
+              />
+            </label>
+          </div>
+          <small className="text-muted">Audio được lưu tại frontend-for-lms/public/audio-for-test</small>
+          <datalist id={audioListId}>
+            {mediaLibrary.audio.map((file) => (
+              <option key={file.path} value={file.path}>
+                {file.name}
+              </option>
+            ))}
+          </datalist>
+        </div>
+      </div>
+    );
   };
 
   const buildSubmitPayload = () => {
@@ -276,6 +483,7 @@ function TeacherTests() {
         await createTeacherTest(payload);
         setSuccessMessage('Tạo bài kiểm tra thành công');
       }
+      await loadHistory();
       resetForm();
     } catch (err) {
       setError(err.message || (editingTestId ? 'Không thể cập nhật bài kiểm tra' : 'Không thể tạo bài kiểm tra mới'));
@@ -303,7 +511,7 @@ function TeacherTests() {
           time_limit_min: test.time_limit_min ?? '',
           available_from: normalizeDateTimeInput(test.available_from),
           due_at: normalizeDateTimeInput(test.due_at),
-          test_status: test.test_status || 'DRAFT',
+          test_status: test.test_status || 'ACTIVE',
         });
         setItems((sourceItems || []).map((item, idx) => ({
           id: `item-edit-${idx}-${generateId()}`,
@@ -331,6 +539,7 @@ function TeacherTests() {
     try {
       await deleteTeacherTest(testId);
       setSuccessMessage('Đã xóa bài kiểm tra');
+      await loadHistory();
     } catch (err) {
       setError(err.message || 'Không thể xóa bài kiểm tra');
     }
@@ -412,10 +621,9 @@ function TeacherTests() {
                 value={form.test_status}
                 onChange={(e) => updateFormField('test_status', e.target.value)}
               >
-                <option value="DRAFT">Nháp</option>
                 <option value="ACTIVE">Mở cho học sinh</option>
-                <option value="INACTIVE">Tạm khóa</option>
-                <option value="ARCHIVED">Lưu trữ</option>
+                <option value="INACTIVE">Tạm khóa chỉnh sửa</option>
+                <option value="ARCHIVED">Đã lưu trữ</option>
               </select>
             </div>
           </div>
@@ -498,20 +706,11 @@ function TeacherTests() {
               Chưa có câu hỏi nào. Nhấn "Thêm câu hỏi" để bắt đầu.
             </div>
           ) : (
-            items.map((item, idx) => {
-              const isExpanded = expandedItems.includes(item.id);
-              return (
-                <div key={item.id} className="test-item card shadow-sm mb-3">
+            items.map((item, idx) => (
+              <div key={item.id} className="test-item card shadow-sm mb-3">
                   <div className="card-header d-flex justify-content-between align-items-center">
                     <span>Câu hỏi #{idx + 1}</span>
                     <div className="d-flex gap-2">
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary btn-sm"
-                        onClick={() => toggleExpandedItem(item.id)}
-                      >
-                        {isExpanded ? 'Thu gọn' : 'Mở rộng'}
-                      </button>
                       <button
                         type="button"
                         className="btn btn-outline-danger btn-sm"
@@ -549,41 +748,21 @@ function TeacherTests() {
                       </div>
                     </div>
 
-                    {isExpanded && (
-                      <div className="expanded-section">
-                        <div className="row g-3 mb-3">
-                          <div className="col-md-6">
-                            <label className="form-label">Mô tả tình huống</label>
-                            <textarea
-                              className="form-control"
-                              rows={2}
-                              value={item.stimulus_text}
-                              onChange={(e) => updateItemField(item.id, 'stimulus_text', e.target.value)}
-                            />
-                          </div>
-                          <div className="col-md-3">
-                            <label className="form-label">Đường dẫn hình ảnh</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              value={item.image_path}
-                              onChange={(e) => updateItemField(item.id, 'image_path', e.target.value)}
-                              placeholder="/img-test/question.png"
-                            />
-                          </div>
-                          <div className="col-md-3">
-                            <label className="form-label">Đường dẫn audio</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              value={item.audio_path}
-                              onChange={(e) => updateItemField(item.id, 'audio_path', e.target.value)}
-                              placeholder="/audio-for-test/file.mp3"
-                            />
-                          </div>
+                    <div className="expanded-section">
+                      <div className="row g-3 mb-3">
+                        <div className="col-md-12">
+                          <label className="form-label">Mô tả tình huống</label>
+                          <textarea
+                            className="form-control"
+                            rows={2}
+                            value={item.stimulus_text}
+                            onChange={(e) => updateItemField(item.id, 'stimulus_text', e.target.value)}
+                            placeholder="(Không bắt buộc)"
+                          />
                         </div>
                       </div>
-                    )}
+                      {renderMediaInputs(item)}
+                    </div>
 
                     <div className="choice-grid">
                       {item.choices.map((choice) => (
@@ -635,14 +814,71 @@ function TeacherTests() {
                       </button>
                     </div>
                   </div>
-                </div>
-              );
-            })
+              </div>
+            ))
           )}
         </div>
       </form>
 
-      {/* History section removed per latest requirements */}
+      <div className="card mt-4">
+        <div className="card-header d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Bài kiểm tra đã tạo</h5>
+          {selectedClassId && <span className="text-muted small">Lớp #{selectedClassId}</span>}
+        </div>
+        <div className="card-body">
+          {historyLoading && <p className="text-muted mb-0">Đang tải lịch sử...</p>}
+          {historyError && <div className="alert alert-danger small mb-3">{historyError}</div>}
+          {!historyLoading && !historyError && history.length === 0 && (
+            <div className="text-muted small">Chưa có bài kiểm tra nào cho lớp này.</div>
+          )}
+          {!historyLoading && !historyError && history.length > 0 && (
+            <div className="list-group">
+              {history.map((test) => (
+                <div
+                  key={test.test_id}
+                  className="list-group-item d-flex flex-wrap justify-content-between align-items-start gap-3"
+                >
+                  <div>
+                    <div className="fw-semibold">{test.test_name || `Bài kiểm tra #${test.test_id}`}</div>
+                    <div className="text-muted small">
+                      Trạng thái: <span className="badge text-bg-light">{test.test_status || 'ACTIVE'}</span>
+                      {typeof test.total_questions === 'number' && (
+                        <span className="ms-2">• {test.total_questions} câu hỏi</span>
+                      )}
+                      {typeof test.question_count === 'number' && !test.total_questions && (
+                        <span className="ms-2">• {test.question_count} câu hỏi</span>
+                      )}
+                    </div>
+                    <div className="text-muted small">
+                      {test.available_from && (
+                        <>
+                          Mở: {new Date(test.available_from).toLocaleString('vi-VN')}
+                          {test.due_at ? ' • ' : ''}
+                        </>
+                      )}
+                      {test.due_at && <>Đóng: {new Date(test.due_at).toLocaleString('vi-VN')}</>}
+                    </div>
+                  </div>
+                  <div className="btn-group btn-group-sm">
+                    <button type="button" className="btn btn-outline-secondary" onClick={() => openDetail(test.test_id, 'view')}>
+                      Xem
+                    </button>
+                    <button type="button" className="btn btn-outline-primary" onClick={() => openDetail(test.test_id, 'edit')}>
+                      Sửa
+                    </button>
+                    <button type="button" className="btn btn-outline-success" onClick={() => openScoreboard(test.test_id)}>
+                      Bảng điểm
+                    </button>
+                    <button type="button" className="btn btn-outline-danger" onClick={() => handleDelete(test.test_id)}>
+                      Xóa
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {detailModalOpen && detailData && (
         <div className="tests-modal-backdrop" role="dialog" aria-modal="true">
@@ -656,41 +892,82 @@ function TeacherTests() {
             </div>
             <div className="card-body tests-modal-body">
               <h5 className="mb-3">{detailData.test?.test_name || 'Bài kiểm tra'}</h5>
-              {detailData.test?.test_description && <p className="text-muted">{detailData.test.test_description}</p>}
-              <div className="d-flex flex-wrap gap-3 mb-3 text-muted small">
+              <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+                {detailData.class && (
+                  <span className="badge bg-primary">
+                    Lớp {detailData.class.class_name || detailData.class.class_id}
+                  </span>
+                )}
+                {detailData.test?.test_status && (
+                  <span className="badge bg-secondary text-uppercase">
+                    {detailData.test.test_status}
+                  </span>
+                )}
+                <span className="text-muted small">Mở: {formatDateTime(detailData.test?.available_from)}</span>
+                <span className="text-muted small">Đóng: {formatDateTime(detailData.test?.due_at)}</span>
+              </div>
+              {detailData.test?.test_description && (
+                <p className="text-muted mb-3">{detailData.test.test_description}</p>
+              )}
+              <div className="d-flex flex-wrap gap-3 mb-4 text-muted small">
                 <span>Thời lượng: {detailData.test?.test_duration_min ?? '—'} phút</span>
                 <span>Giới hạn lượt: {detailData.test?.max_attempts ?? 2}</span>
-                {detailData.test?.available_from && <span>Mở từ: {new Date(detailData.test.available_from).toLocaleString('vi-VN')}</span>}
-                {detailData.test?.due_at && <span>Đóng lúc: {new Date(detailData.test.due_at).toLocaleString('vi-VN')}</span>}
+                <span>Giới hạn thời gian: {detailData.test?.time_limit_min ?? '—'} phút</span>
+                <span>Tổng câu hỏi: {detailData.test?.test_total_questions ?? (detailData.items?.length || '—')}</span>
               </div>
+
               <div className="test-preview-questions">
-                {(detailData.items || []).map((item, idx) => (
-                  <div key={item.item_id || idx} className="preview-question-card border rounded mb-3 p-3">
-                    <div className="d-flex justify-content-between align-items-start mb-2">
-                      <div>
-                        <div className="fw-semibold">Câu {idx + 1}</div>
-                        {item.question_text ? <p className="mb-2">{item.question_text}</p> : <p className="text-muted mb-2">(Chưa có nội dung)</p>}
+                {(detailData.items || []).map((item, idx) => {
+                  const hasMedia = Boolean(item.image_path || item.audio_path);
+                  return (
+                    <div key={item.item_id || idx} className="preview-question-card border rounded shadow-sm mb-4 p-3">
+                      <div className="preview-question-header d-flex justify-content-between align-items-start">
+                        <div>
+                          <div className="fw-semibold">Câu {idx + 1}</div>
+                          {item.question_text ? (
+                            <p className="mb-2">{item.question_text}</p>
+                          ) : (
+                            <p className="text-muted mb-2">(Chưa có nội dung)</p>
+                          )}
+                        </div>
+                        {item.part_id && <span className="badge bg-info text-dark">Part #{item.part_id}</span>}
                       </div>
-                      {item.part_id && <span className="badge bg-secondary">Part #{item.part_id}</span>}
+
+                      {item.stimulus_text && <p className="text-muted small mb-3">{item.stimulus_text}</p>}
+
+                      {hasMedia && (
+                        <div className="preview-media mb-3">
+                          {item.image_path && (
+                            <img
+                              src={item.image_path}
+                              alt="Hình minh hoạ"
+                              className="img-fluid rounded"
+                              style={{ maxHeight: 220, objectFit: 'cover' }}
+                            />
+                          )}
+                          {item.audio_path && (
+                            <div className="mt-2">
+                              <audio controls src={item.audio_path} style={{ width: '100%' }} />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="preview-choice-list">
+                        {(item.choices || []).map((choice, choiceIdx) => (
+                          <div
+                            key={choice.choice_id || choiceIdx}
+                            className={`preview-choice border rounded p-2 mb-2 ${choice.is_correct ? 'preview-choice-correct' : ''}`}
+                          >
+                            <strong className="me-2">{choice.label || String.fromCharCode(65 + choiceIdx)}.</strong>
+                            {choice.content || <span className="text-muted">(Trống)</span>}
+                            {choice.is_correct && <span className="badge bg-success ms-2">Đúng</span>}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    {item.stimulus_text && <p className="text-muted small mb-2">{item.stimulus_text}</p>}
-                    {(item.image_path || item.audio_path) && (
-                      <div className="mb-3">
-                        {item.image_path && <div className="text-muted small">Hình: {item.image_path}</div>}
-                        {item.audio_path && <div className="text-muted small">Audio: {item.audio_path}</div>}
-                      </div>
-                    )}
-                    <ul className="list-unstyled mb-0">
-                      {(item.choices || []).map((choice, choiceIdx) => (
-                        <li key={choice.choice_id || choiceIdx} className={`preview-choice ${choice.is_correct ? 'preview-choice-correct' : ''}`}>
-                          <strong className="me-2">{choice.label || String.fromCharCode(65 + choiceIdx)}.</strong>
-                          {choice.content || <span className="text-muted">(Trống)</span>}
-                          {choice.is_correct && <span className="badge bg-success ms-2">Đúng</span>}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             <div className="card-footer text-end">

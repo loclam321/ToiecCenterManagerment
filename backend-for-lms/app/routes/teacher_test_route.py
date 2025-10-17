@@ -152,3 +152,26 @@ def teacher_test_scoreboard(test_id: int):
     if status == 403:
         return error_response(message=error_message, status_code=403)
     return error_response(message=error_message, status_code=status)
+
+
+@teacher_test_bp.route("/history/<int:class_id>", methods=["GET"])
+@jwt_required()
+def teacher_test_history(class_id: int):
+    """Fetch previously created tests for a specific class."""
+    auth = _ensure_teacher_role()
+    if auth is None:
+        return error_response(message="Permission denied", status_code=403)
+
+    teacher_id, role = auth
+    allow_all = role == "admin"
+    result = service.list_tests_for_class(teacher_id, class_id, allow_all=allow_all)
+    if result.get("success"):
+        return success_response(data=result.get("data", {}))
+
+    status = result.get("status", 400)
+    error_message = result.get("error", "Unable to fetch test history")
+    if status == 404:
+        return not_found_response(message=error_message)
+    if status == 403:
+        return error_response(message=error_message, status_code=403)
+    return error_response(message=error_message, status_code=status)
