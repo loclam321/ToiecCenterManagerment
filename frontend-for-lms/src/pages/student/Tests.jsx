@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { listTests, getTestAttempts } from '../../services/testService';
+import { listTests, getTestAttempts, checkTestEligibility } from '../../services/testService';
 import { getCurrentUser } from '../../services/authService';
 
 export default function StudentTests() {
   const [loading, setLoading] = useState(true);
   const [tests, setTests] = useState([]);
   const [error, setError] = useState('');
-  const [attemptSummaries, setAttemptSummaries] = useState({}); // { [test_id]: {count, best_score, last_submitted_at} }
+  const [attemptSummaries, setAttemptSummaries] = useState({}); // { [test_id]: {count, best_score, last_submitted_at, can_attempt, remaining} }
   const user = getCurrentUser();
 
   useEffect(() => {
@@ -23,11 +23,18 @@ export default function StudentTests() {
           await Promise.all(
             (data || []).map(async (t) => {
               try {
-                const s = await getTestAttempts(t.test_id, user.user_id);
+                const [attemptsData, eligibilityData] = await Promise.all([
+                  getTestAttempts(t.test_id, user.user_id),
+                  checkTestEligibility(t.test_id, user.user_id)
+                ]);
                 summaries[t.test_id] = {
-                  count: s.count || (Array.isArray(s.attempts) ? s.attempts.length : 0),
-                  best_score: s.best_score ?? null,
-                  last_submitted_at: s.last_submitted_at || null,
+                  count: attemptsData.count || (Array.isArray(attemptsData.attempts) ? attemptsData.attempts.length : 0),
+                  best_score: attemptsData.best_score ?? null,  // Raw score (backward compatible)
+                  best_score_10: attemptsData.best_score_10 ?? null,  // Điểm thang 10
+                  last_submitted_at: attemptsData.last_submitted_at || null,
+                  can_attempt: eligibilityData.can_attempt ?? true,
+                  remaining_attempts: eligibilityData.remaining_attempts ?? 2,
+                  max_attempts: eligibilityData.max_attempts ?? 2,
                 };
               } catch (_) {
                 // ignore per-test errors
@@ -66,24 +73,54 @@ export default function StudentTests() {
                 </div>
                 {attemptSummaries[t.test_id] && (
                   <div className="mt-1">
-                    <span className="badge text-bg-light me-2">Đã làm: {attemptSummaries[t.test_id].count}</span>
-                    {typeof attemptSummaries[t.test_id].best_score === 'number' && (
-                      <span className="badge bg-success me-2">Điểm cao nhất: {attemptSummaries[t.test_id].best_score}</span>
-                    )}
+                    <span className="badge text-bg-light me-2">
+                      Đã làm: {attemptSummaries[t.test_id].count}/{attemptSummaries[t.test_id].max_attempts}
+                    </span>
+                    {typeof attemptSummaries[t.test_id].best_score_10 === 'number' ? (
+                      <span className="badge bg-success me-2">
+                        Điểm cao nhất: {attemptSummaries[t.test_id].best_score_10.toFixed(attemptSummaries[t.test_id].best_score_10 % 1 === 0 ? 0 : 2)}/10
+                      </span>
+                    ) : typeof attemptSummaries[t.test_id].best_score === 'number' ? (
+                      <span className="badge bg-success me-2">Số câu đúng: {attemptSummaries[t.test_id].best_score}</span>
+                    ) : null}
                     {attemptSummaries[t.test_id].last_submitted_at && (
                       <span className="text-muted small">Lần gần nhất: {new Date(attemptSummaries[t.test_id].last_submitted_at).toLocaleString()}</span>
+                    )}
+                    {!attemptSummaries[t.test_id].can_attempt && (
+                      <div className="mt-2">
+                        <span className="badge bg-danger">
+                          ⚠️ Đã hết lượt làm bài (tối đa {attemptSummaries[t.test_id].max_attempts} lần)
+                        </span>
+                      </div>
+                    )}
+                    {attemptSummaries[t.test_id].can_attempt && attemptSummaries[t.test_id].remaining_attempts > 0 && (
+                      <div className="mt-1">
+                        <span className="badge bg-warning text-dark">
+                          Còn {attemptSummaries[t.test_id].remaining_attempts} lần làm bài
+                        </span>
+                      </div>
                     )}
                   </div>
                 )}
               </div>
               <div>
-                <Link
-                  className="btn btn-primary"
-                  to={`/student/tests/${t.test_id}`}
-                  state={{ freshStart: true }}
-                >
-                  Bắt đầu
-                </Link>
+                {attemptSummaries[t.test_id] && !attemptSummaries[t.test_id].can_attempt ? (
+                  <button 
+                    className="btn btn-secondary" 
+                    disabled
+                    title="Bạn đã hết lượt làm bài kiểm tra này"
+                  >
+                    Đã hết lượt
+                  </button>
+                ) : (
+                  <Link
+                    className="btn btn-primary"
+                    to={`/student/tests/${t.test_id}`}
+                    state={{ freshStart: true }}
+                  >
+                    Bắt đầu
+                  </Link>
+                )}
               </div>
             </div>
           ))}

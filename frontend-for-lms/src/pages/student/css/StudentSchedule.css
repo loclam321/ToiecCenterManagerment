@@ -164,6 +164,77 @@
   gap: 8px;
   height: 100%;
   box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.session-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.35);
+  cursor: pointer;
+}
+
+/* ✨ Status-based colors */
+.session-cell.session-completed .session-card {
+  background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+  box-shadow: 0 8px 20px rgba(107, 114, 128, 0.20);
+  opacity: 0.85;
+}
+
+.session-cell.session-today .session-card {
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);
+  animation: pulse-today 2s ease-in-out infinite;
+}
+
+.session-cell.session-upcoming .session-card {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+
+/* ✨ Status badge */
+.session-status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.25);
+  align-self: flex-start;
+  margin-top: auto;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-completed {
+  background: rgba(255, 255, 255, 0.20);
+}
+
+.status-today {
+  background: rgba(255, 255, 255, 0.30);
+  animation: glow-badge 2s ease-in-out infinite;
+}
+
+.status-upcoming {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ✨ Animations */
+@keyframes pulse-today {
+  0%, 100% {
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);
+  }
+  50% {
+    box-shadow: 0 12px 28px rgba(245, 158, 11, 0.55);
+  }
+}
+
+@keyframes glow-badge {
+  0%, 100% {
+    background: rgba(255, 255, 255, 0.30);
+  }
+  50% {
+    background: rgba(255, 255, 255, 0.50);
+  }
 }
 
 .session-title {
@@ -226,6 +297,7 @@
   padding: 20px;
 }
 
+/* ✨ Mobile-first responsive design */
 @media (max-width: 992px) {
   .student-schedule-page {
     padding: 16px;
@@ -234,5 +306,216 @@
   .schedule-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .schedule-btn {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .schedule-table {
+    min-width: 700px;
+  }
+
+  .session-card {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .session-title {
+    font-size: 13px;
+  }
+
+  .session-subtitle {
+    font-size: 11px;
+  }
+
+  .session-time,
+  .session-meta {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .student-schedule-page {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .schedule-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .schedule-title {
+    font-size: 20px;
+  }
+
+  .schedule-actions {
+    gap: 6px;
+  }
+
+  .schedule-btn {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .schedule-btn i {
+    font-size: 12px;
+  }
+
+  .filter-control {
+    min-width: 150px;
+  }
+
+  .schedule-table-wrapper {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .schedule-table {
+    font-size: 12px;
+  }
+
+  .day-column {
+    min-width: 110px;
+  }
+
+  .time-column {
+    width: 70px;
+  }
+
+  .session-card {
+    padding: 6px;
+    border-radius: 8px;
+  }
+
+  .session-meta {
+    font-size: 10px;
+  }
+
+  .session-status-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+}
+
+@media (max-width: 576px) {
+  .student-schedule-page {
+    padding: 8px;
+    gap: 12px;
+  }
+
+  .schedule-header {
+    gap: 10px;
+  }
+
+  .schedule-title {
+    font-size: 18px;
+  }
+
+  .schedule-range {
+    font-size: 12px;
+  }
+
+  .schedule-actions {
+    flex-wrap: wrap;
+  }
+
+  .schedule-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .schedule-filters {
+    gap: 10px;
+  }
+
+  .filter-control {
+    min-width: 100%;
+  }
+
+  .filter-control select {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .schedule-table {
+    min-width: 600px;
+    font-size: 11px;
+  }
+
+  .time-column {
+    width: 60px;
+  }
+
+  .day-column {
+    min-width: 90px;
+  }
+
+  .schedule-table thead th {
+    padding: 8px 6px;
+    font-size: 10px;
+  }
+
+  .time-cell {
+    padding: 8px 4px;
+    font-size: 11px;
+  }
+
+  .empty-cell {
+    min-height: 50px;
+  }
+
+  .session-card {
+    padding: 5px;
+    gap: 4px;
+    border-radius: 6px;
+  }
+
+  .session-title {
+    font-size: 12px;
+  }
+
+  .session-subtitle {
+    font-size: 10px;
+  }
+
+  .session-time {
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  .session-time i {
+    font-size: 10px;
+  }
+
+  .session-meta {
+    font-size: 9px;
+    gap: 2px;
+  }
+
+  .session-meta i {
+    margin-right: 4px;
+    font-size: 9px;
+  }
+
+  .session-status-badge {
+    font-size: 8px;
+    padding: 2px 5px;
+  }
+
+  .schedule-empty {
+    padding: 20px;
+  }
+
+  .schedule-empty i {
+    font-size: 24px;
+  }
+
+  .schedule-empty p {
+    font-size: 12px;
   }
 }

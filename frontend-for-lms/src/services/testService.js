@@ -70,3 +70,19 @@ export const getTestAttempts = async (testId, userId) => {
   return data.data || { attempts: [], best_score: null, count: 0 };
 };
 
+export const getStudentTestResults = async (classId, userId) => {
+  const url = `${BASE_URL}/class/${encodeURIComponent(classId)}/student-results?user_id=${encodeURIComponent(userId)}`;
+  const res = await fetch(url, { headers: getHeaders() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Không thể tải kết quả bài kiểm tra');
+  return data.data || { tests: [], total_tests: 0, student_info: {} };
+};
+
+export const checkTestEligibility = async (testId, userId) => {
+  const url = `${BASE_URL}/${encodeURIComponent(testId)}/check-eligibility?user_id=${encodeURIComponent(userId)}`;
+  const res = await fetch(url, { headers: getHeaders() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Không thể kiểm tra quyền làm bài');
+  return data.data || { can_attempt: false, attempt_count: 0, max_attempts: 2 };
+};
+

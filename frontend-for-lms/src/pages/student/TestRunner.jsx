@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { getTestMeta, getTestQuestions, submitTest } from '../../services/testService';
+import { getTestMeta, getTestQuestions, submitTest, checkTestEligibility } from '../../services/testService';
 import { getCurrentUser } from '../../services/authService';
 import useCountdown from '../../services/useCountdown';
 import './css/testRunner.css';
@@ -19,12 +19,28 @@ export default function TestRunner() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [currentIdx, setCurrentIdx] = useState(0); // 0-based index of current question
+  const [eligibility, setEligibility] = useState(null); // Kiểm tra quyền làm bài
   const autoSubmittedRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
+        // Kiểm tra quyền làm bài trước
+        let eligibilityCheck = null;
+        if (user?.user_id) {
+          eligibilityCheck = await checkTestEligibility(testId, user.user_id);
+          if (!mounted) return;
+          setEligibility(eligibilityCheck);
+          
+          // Nếu đã hết lượt, dừng lại và hiển thị thông báo
+          if (!eligibilityCheck.can_attempt) {
+            setError(`Bạn đã hết lượt làm bài này (${eligibilityCheck.attempt_count}/${eligibilityCheck.max_attempts} lần). Vui lòng liên hệ giáo viên nếu cần làm thêm.`);
+            setLoading(false);
+            return;
+          }
+        }
+        
         const [metaResp, qs] = await Promise.all([
           getTestMeta(testId),
           getTestQuestions(testId),
@@ -39,7 +55,7 @@ export default function TestRunner() {
       }
     })();
     return () => { mounted = false; };
-  }, [testId]);
+  }, [testId, user?.user_id]);
 
   const total = questions.length;
   const currentQ = total > 0 ? questions[currentIdx] : null;
@@ -116,7 +132,22 @@ export default function TestRunner() {
   }, [enableTimer, storageId, totalSeconds, location.state, setRemaining]);
 
   if (loading) return <div className="card p-3">Đang tải đề...</div>;
-  if (error) return <div className="alert alert-danger">{error}</div>;
+  if (error) {
+    return (
+      <div className="card p-3">
+        <div className="alert alert-danger mb-3">
+          <h5 className="alert-heading">⚠️ Không thể làm bài</h5>
+          <p className="mb-0">{error}</p>
+        </div>
+        <button 
+          className="btn btn-primary" 
+          onClick={() => navigate('/student/tests')}
+        >
+          ← Quay lại danh sách bài kiểm tra
+        </button>
+      </div>
+    );
+  }
 
   if (result) {
     const totalQuestions = Number(result?.breakdown?.total ?? total ?? 0);
@@ -340,6 +371,18 @@ export default function TestRunner() {
           )}
         </div>
       </div>
+      
+      {/* Hiển thị số lượt còn lại */}
+      {eligibility && eligibility.remaining_attempts !== undefined && (
+        <div className="mt-2">
+          <div className={`alert ${eligibility.remaining_attempts <= 1 ? 'alert-warning' : 'alert-info'} py-2 px-3 mb-0`}>
+            <strong>📊 Lượt làm bài:</strong> Đây là lần thứ {eligibility.attempt_count + 1}/{eligibility.max_attempts} của bạn
+            {eligibility.remaining_attempts > 1 && ` (còn ${eligibility.remaining_attempts - 1} lượt sau lần này)`}
+            {eligibility.remaining_attempts === 1 && ' (⚠️ Đây là lượt cuối cùng!)'}
+          </div>
+        </div>
+      )}
+      
       {currentPartLabel && (
         <div className="mt-2" aria-live="polite">
           <div className="alert alert-info py-2 px-3 mb-0" role="status">

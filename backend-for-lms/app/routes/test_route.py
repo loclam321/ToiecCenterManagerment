@@ -26,6 +26,46 @@ def get_test_meta(test_id):
         return error_response(f"Error retrieving test: {str(e)}", 500)
 
 
+@test_bp.route("/<int:test_id>/check-eligibility", methods=["GET", "OPTIONS"])
+def check_test_eligibility(test_id):
+    """Kiểm tra xem user có thể làm bài test này không (giới hạn 2 lần)"""
+    # Handle OPTIONS preflight request
+    if request.method == "OPTIONS":
+        return "", 200
+    
+    try:
+        test = Test.query.get(test_id)
+        if not test:
+            return not_found_response("Test not found", "Test", test_id)
+        
+        user_id = request.args.get("user_id")
+        if not user_id:
+            return error_response("Missing user_id parameter", 400)
+        
+        # Đếm số lần đã làm
+        attempt_count = Attempt.query.filter(
+            Attempt.user_id == user_id,
+            Attempt.test_id == test_id,
+            Attempt.att_status == "COMPLETED"
+        ).count()
+        
+        # Giới hạn tối đa 2 lần
+        max_attempts = 2
+        can_attempt = attempt_count < max_attempts
+        remaining_attempts = max(0, max_attempts - attempt_count)
+        
+        return success_response({
+            "can_attempt": can_attempt,
+            "attempt_count": attempt_count,
+            "max_attempts": max_attempts,
+            "remaining_attempts": remaining_attempts,
+            "message": f"Bạn đã làm {attempt_count}/{max_attempts} lần" if not can_attempt 
+                      else f"Bạn còn {remaining_attempts} lần làm bài"
+        })
+    except Exception as e:
+        return error_response(f"Error checking eligibility: {str(e)}", 500)
+
+
 @test_bp.route("/<int:test_id>/questions", methods=["GET"])
 def get_test_questions(test_id):
     """Lấy danh sách câu hỏi của test"""
@@ -93,6 +133,21 @@ def submit_test(test_id):
         user_id = payload.get("user_id")
         class_id = payload.get("class_id")
         responses = payload.get("responses", [])
+        
+        # ====== KIỂM TRA GIỚI HẠN SỐ LẦN LÀM BÀI (MAX 2 LẦN) ======
+        if user_id:
+            existing_attempts = Attempt.query.filter(
+                Attempt.user_id == user_id,
+                Attempt.test_id == test_id,
+                Attempt.att_status == "COMPLETED"
+            ).count()
+            
+            max_attempts = 2
+            if existing_attempts >= max_attempts:
+                return error_response(
+                    f"Bạn đã làm đủ {max_attempts} lần cho bài kiểm tra này. Không thể làm thêm.",
+                    403
+                )
         
         # Tính điểm và lưu chi tiết từng câu
         total_correct = 0
@@ -285,12 +340,123 @@ def list_attempts_for_test(test_id):
             .order_by(Attempt.att_submitted_at.desc())
             .all()
         )
-        best_score = max((a.att_raw_score or 0) for a in attempts) if attempts else None
+        
+        # Tính điểm cao nhất trên thang 10
+        best_score_raw = max((a.att_raw_score or 0) for a in attempts) if attempts else None
+        best_score_10 = None
+        
+        if best_score_raw is not None and best_score_raw > 0:
+            # Lấy tổng số câu hỏi của test
+            total_questions = Item.query.filter(Item.test_id == test_id).count()
+            if total_questions > 0:
+                best_score_10 = round((best_score_raw / total_questions) * 10, 2)
+        
         return success_response({
             "attempts": [a.to_dict() for a in attempts],
-            "best_score": best_score,
+            "best_score": best_score_raw,  # Raw score (số câu đúng) - để backward compatible
+            "best_score_10": best_score_10,  # Điểm thang 10
             "count": len(attempts),
             "last_submitted_at": attempts[0].att_submitted_at.isoformat() if attempts else None,
         })
     except Exception as e:
         return error_response(f"Error retrieving attempts: {str(e)}", 500)
+
+
+@test_bp.route("/class/<int:class_id>/student-results", methods=["GET"])
+def get_student_test_results_for_class(class_id):
+    """
+    Lấy kết quả bài kiểm tra của học viên trong lớp
+    Query params: user_id (required)
+    Returns: Danh sách tests với điểm cao nhất và số người đã làm
+    """
+    try:
+        import json
+        from app.models.class_model import Class
+        from app.models.enrollment_model import Enrollment
+        
+        user_id = request.args.get("user_id")
+        if not user_id:
+            return error_response("Missing user_id parameter", 400)
+        
+        # Kiểm tra class tồn tại
+        class_obj = Class.query.get(class_id)
+        if not class_obj:
+            return not_found_response("Class not found", "Class", class_id)
+        
+        # Kiểm tra user có trong lớp không
+        enrollment = Enrollment.query.filter_by(
+            user_id=user_id,
+            class_id=class_id
+        ).first()
+        
+        if not enrollment:
+            return error_response("Student not enrolled in this class", 403)
+        
+        # Lấy tất cả tests trong hệ thống (có thể filter theo course nếu cần)
+        tests = Test.query.all()
+        
+        results = []
+        for test in tests:
+            # Lấy điểm cao nhất của học viên này
+            student_best = (
+                db.session.query(func.max(Attempt.att_raw_score))
+                .filter(Attempt.user_id == user_id, Attempt.test_id == test.test_id)
+                .scalar()
+            )
+            
+            # Đếm số lần làm bài của học viên
+            student_attempt_count = (
+                Attempt.query
+                .filter(Attempt.user_id == user_id, Attempt.test_id == test.test_id)
+                .count()
+            )
+            
+            # Đếm tổng số học viên trong lớp đã làm bài test này
+            total_participants = (
+                db.session.query(func.count(func.distinct(Attempt.user_id)))
+                .join(Enrollment, Enrollment.user_id == Attempt.user_id)
+                .filter(
+                    Enrollment.class_id == class_id,
+                    Attempt.test_id == test.test_id
+                )
+                .scalar()
+            ) or 0
+            
+            # Tính điểm thang 10 nếu có điểm
+            score_10 = None
+            percentage = None
+            if student_best is not None:
+                # Lấy tổng số câu hỏi trong test
+                total_questions = (
+                    Item.query.filter(Item.test_id == test.test_id).count()
+                )
+                if total_questions > 0:
+                    percentage = round((student_best / total_questions) * 100, 2)
+                    score_10 = round((student_best / total_questions) * 10, 2)
+            
+            test_dict = test.to_dict()
+            test_dict.update({
+                "student_best_score": student_best,  # Số câu đúng
+                "student_score_10": score_10,  # Điểm thang 10
+                "student_percentage": percentage,  # Tỷ lệ %
+                "student_attempt_count": student_attempt_count,  # Số lần làm
+                "class_total_participants": total_participants,  # Số người trong lớp đã làm
+                "has_attempted": student_attempt_count > 0,  # Đã làm chưa
+            })
+            results.append(test_dict)
+        
+        # Sắp xếp: tests đã làm lên đầu, sau đó theo tên
+        results.sort(key=lambda x: (not x["has_attempted"], x.get("test_name", "")))
+        
+        return success_response({
+            "tests": results,
+            "total_tests": len(results),
+            "student_info": {
+                "user_id": user_id,
+                "class_id": class_id,
+                "class_name": class_obj.class_name
+            }
+        })
+        
+    except Exception as e:
+        return error_response(f"Error retrieving test results: {str(e)}", 500)

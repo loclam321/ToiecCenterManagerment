@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from app.config import db, migrate, jwt, mail, config
 from .routes.auth_route import auth_bp
 from .routes.teacher_route import teacher_bp
@@ -7,12 +7,12 @@ from .routes.course_route import course_bp
 from .routes.class_route import class_bp
 from .routes.schedule_route import schedule_bp
 from flask_cors import CORS
-from .routes.teacher_route import teacher_bp
-from .routes.course_route import course_bp
 from .routes.room_route import room_bp
 from .routes.student_lesson_route import student_lesson_bp
 from .routes.teacher_lesson_route import teacher_lesson_bp
 from .routes.consult_registration_route import consult_registration_bp
+from .routes.teacher_test_route import teacher_test_bp
+from .routes.teacher_class_route import teacher_class_bp
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine.url import make_url
 
@@ -57,12 +57,22 @@ def create_app(config_name="default"):
                     "http://localhost:5176",
                     "http://localhost:5177",
                 ],
-                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
                 "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+                "expose_headers": ["Content-Type", "Authorization"],
             }
         },
         supports_credentials=True,
+        send_wildcard=False,
+        always_send=True,
     )
+    
+    # Thêm handler để đảm bảo OPTIONS request được xử lý
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = app.make_default_options_response()
+            return response
 
     # Ensure database exists before initializing extensions
     _ensure_database_exists(config[config_name].SQLALCHEMY_DATABASE_URI)
@@ -90,5 +100,8 @@ def create_app(config_name="default"):
     app.register_blueprint(student_lesson_bp)
     app.register_blueprint(teacher_lesson_bp)
     app.register_blueprint(consult_registration_bp)
+    app.register_blueprint(teacher_class_bp)
+    app.register_blueprint(teacher_test_bp)
+    
 
     return app

@@ -23,6 +23,11 @@ const teacherMenu = [
     label: 'Bài học'
   },
   {
+    path: '/teachers/tests',
+    icon: 'bi bi-clipboard-check',
+    label: 'Bài kiểm tra'
+  },
+  {
     path: '/teachers/resources',
     icon: 'bi bi-folder',
     label: 'Tài nguyên'
@@ -41,6 +46,9 @@ const resolveTitle = (pathname) => {
   }
   if (pathname.startsWith('/teachers/lessons')) {
     return 'Quản lý bài học';
+  }
+  if (pathname.startsWith('/teachers/tests')) {
+    return 'Quản lý bài kiểm tra';
   }
   if (pathname.startsWith('/teachers/resources')) {
     return 'Tài nguyên giảng dạy';

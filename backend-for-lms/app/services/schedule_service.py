@@ -438,7 +438,10 @@ class ScheduleService:
 
     def get_schedules_for_student(self, student_id: str, start_date_str: str, end_date_str: str,
                                    class_id: Optional[int] = None, course_id: Optional[str] = None) -> Dict[str, Any]:
-        """Lấy lịch học của học viên trong khoảng thời gian xác định"""
+        """
+        Lấy lịch học của học viên trong khoảng thời gian xác định
+        ✨ Optimized: Sử dụng eager loading, gom nhóm dữ liệu theo ngày, tính trạng thái buổi học
+        """
         if not student_id:
             return {"success": False, "error": "student_id is required"}
 
@@ -451,11 +454,12 @@ class ScheduleService:
             if not student:
                 return {"success": False, "error": f"Student with ID {student_id} not found"}
 
+            # ✨ Optimized: Single query với eager loading để tránh N+1 queries
             query = (
                 Schedule.query
                 .join(Class, Schedule.class_id == Class.class_id)
                 .join(Enrollment, Enrollment.class_id == Class.class_id)
-                .filter(Enrollment.user_id == student_id)
+                .filter(Enrollment.user_id == student_id, Enrollment.status != "DROPPED")
                 .options(
                     joinedload(Schedule.room),
                     joinedload(Schedule.class_obj).joinedload(Class.course),
@@ -472,12 +476,9 @@ class ScheduleService:
             if course_id:
                 query = query.filter(Class.course_id == course_id)
 
-            # Loại bỏ các enrollment đã bị huỷ
-            query = query.filter(Enrollment.status != "DROPPED")
-
             schedules = query.order_by(Schedule.schedule_date, Schedule.schedule_startime).all()
 
-            # Lấy danh sách lớp mà học viên đang theo học để hiển thị bộ lọc phía frontend
+            # ✨ Optimized: Single query cho enrolled classes
             enrolled_classes = (
                 Enrollment.query
                 .join(Class, Enrollment.class_id == Class.class_id)
@@ -486,14 +487,41 @@ class ScheduleService:
                 .all()
             )
 
+            # ✨ Tính trạng thái buổi học (đã học, sắp tới, hôm nay)
+            today = date.today()
+            now = datetime.now()
+            
+            def get_session_status(schedule: Schedule) -> str:
+                """Xác định trạng thái buổi học"""
+                schedule_date = schedule.schedule_date
+                schedule_end = schedule.schedule_endtime
+                
+                if not schedule_date or not schedule_end:
+                    return "upcoming"
+                
+                if schedule_date < today:
+                    return "completed"
+                elif schedule_date == today:
+                    # Kiểm tra giờ kết thúc
+                    schedule_end_datetime = datetime.combine(schedule_date, schedule_end)
+                    if now > schedule_end_datetime:
+                        return "completed"
+                    else:
+                        return "today"
+                else:
+                    return "upcoming"
+
             def serialize_schedule(schedule: Schedule) -> Dict[str, Any]:
+                """Serialize schedule với đầy đủ thông tin và trạng thái"""
                 class_info = schedule.class_obj
                 course_info = class_info.course if class_info else None
+                
                 return {
                     "schedule_id": schedule.schedule_id,
                     "schedule_date": schedule.schedule_date.strftime("%Y-%m-%d") if schedule.schedule_date else None,
                     "schedule_startime": schedule.schedule_startime.strftime("%H:%M:%S") if schedule.schedule_startime else None,
                     "schedule_endtime": schedule.schedule_endtime.strftime("%H:%M:%S") if schedule.schedule_endtime else None,
+                    "status": get_session_status(schedule),  # ✨ Thêm trạng thái
                     "room": {
                         "room_id": schedule.room.room_id if schedule.room else schedule.room_id,
                         "room_name": schedule.room.room_name if schedule.room else None,
@@ -515,6 +543,14 @@ class ScheduleService:
                     }
                 }
 
+            # ✨ Gom nhóm schedules theo ngày cho frontend dễ xử lý
+            schedules_by_day = {}
+            for schedule in schedules:
+                day_key = schedule.schedule_date.strftime("%Y-%m-%d") if schedule.schedule_date else "unknown"
+                if day_key not in schedules_by_day:
+                    schedules_by_day[day_key] = []
+                schedules_by_day[day_key].append(serialize_schedule(schedule))
+
             return {
                 "success": True,
                 "data": {
@@ -523,6 +559,7 @@ class ScheduleService:
                         "user_name": student.user_name
                     },
                     "schedules": [serialize_schedule(schedule) for schedule in schedules],
+                    "schedules_by_day": schedules_by_day,  # ✨ Thêm dữ liệu đã gom nhóm
                     "available_classes": [
                         {
                             "class_id": enrollment.class_id,
@@ -531,7 +568,11 @@ class ScheduleService:
                             "course_name": enrollment.class_obj.course.course_name if enrollment.class_obj and enrollment.class_obj.course else None
                         }
                         for enrollment in enrolled_classes
-                    ]
+                    ],
+                    "summary": {  # ✨ Thêm thống kê tổng quan
+                        "total_sessions": len(schedules),
+                        "days_count": len(schedules_by_day)
+                    }
                 }
             }
 

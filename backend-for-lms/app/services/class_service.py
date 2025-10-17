@@ -780,6 +780,119 @@ class ClassService:
                 "error": f"Error retrieving enrollments: {str(e)}",
             }
 
+    def get_classes_for_teacher(self, teacher_id: str) -> Dict[str, Any]:
+        """Lấy danh sách lớp học mà giáo viên phụ trách kèm học viên đã tham gia."""
+
+        try:
+            if not teacher_id:
+                return {
+                    "success": False,
+                    "error": "Teacher ID is required",
+                    "status": 400,
+                }
+
+            teacher_classes = (
+                self.db.session.query(Class)
+                .join(Schedule, Schedule.class_id == Class.class_id)
+                .filter(Schedule.user_id == teacher_id)
+                .distinct()
+                .all()
+            )
+
+            if not teacher_classes:
+                return {"success": True, "data": []}
+
+            today = date.today()
+            result_data: List[Dict[str, Any]] = []
+
+            for class_obj in teacher_classes:
+                class_dict = class_obj.to_dict()
+
+                next_session = (
+                    Schedule.query.filter(
+                        Schedule.class_id == class_obj.class_id,
+                        Schedule.user_id == teacher_id,
+                        Schedule.schedule_date >= today,
+                    )
+                    .order_by(Schedule.schedule_date, Schedule.schedule_startime)
+                    .first()
+                )
+
+                if next_session:
+                    class_dict["next_session"] = {
+                        "date": next_session.schedule_date.strftime("%Y-%m-%d")
+                        if next_session.schedule_date
+                        else None,
+                        "start_time": next_session.schedule_startime.strftime("%H:%M")
+                        if next_session.schedule_startime
+                        else None,
+                        "end_time": next_session.schedule_endtime.strftime("%H:%M")
+                        if next_session.schedule_endtime
+                        else None,
+                        "room_name": next_session.room.room_name
+                        if next_session.room
+                        else None,
+                    }
+                else:
+                    class_dict["next_session"] = None
+
+                enrollments = (
+                    Enrollment.query.filter_by(class_id=class_obj.class_id)
+                    .filter(Enrollment.status != "DROPPED")
+                    .join(Student, Student.user_id == Enrollment.user_id)
+                    .all()
+                )
+
+                students_data: List[Dict[str, Any]] = []
+                for enrollment in enrollments:
+                    student = enrollment.student
+                    student_dict = student.to_dict() if student else {}
+                    students_data.append(
+                        {
+                            "user_id": student.user_id if student else enrollment.user_id,
+                            "name": student_dict.get("user_name"),
+                            "email": student_dict.get("user_email"),
+                            "telephone": student_dict.get("user_telephone"),
+                            "status": enrollment.status,
+                            "enrolled_date": enrollment.enrolled_date.isoformat()
+                            if enrollment.enrolled_date
+                            else None,
+                        }
+                    )
+
+                class_dict["students"] = students_data
+                class_dict["student_count"] = len(students_data)
+
+                total_sessions = Schedule.query.filter_by(
+                    class_id=class_obj.class_id
+                ).count()
+                completed_sessions = Schedule.query.filter(
+                    Schedule.class_id == class_obj.class_id,
+                    Schedule.schedule_date.isnot(None),
+                    Schedule.schedule_date < today,
+                ).count()
+
+                progress_percent = 0
+                if total_sessions > 0:
+                    progress_percent = int(
+                        round((completed_sessions / total_sessions) * 100)
+                    )
+
+                class_dict["progress_percent"] = min(max(progress_percent, 0), 100)
+
+                result_data.append(class_dict)
+
+            return {"success": True, "data": result_data}
+        except Exception as e:
+            current_app.logger.error(
+                f"Error in get_classes_for_teacher: {str(e)}"
+            )
+            return {
+                "success": False,
+                "error": f"Error retrieving teacher classes: {str(e)}",
+                "status": 500,
+            }
+
     def get_classes_list(self, filters: Dict[str, Any] = None) -> Dict[str, Any]:
         """
         Lấy danh sách lớp học không phân trang, với trạng thái được xác định dựa trên logic nghiệp vụ
