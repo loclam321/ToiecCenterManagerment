@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.consultregistraion_service import ConsultRegistrationService
 
-consult_registration_bp = Blueprint("consult_registration", __name__)
+consult_registration_bp = Blueprint("consult_registration", __name__, url_prefix="/api/consult-registrations")
+
 consult_service = ConsultRegistrationService()
 
 
@@ -220,3 +221,7 @@ def verify_consultation_email(token):
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@consult_registration_bp.route("/verify-email", methods=["POST"])
+def verification_email():

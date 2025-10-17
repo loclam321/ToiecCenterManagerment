@@ -10,7 +10,7 @@ from flask_cors import CORS
 from .routes.room_route import room_bp
 from .routes.student_lesson_route import student_lesson_bp
 from .routes.teacher_lesson_route import teacher_lesson_bp
-from .routes.consult_registration_route import consult_registration_bp
+from .routes.consult_registration_route import consult_registration_bp  # ✅ Sửa tên import
 from .routes.teacher_test_route import teacher_test_bp
 from .routes.teacher_class_route import teacher_class_bp
 from sqlalchemy import create_engine, text
@@ -24,7 +24,7 @@ def _ensure_database_exists(database_uri: str) -> None:
         database_name = url.database
         if not database_name:
             return
-        server_db = 'mysql' if url.drivername.startswith('mysql') else None
+        server_db = "mysql" if url.drivername.startswith("mysql") else None
         server_url = url.set(database=server_db)
         engine = create_engine(server_url)
         with engine.connect() as conn:
@@ -38,6 +38,7 @@ def _ensure_database_exists(database_uri: str) -> None:
     except Exception:
         # Ignore and let normal initialization surface errors
         pass
+
 
 def create_app(config_name="default"):
     app = Flask(__name__)
@@ -66,7 +67,7 @@ def create_app(config_name="default"):
         send_wildcard=False,
         always_send=True,
     )
-    
+
     # Thêm handler để đảm bảo OPTIONS request được xử lý
     @app.before_request
     def handle_preflight():
@@ -99,9 +100,8 @@ def create_app(config_name="default"):
     app.register_blueprint(test_bp)
     app.register_blueprint(student_lesson_bp)
     app.register_blueprint(teacher_lesson_bp)
-    app.register_blueprint(consult_registration_bp)
+    app.register_blueprint(consult_registration_bp)  # ✅ Vẫn dùng tên BP này
     app.register_blueprint(teacher_class_bp)
     app.register_blueprint(teacher_test_bp)
-    
 
     return app

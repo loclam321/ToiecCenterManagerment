@@ -5,7 +5,7 @@ from flask_mail import Message
 from app.config import mail
 
 
-def generate_email_verification_token(user_id):
+def generate_email_verification_token(user_id,data):
     """
     Tạo JWT token cho xác minh email (stateless)
 
@@ -17,7 +17,8 @@ def generate_email_verification_token(user_id):
     """
     payload = {
         "user_id": user_id,
-        "purpose": "email_verification",  # Mục đích sử dụng token
+        "purpose": "email_verification",  # Mục đích sử dụng 
+        "data": data,
         "iat": datetime.utcnow(),  # Thời điểm tạo
         "exp": datetime.utcnow() + timedelta(hours=24),  # Hết hạn sau 24h
     }
@@ -56,19 +57,7 @@ def verify_email_token(token):
         return None
 
 
-def send_email(to, subject, template, **kwargs):
-    """
-    Gửi email sử dụng template
 
-    Args:
-        to: Email người nhận
-        subject: Tiêu đề email
-        template: Tên file template html
-        kwargs: Các biến truyền vào template
-    """
-    msg = Message(subject=subject, recipients=[to])
-    msg.html = render_template(template, **kwargs)
-    mail.send(msg)
 
 
 def send_verification_email(to_email, token):
