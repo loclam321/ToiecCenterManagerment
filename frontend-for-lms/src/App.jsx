@@ -80,43 +80,173 @@ function HomeContent() {
 
       {/* Giới thiệu trung tâm */}
       <section id="intro" className="section container py-6">
-        <div className="row align-items-center g-4">
-          <div className="col-md-6">
-            <h2 className="section-title">Về Trung Tâm</h2>
-            <p className="section-desc">Môi trường học hiện đại, lộ trình cá nhân hóa theo mục tiêu. Hệ thống theo dõi tiến độ từng tuần và kho đề cập nhật liên tục theo format mới.</p>
-            <ul className="intro-features mt-3">
-              <li>Khảo sát đầu vào & tư vấn lộ trình theo mục tiêu điểm</li>
-              <li>Giáo trình bám sát đề thi chính thức, cập nhật hàng quý</li>
-              <li>Mentor đồng hành 1-1, chữa lỗi chi tiết từng kỹ năng</li>
-              <li>Lịch học linh hoạt, hỗ trợ học ngoài giờ qua nhóm riêng</li>
-            </ul>
+        <div className="text-center mb-5">
+          <h2 className="section-title mb-3">Về Trung Tâm TOEIC</h2>
+          <p className="section-desc mx-auto" style={{maxWidth: '720px'}}>
+            Môi trường học hiện đại, lộ trình cá nhân hóa theo mục tiêu. 
+            Hệ thống theo dõi tiến độ từng tuần và kho đề cập nhật liên tục theo format mới.
+          </p>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="row g-4 mb-5">
+          <div className="col-md-3 col-6">
+            <div className="stats-card text-center p-4 h-100 rounded-3 border bg-white shadow-sm">
+              <div className="stats-icon mb-3 mx-auto">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="stats-value mb-1">10.000+</div>
+              <div className="stats-label">Học viên đã đạt mục tiêu</div>
+            </div>
           </div>
-          <div className="col-md-6">
-            <div className="intro-card shadow-sm p-4 rounded bg-white">
-              <div className="d-flex align-items-center justify-content-between mb-3">
-                <h5 className="mb-0">Cam kết đầu ra</h5>
-                <span className="badge text-bg-primary">Chính sách rõ ràng</span>
+          <div className="col-md-3 col-6">
+            <div className="stats-card text-center p-4 h-100 rounded-3 border bg-white shadow-sm">
+              <div className="stats-icon mb-3 mx-auto">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M22 4L12 14.01l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
-              <div className="kpi-row mb-3">
-                <div className="kpi">
-                  <div className="kpi-value">10.000+</div>
-                  <div className="kpi-label">Học viên</div>
-                </div>
-                <div className="kpi">
-                  <div className="kpi-value">92%</div>
-                  <div className="kpi-label">Đạt mục tiêu</div>
-                </div>
-                <div className="kpi">
-                  <div className="kpi-value">8+ năm</div>
-                  <div className="kpi-label">Kinh nghiệm GV</div>
+              <div className="stats-value mb-1">92%</div>
+              <div className="stats-label">Tỷ lệ đạt target</div>
+            </div>
+          </div>
+          <div className="col-md-3 col-6">
+            <div className="stats-card text-center p-4 h-100 rounded-3 border bg-white shadow-sm">
+              <div className="stats-icon mb-3 mx-auto">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2V3zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7V3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="stats-value mb-1">8+ năm</div>
+              <div className="stats-label">Kinh nghiệm giảng viên</div>
+            </div>
+          </div>
+          <div className="col-md-3 col-6">
+            <div className="stats-card text-center p-4 h-100 rounded-3 border bg-white shadow-sm">
+              <div className="stats-icon mb-3 mx-auto">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="stats-value mb-1">100+</div>
+              <div className="stats-label">Khóa học đã triển khai</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Grid */}
+        <div className="row g-4 mb-5">
+          <div className="col-lg-3 col-md-6">
+            <div className="feature-box p-4 h-100 rounded-3 border bg-white">
+              <div className="feature-icon-wrapper mb-3">
+                <div className="feature-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
                 </div>
               </div>
-              <ul className="guarantee-list mb-3">
-                <li>Cam kết 550/650/800+ theo lộ trình đăng ký</li>
-                <li>Ôn lại miễn phí hoặc hoàn phí theo điều kiện</li>
-                <li>Thi thử định kỳ, báo cáo tiến bộ 2 tuần/lần</li>
-              </ul>
-              <a href="#paths" className="btn btn-outline-primary btn-sm">Xem thêm thông tin về lộ trình</a>
+              <h5 className="feature-title mb-2">Khảo sát đầu vào</h5>
+              <p className="feature-desc mb-0">Đánh giá năng lực & tư vấn lộ trình phù hợp với mục tiêu điểm của bạn</p>
+            </div>
+          </div>
+          <div className="col-lg-3 col-md-6">
+            <div className="feature-box p-4 h-100 rounded-3 border bg-white">
+              <div className="feature-icon-wrapper mb-3">
+                <div className="feature-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </div>
+              </div>
+              <h5 className="feature-title mb-2">Giáo trình cập nhật</h5>
+              <p className="feature-desc mb-0">Bám sát đề thi chính thức, cập nhật hàng quý theo format mới nhất</p>
+            </div>
+          </div>
+          <div className="col-lg-3 col-md-6">
+            <div className="feature-box p-4 h-100 rounded-3 border bg-white">
+              <div className="feature-icon-wrapper mb-3">
+                <div className="feature-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                </div>
+              </div>
+              <h5 className="feature-title mb-2">Mentor 1-1</h5>
+              <p className="feature-desc mb-0">Đồng hành cá nhân, chữa lỗi chi tiết từng kỹ năng để cải thiện nhanh</p>
+            </div>
+          </div>
+          <div className="col-lg-3 col-md-6">
+            <div className="feature-box p-4 h-100 rounded-3 border bg-white">
+              <div className="feature-icon-wrapper mb-3">
+                <div className="feature-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </div>
+              </div>
+              <h5 className="feature-title mb-2">Lịch linh hoạt</h5>
+              <p className="feature-desc mb-0">Thời gian học linh động, hỗ trợ ngoài giờ qua nhóm riêng 24/7</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Commitment Card */}
+        <div className="commitment-card p-4 p-md-5 rounded-3 border bg-gradient">
+          <div className="row align-items-center g-4">
+            <div className="col-md-5">
+              <div className="commitment-badge mb-3">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h3 className="commitment-title mb-3">Cam kết đầu ra rõ ràng</h3>
+              <p className="commitment-desc mb-0">
+                Chúng tôi cam kết kết quả học tập với chính sách hoàn phí hoặc học lại miễn phí nếu không đạt mục tiêu theo điều kiện.
+              </p>
+            </div>
+            <div className="col-md-7">
+              <div className="row g-3">
+                <div className="col-12">
+                  <div className="commitment-item">
+                    <div className="commitment-item-icon">✓</div>
+                    <div className="commitment-item-text">
+                      <strong>Cam kết 550/650/800+</strong> theo lộ trình đăng ký
+                    </div>
+                  </div>
+                </div>
+                <div className="col-12">
+                  <div className="commitment-item">
+                    <div className="commitment-item-icon">✓</div>
+                    <div className="commitment-item-text">
+                      <strong>Ôn lại miễn phí</strong> hoặc hoàn phí theo điều kiện cam kết
+                    </div>
+                  </div>
+                </div>
+                <div className="col-12">
+                  <div className="commitment-item">
+                    <div className="commitment-item-icon">✓</div>
+                    <div className="commitment-item-text">
+                      <strong>Thi thử định kỳ</strong>, báo cáo tiến bộ 2 tuần/lần
+                    </div>
+                  </div>
+                </div>
+                <div className="col-12">
+                  <div className="commitment-item">
+                    <div className="commitment-item-icon">✓</div>
+                    <div className="commitment-item-text">
+                      <strong>Hỗ trợ học tập</strong> liên tục qua nhóm riêng và mentor cá nhân
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -243,67 +373,6 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* Teachers Section */}
-      <section id="teachers" className="section container py-6">
-        <div className="section-header text-center mb-4">
-          <h2 className="section-title mb-1">Đội ngũ giảng viên</h2>
-          <p className="section-subtitle mb-0">Giảng viên giàu kinh nghiệm với chứng chỉ quốc tế</p>
-        </div>
-        <div className="row g-4">
-          <div className="col-md-4">
-            <div className="teacher-card p-4 rounded border h-100">
-              <div className="teacher-avatar mb-3">
-                <div className="avatar-circle-large mx-auto">MS</div>
-              </div>
-              <h5 className="teacher-name text-center mb-2">Ms. Sarah Johnson</h5>
-              <p className="teacher-title text-center text-muted mb-3">Chuyên gia TOEIC</p>
-              <p className="mb-3">8 năm kinh nghiệm giảng dạy TOEIC, chứng chỉ TESOL quốc tế. Đã giúp hơn 500 học viên đạt điểm mục tiêu.</p>
-              <div className="teacher-experience d-flex justify-content-center align-items-center mb-3">
-                <span className="badge bg-primary me-2">8 năm kinh nghiệm</span>
-                <span className="badge bg-success">TESOL Certified</span>
-              </div>
-              <div className="teacher-achievements text-center">
-                <div className="small text-muted">500+ học viên thành công</div>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-4">
-            <div className="teacher-card p-4 rounded border h-100">
-              <div className="teacher-avatar mb-3">
-                <div className="avatar-circle-large mx-auto">DM</div>
-              </div>
-              <h5 className="teacher-name text-center mb-2">Mr. David Miller</h5>
-              <p className="teacher-title text-center text-muted mb-3">Chuyên gia Listening</p>
-              <p className="mb-3">10 năm kinh nghiệm, từng làm việc tại các tập đoàn đa quốc gia. Chuyên sâu về kỹ năng nghe và phát âm.</p>
-              <div className="teacher-experience d-flex justify-content-center align-items-center mb-3">
-                <span className="badge bg-primary me-2">10 năm kinh nghiệm</span>
-                <span className="badge bg-info">IELTS 8.5</span>
-              </div>
-              <div className="teacher-achievements text-center">
-                <div className="small text-muted">98% học viên đạt mục tiêu</div>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-4">
-            <div className="teacher-card p-4 rounded border h-100">
-              <div className="teacher-avatar mb-3">
-                <div className="avatar-circle-large mx-auto">AL</div>
-              </div>
-              <h5 className="teacher-name text-center mb-2">Ms. Anna Lee</h5>
-              <p className="teacher-title text-center text-muted mb-3">Chuyên gia Reading</p>
-              <p className="mb-3">6 năm kinh nghiệm, thạc sĩ Ngôn ngữ học. Phương pháp giảng dạy sáng tạo, giúp học viên cải thiện kỹ năng đọc hiểu nhanh chóng.</p>
-              <div className="teacher-experience d-flex justify-content-center align-items-center mb-3">
-                <span className="badge bg-primary me-2">6 năm kinh nghiệm</span>
-                <span className="badge bg-warning">MA Linguistics</span>
-              </div>
-              <div className="teacher-achievements text-center">
-                <div className="small text-muted">300+ học viên thành công</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Chia sẻ học viên */}
       <section id="testimonials" className="section container py-6">
         <div className="section-header text-center mb-4">
@@ -370,20 +439,18 @@ function App() {
     <div className="app-layout bg-light min-vh-100 d-flex flex-column">
       <Header />
 
-
-        <main className="content bg-white border rounded p-0">
-          <Routes>
-            <Route path="/" element={<HomeContent />} />
-            <Route path="/login" element={<AuthPage />} />
-            <Route path="/test" element={<TestPage />} />
-            <Route path="/test/:testId" element={<TestPage />} />
-            <Route path="/toeic-test" element={<ToeicTestPage />} />
-            <Route path="/toeic-test/:testId" element={<ToeicTestPage />} />
-            <Route path="/facility" element={<FacilityPage />} />
-            {/* Thêm các routes khác ở đây */}
-          </Routes>
-        </main>
-    
+      <main className="content flex-grow-1 bg-white">
+        <Routes>
+          <Route path="/" element={<HomeContent />} />
+          <Route path="/login" element={<AuthPage />} />
+          <Route path="/test" element={<TestPage />} />
+          <Route path="/test/:testId" element={<TestPage />} />
+          <Route path="/toeic-test" element={<ToeicTestPage />} />
+          <Route path="/toeic-test/:testId" element={<ToeicTestPage />} />
+          <Route path="/facility" element={<FacilityPage />} />
+          {/* Thêm các routes khác ở đây */}
+        </Routes>
+      </main>
 
       <Footer />
     </div>

@@ -298,22 +298,6 @@ const TeacherIntroduction = () => {
                             </div>
                         </div>
                     </div>
-
-                    {/* CTA Section */}
-                    <div className="cta-section">
-                        <div className="container">
-                            <div className="cta-content">
-                                <h2 className="cta-title">Sẵn Sàng Bắt Đầu Hành Trình TOEIC?</h2>
-                                <p className="cta-subtitle">
-                                    Đăng ký ngay để được học với đội ngũ giáo viên uy tín và giàu kinh nghiệm
-                                </p>
-                                <div className="cta-buttons">
-                                    <button className="btn-primary">Đăng Ký Ngay</button>
-                                    <button className="btn-secondary">Tư Vấn Miễn Phí</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </main>
             <Footer />
