@@ -10,79 +10,78 @@ const ConfirmRegistration = ({
     courseId
 }) => {
     const [course, setCourse] = useState({});
-    const [preCourse, setPreCourse] = useState({});
+    const [preCourses, setPreCourses] = useState([]); // Mảng các học phần tiên quyết
+    const [selectedStartCourseId, setSelectedStartCourseId] = useState(null); // ID học phần muốn bắt đầu
     const [selectedOption, setSelectedOption] = useState('current');
-    const handleOverlayClick = (e) => {
-        if (e.target === e.currentTarget) {
-            onClose();
-        }
-    };
 
-    const fetchCourse = async () => {
-        try {
-            const data = await getCourseById(courseId);
-            setCourse(data);
-        } catch (error) {
-            console.error('Error fetching course:', error);
-        }
-    };
+    // Đệ quy lấy tất cả precourse (nhiều cấp)
+    const fetchAllPreCourses = async (courseId, visited = new Set()) => {
+        if (!courseId || visited.has(courseId)) return [];
+        visited.add(courseId);
 
-    const fetchPreCourse = async () => {
-        try {
-            const data = await getCourseById(course.cou_course_id);
-            setPreCourse(data);
-        } catch (error) {
-            console.error('Error fetching pre-course:', error);
+        const course = await getCourseById(courseId);
+        preCourses.forEach(c => {
+            if (c.course_id === course.course_id) {
+                return []; // Đã có trong danh sách
+            }
+        });
+        setPreCourses(prev => [...prev, course]);
+
+        const preIds = Array.isArray(course.precourses)
+            ? course.precourses
+            : course.cou_course_id
+                ? [course.cou_course_id]
+                : [];
+        let result = [];
+        for (const preId of preIds) {
+            const pre = await getCourseById(preId);
+            result.push(pre);
+            const subPre = await fetchAllPreCourses(preId, visited);
+            result = result.concat(subPre);
         }
+        return result;
     };
 
     useEffect(() => {
         if (!isOpen || !courseId) return;
-        fetchCourse();
+        const fetchData = async () => {
+            const mainCourse = await getCourseById(courseId);
+            setCourse(mainCourse);
+            const allPreCourses = await fetchAllPreCourses(mainCourse.cou_course_id);
+            
+            if (allPreCourses.length > 0) {
+                setSelectedStartCourseId(allPreCourses[allPreCourses.length - 1].course_id); // mặc định chọn cuối cùng
+            }
+        };
+        fetchData();
         setSelectedOption('current');
     }, [isOpen, courseId]);
-
-    useEffect(() => {
-        if (!course.cou_course_id) return;
-        fetchPreCourse();
-    }, [course.cou_course_id]);
-
     if (!isOpen) return null;
-
-    const hasPreCourse = preCourse.course_name;
+    const hasPreCourse = preCourses.length > 0;
 
     const handleConfirm = () => {
-        // ✅ Tính startLevel dựa trên lựa chọn
+        // Xác định startLevel theo học phần được chọn
         let startLevel = '';
-
-        if (selectedOption === 'current') {
-            // Nếu chỉ học khóa hiện tại → startLevel = level của preCourse
-            startLevel = preCourse.level || '';
-        } else {
-            // Nếu học cả preCourse → startLevel = '' (bắt đầu từ đầu)
-            startLevel = '';
+        let startCourseName = '';
+        if (selectedOption === 'current' && hasPreCourse) {
+            const startCourse = preCourses.find(c => c.course_id === selectedStartCourseId);
+            startLevel = startCourse ? startCourse.course_level : '';
+            startCourseName = startCourse ? startCourse.course_name : '';
         }
-
         const confirmData = {
-            selectedOption: selectedOption,
+            selectedOption,
             includePreCourse: selectedOption === 'withPreCourse',
-            preCourseId: selectedOption === 'withPreCourse' ? preCourse.course_id : null,
-            preCourseName: selectedOption === 'withPreCourse' ? preCourse.course_name : null,
-            startLevel: startLevel // ✅ Gửi startLevel về parent
+            preCourseIds: hasPreCourse ? preCourses.map(c => c.course_id) : null,
+            preCourseNames: hasPreCourse ? preCourses.map(c => c.course_name) : null,
+            startLevel,
+            startCourseId: selectedStartCourseId,
+            startCourseName
         };
-
-        console.log('📦 Confirm Data:', {
-            ...confirmData,
-            logic: selectedOption === 'current'
-                ? `Bỏ qua preCourse → startLevel = ${preCourse.level}`
-                : 'Học cả preCourse → startLevel = "" (bắt đầu từ đầu)'
-        });
-
         onConfirm(confirmData);
     };
 
     return (
-        <div className="modal-overlay" onClick={handleOverlayClick}>
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
             <div className="modal-container">
                 <div className="modal-header">
                     <div className="header-content">
@@ -169,11 +168,15 @@ const ConfirmRegistration = ({
                             <div className="info-item course-item precourse-item">
                                 <div className="info-label">
                                     <i className="bi bi-arrow-up-circle-fill"></i>
-                                    <span>Khóa tiên quyết</span>
+                                    <span>Các học phần tiên quyết</span>
                                 </div>
                                 <div className="info-value course-name">
-                                    {preCourse.course_name}
-                                    <span className="level-badge">Level: {preCourse.level}</span>
+                                    {preCourses.map((c, idx) => (
+                                        <span key={c.course_id} className="precourse-list-item">
+                                            {idx + 1}. {c.course_name} <span className="level-badge">Level: {c.course_level}</span>
+                                            <br />
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
                         )}
@@ -182,13 +185,11 @@ const ConfirmRegistration = ({
                     {hasPreCourse && (
                         <>
                             <div className="divider"></div>
-
                             <div className="course-options">
                                 <div className="options-header">
                                     <i className="bi bi-check2-square"></i>
-                                    <span>Chọn phương án học</span>
+                                    <span>Bạn muốn bắt đầu học từ học phần nào?</span>
                                 </div>
-
                                 <div className="options-grid">
                                     <label
                                         className={`option-card ${selectedOption === 'current' ? 'selected' : ''}`}
@@ -209,8 +210,30 @@ const ConfirmRegistration = ({
                                                 <div className="option-title">Chỉ học khóa đã chọn</div>
                                                 <div className="option-desc">
                                                     {course.course_name}
+                                                    {preCourses.length > 0 && (
+                                                        <div style={{ marginTop: 8 }}>
+                                                            <label style={{ fontWeight: 500 }}>
+                                                                Chọn học phần tiên quyết bạn đã hoàn thành:
+                                                            </label>
+                                                            <select
+                                                                style={{ marginLeft: 8, padding: '4px 8px' }}
+                                                                value={selectedStartCourseId || ''}
+                                                                onChange={e => setSelectedStartCourseId(e.target.value)}
+                                                            >
+                                                                {preCourses.map(c => (
+                                                                    <option key={c.course_id} value={c.course_id}>
+                                                                        {c.course_name} (Level: {c.course_level})
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    )}
                                                     <span className="start-level-hint">
-                                                        (Bắt đầu từ Level: {preCourse.course_level})
+                                                        (Bắt đầu từ Level: {
+                                                            preCourses.length > 0
+                                                                ? preCourses.find(c => c.course_id === selectedStartCourseId)?.course_level
+                                                                : 'Beginner'
+                                                        })
                                                     </span>
                                                 </div>
                                             </div>
@@ -219,7 +242,6 @@ const ConfirmRegistration = ({
                                             </div>
                                         </div>
                                     </label>
-
                                     <label
                                         className={`option-card ${selectedOption === 'withPreCourse' ? 'selected' : ''}`}
                                         onClick={() => setSelectedOption('withPreCourse')}
@@ -237,11 +259,11 @@ const ConfirmRegistration = ({
                                             </div>
                                             <div className="option-info">
                                                 <div className="option-title">
-                                                    Học bao gồm khóa tiên quyết
+                                                    Học từ học phần tiên quyết đầu tiên
                                                     <span className="recommended-badge">Khuyến nghị</span>
                                                 </div>
                                                 <div className="option-desc">
-                                                    {preCourse.course_name} + {course.course_name}
+                                                    {preCourses.map((c) => c.course_name).join(' → ')} + {course.course_name}
                                                     <span className="start-level-hint">
                                                         (Bắt đầu từ Level: Beginner)
                                                     </span>
@@ -253,21 +275,21 @@ const ConfirmRegistration = ({
                                         </div>
                                     </label>
                                 </div>
-
                                 <div className="option-note">
                                     <i className="bi bi-lightbulb-fill"></i>
                                     <span>
                                         {selectedOption === 'withPreCourse'
-                                            ? 'Bạn sẽ được tư vấn chi tiết về lộ trình học cả 2 khóa từ cơ bản'
-                                            : `Đảm bảo bạn đã có kiến thức tương đương Level ${preCourse.course_level}`
-                                        }
+                                            ? 'Bạn sẽ được tư vấn lộ trình học từ các học phần nền tảng.'
+                                            : `Bạn cần đảm bảo đã có kiến thức tương đương Level ${preCourses.length > 0
+                                                ? preCourses.find(c => c.course_id === selectedStartCourseId)?.course_level
+                                                : 'Beginner'
+                                            }`}
                                     </span>
                                 </div>
                             </div>
                         </>
                     )}
                 </div>
-
                 <div className="modal-footer">
                     <button className="btn-cancel" onClick={onClose}>
                         <i className="bi bi-x-circle"></i>

@@ -8,7 +8,11 @@ from sqlalchemy.exc import IntegrityError
 from app.config import db
 from app.models.consult_registration_model import ConsultRegistration
 from app.models.course_model import Course
-from app.utils.email_utils import verify_email_token, generate_email_verification_token, send_verification_email
+from app.utils.email_utils import (
+    verify_email_token,
+    generate_email_verification_token,
+    send_verification_email,
+)
 
 
 class ConsultRegistrationService:
@@ -86,10 +90,13 @@ class ConsultRegistrationService:
                 cr_email=data.get("cr_email"),
                 cr_gender=data.get("cr_gender"),
             )
+            data = consultation.to_dict()
             email_sent = False
             if consultation.cr_email:
                 try:
-                    verify_token = generate_email_verification_token(consultation.cr_id,consultation)
+                    verify_token = generate_email_verification_token(
+                        consultation.cr_id, data
+                    )
                     send_verification_email(consultation.cr_email, verify_token)
                     email_sent = True
                 except Exception as e:
@@ -99,11 +106,10 @@ class ConsultRegistrationService:
                     # Không return error vì consultation đã được tạo thành công
 
             # ✅ RETURN MESSAGE PHÙ HỢP
-            message = "Consultation registration created successfully"
             if email_sent:
-                message += ". Please check your email to verify your registration"
+                message = "Please check your email to verify your registration"
             elif consultation.cr_email:
-                message += ", but verification email could not be sent"
+                message = "Verification email could not be sent"
 
             return {
                 "success": True,
@@ -147,27 +153,37 @@ class ConsultRegistrationService:
             payload = verify_email_token(token)
             if not payload:
                 return {"success": False, "error": "Invalid or expired token"}
+            new_cr_id = payload.get("user_id")
+            print(f"New CR ID from token: {new_cr_id}"  )
+            data = payload.get("data")
+            if not data:
+                return {"success": False, "error": "Invalid token data"}
 
-            cr_id = payload.get("user_id")
-            consultation = ConsultRegistration.query.get(cr_id)
-            if not consultation:
-                return {"success": False, "error": "Consultation registration not found"}
+            # Chuyển dict thành ConsultRegistration object
+            consultation = ConsultRegistration(
+                cr_id=new_cr_id,
+                course_id=data.get("course_id"),
+                cr_fullname=data.get("cr_fullname"),
+                cr_birthday=(
+                    datetime.strptime(data.get("cr_birthday"), "%Y-%m-%d").date()
+                    if data.get("cr_birthday")
+                    else None
+                ),
+                cr_phone=data.get("cr_phone"),
+                cr_email=data.get("cr_email"),
+                cr_gender=data.get("cr_gender"),
+            )
 
-            if consultation.is_email_verified:
-                return {
-                    "success": True,
-                    "message": "Email already verified",
-                    "data": consultation.to_dict(include_course=True),
-                }
-
-            consultation.is_email_verified = True
+            self.db.session.add(consultation)
             self.db.session.commit()
 
             return {
                 "success": True,
-                "message": "Email verified successfully",
+                "message": "Email verified successfully! Registration completed.",
                 "data": consultation.to_dict(include_course=True),
             }
+
         except Exception as e:
+            self.db.session.rollback()
             current_app.logger.error(f"Error verifying email: {str(e)}")
             return {"success": False, "error": f"Error verifying email: {str(e)}"}

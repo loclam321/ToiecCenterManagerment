@@ -63,6 +63,11 @@ class ConsultRegistration(db.Model):
         nullable=True,
         comment="Giới tính (M: Male, F: Female)",
     )
+    cr_startlv = db.Column(
+        db.Enum("300–450", "450–600", "600–750", "750–900", name="student_levels"),
+        nullable=True
+    )  
+    
 
     # Timestamps
     created_at = db.Column(

@@ -57,14 +57,11 @@ def verify_email_token(token):
         return None
 
 
-
-
-
 def send_verification_email(to_email, token):
     """Gửi email xác minh cho người dùng mới"""
     from flask import current_app
 
-    verification_url = f"{current_app.config.get('BASE_URL', 'http://localhost:5000')}/api/auth/verify-email/{token}"
+    verification_url = f"{current_app.config.get('BASE_URL', 'http://localhost:5000')}/api/consult-registrations/verify-email/{token}"
 
     subject = "Xác minh tài khoản LMS của bạn"
 

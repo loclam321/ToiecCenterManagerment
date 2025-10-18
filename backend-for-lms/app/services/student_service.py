@@ -8,7 +8,7 @@ from app.models.student_model import Student
 from datetime import datetime, date
 from werkzeug.security import generate_password_hash
 from werkzeug.exceptions import NotFound, BadRequest, Conflict
-from app.utils.email_utils import send_email, generate_email_verification_token
+from app.utils.email_utils import  generate_email_verification_token, send_verification_email
 
 
 class StudentService:
@@ -121,8 +121,8 @@ class StudentService:
 
             verify_email_token = generate_email_verification_token()
             try:
-                send_email(
-                     student.user_email, new_id, verify_email_token
+                send_verification_email(
+                     student.user_email, verify_email_token
                 )
             except Exception as e:
                 current_app.logger.error(f"Error sending verification email: {e}")

@@ -1,24 +1,51 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.consultregistraion_service import ConsultRegistrationService
 
-consult_registration_bp = Blueprint("consult_registration", __name__, url_prefix="/api/consult-registrations")
+consult_registration_bp = Blueprint(
+    "consult_registration", __name__, url_prefix="/api/consult-registrations"
+)
 
 consult_service = ConsultRegistrationService()
 
 
+# ========== PUBLIC ROUTES (No JWT required) ==========
+
+
 @consult_registration_bp.route("/", methods=["POST"])
-def create_consultation_registration():
+def send_consultation_verification_email():
+    """
+    Gửi email xác minh đăng ký tư vấn (CHƯA lưu vào database)
+
+    Request Body:
+    {
+        "course_id": "C0000001",
+        "cr_fullname": "Nguyen Van A",
+        "cr_email": "user@example.com",  # Required
+        "cr_phone": "0123456789",
+        "cr_birthday": "2000-01-15",
+        "cr_gender": "M"
+    }
+
+    Response:
+    {
+        "success": true,
+        "message": "Verification email sent successfully. Please check your email...",
+        "data": {...},
+        "email_sent": true
+    }
+    """
     try:
         data = request.get_json()
 
         if not data:
             return jsonify({"success": False, "error": "No data provided"}), 400
 
-        result = consult_service.create_consultation_registration(data)
+        # ✅ Gọi method send_verification_email thay vì create
+        result = consult_service.send_verification_email(data)
 
         if result["success"]:
-            return jsonify(result), 201
+            return jsonify(result), 200
         else:
             return jsonify(result), 400
 
@@ -26,7 +53,41 @@ def create_consultation_registration():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@consult_registration_bp.route("/consult-registrations", methods=["GET"])
+@consult_registration_bp.route("/verify-email/<token>", methods=["GET"])
+def verify_consultation_email(token):
+    """
+    Xác thực email và TẠO record vào database
+
+    URL: GET /api/consult-registrations/verify-email/<token>
+
+    Success Response: Render HTML template
+    Error Response: Render error template
+    """
+    try:
+        result = consult_service.verify_email(token)
+
+        if result["success"]:
+            # ✅ Render template success
+            return render_template(
+                "verification_success.html",
+                message=result["message"],
+                data=result.get("data"),
+            )
+        else:
+            # ❌ Render template error
+            return (
+                render_template("verification_error.html", error=result["error"]),
+                400,
+            )
+
+    except Exception as e:
+        return render_template("verification_error.html", error=str(e)), 500
+
+
+# ========== PROTECTED ROUTES (JWT required) ==========
+
+
+@consult_registration_bp.route("/", methods=["GET"])
 @jwt_required()
 def get_all_consultation_registrations():
     """
@@ -76,7 +137,7 @@ def get_all_consultation_registrations():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@consult_registration_bp.route("/consult-registrations/<int:cr_id>", methods=["GET"])
+@consult_registration_bp.route("/<int:cr_id>", methods=["GET"])
 @jwt_required()
 def get_consultation_registration(cr_id):
     """
@@ -98,7 +159,7 @@ def get_consultation_registration(cr_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@consult_registration_bp.route("/consult-registrations/<int:cr_id>", methods=["PUT"])
+@consult_registration_bp.route("/<int:cr_id>", methods=["PUT"])
 @jwt_required()
 def update_consultation_registration(cr_id):
     """
@@ -130,7 +191,7 @@ def update_consultation_registration(cr_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@consult_registration_bp.route("/consult-registrations/<int:cr_id>", methods=["DELETE"])
+@consult_registration_bp.route("/<int:cr_id>", methods=["DELETE"])
 @jwt_required()
 def delete_consultation_registration(cr_id):
     """
@@ -148,13 +209,13 @@ def delete_consultation_registration(cr_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@consult_registration_bp.route(
-    "/courses/<course_id>/consult-registrations", methods=["GET"]
-)
+@consult_registration_bp.route("/by-course/<course_id>", methods=["GET"])
 @jwt_required()
 def get_registrations_by_course(course_id):
     """
     Lấy danh sách đăng ký tư vấn theo khóa học
+
+    URL: GET /api/consult-registrations/by-course/<course_id>
     """
     try:
         result = consult_service.get_registrations_by_course(course_id)
@@ -168,7 +229,7 @@ def get_registrations_by_course(course_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@consult_registration_bp.route("/consult-registrations/statistics", methods=["GET"])
+@consult_registration_bp.route("/statistics", methods=["GET"])
 @jwt_required()
 def get_consultation_statistics():
     """
@@ -200,28 +261,3 @@ def get_consultation_statistics():
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
-
-@consult_registration_bp.route(
-    "/consult-registrations/verify-email/<token>", methods=["GET"]
-)
-def verify_consultation_email(token):
-    """
-    Xác thực email đăng ký tư vấn
-
-    URL: /api/consult-registrations/verify-email/<token>
-    """
-    try:
-        result = consult_service.verify_consultation_email(token)
-
-        if result["success"]:
-            return jsonify(result), 200
-        else:
-            return jsonify(result), 400
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
-@consult_registration_bp.route("/verify-email", methods=["POST"])
-def verification_email():
