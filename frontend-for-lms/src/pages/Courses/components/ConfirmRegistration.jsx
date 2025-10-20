@@ -7,51 +7,21 @@ const ConfirmRegistration = ({
     onClose,
     onConfirm,
     formData,
-    courseId
+    courseId,
+    preCourse
 }) => {
     const [course, setCourse] = useState({});
     const [preCourses, setPreCourses] = useState([]); // Mảng các học phần tiên quyết
     const [selectedStartCourseId, setSelectedStartCourseId] = useState(null); // ID học phần muốn bắt đầu
     const [selectedOption, setSelectedOption] = useState('current');
-
     // Đệ quy lấy tất cả precourse (nhiều cấp)
-    const fetchAllPreCourses = async (courseId, visited = new Set()) => {
-        if (!courseId || visited.has(courseId)) return [];
-        visited.add(courseId);
-
-        const course = await getCourseById(courseId);
-        preCourses.forEach(c => {
-            if (c.course_id === course.course_id) {
-                return []; // Đã có trong danh sách
-            }
-        });
-        setPreCourses(prev => [...prev, course]);
-
-        const preIds = Array.isArray(course.precourses)
-            ? course.precourses
-            : course.cou_course_id
-                ? [course.cou_course_id]
-                : [];
-        let result = [];
-        for (const preId of preIds) {
-            const pre = await getCourseById(preId);
-            result.push(pre);
-            const subPre = await fetchAllPreCourses(preId, visited);
-            result = result.concat(subPre);
-        }
-        return result;
-    };
+  
 
     useEffect(() => {
         if (!isOpen || !courseId) return;
         const fetchData = async () => {
-            const mainCourse = await getCourseById(courseId);
-            setCourse(mainCourse);
-            const allPreCourses = await fetchAllPreCourses(mainCourse.cou_course_id);
-            
-            if (allPreCourses.length > 0) {
-                setSelectedStartCourseId(allPreCourses[allPreCourses.length - 1].course_id); // mặc định chọn cuối cùng
-            }
+        setPreCourses(preCourse || []);
+            setSelectedOption('current');
         };
         fetchData();
         setSelectedOption('current');

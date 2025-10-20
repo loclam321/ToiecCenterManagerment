@@ -1,16 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { use, useEffect, useMemo, useState } from 'react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { useParams } from 'react-router-dom';
 import { fetchLearningPathsByCourse } from '../../services/courseService';
 import './css/CourseIntroduction.css';
 import StudentRegistration from './components/StudentRegistration';
+import { getCourseById } from '../../services/courseService';
 
 const CourseIntroduction = () => {
   const { courseId } = useParams();
   const [data, setData] = useState(null);
+  const [preCourses, setPreCourses] = useState([]);
+  const [mainCourse, setMainCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isFetched, setIsFetched] = useState(false);
+
 
   const isYouTubeUrl = (url) => /youtu\.be|youtube\.com/.test(url || '');
   const toYouTubeEmbed = (url) => {
@@ -24,6 +29,24 @@ const CourseIntroduction = () => {
       return vid ? `https://www.youtube.com/embed/${vid}` : url;
     } catch (_) {
       return url;
+    }
+  };
+
+  // Đệ quy lấy tất cả các khóa học tiên quyết
+  const fetchAllPreCourses = async (courseId, visited = new Set()) => {
+    if(!courseId || visited.has(courseId)) return;
+    visited.add(courseId);
+    try {
+      const preCourse = await getCourseById(courseId);
+      console.log('Fetched pre-course:', preCourse);  
+      setPreCourses((prev) => [...prev, preCourse]);
+      if (preCourse.cou_course_id) {
+        await fetchAllPreCourses(preCourse.cou_course_id, visited);
+      } else {
+        return;
+      }
+    } catch (e) {
+      console.error('Error fetching pre-courses:', e);
     }
   };
 
@@ -45,6 +68,8 @@ const CourseIntroduction = () => {
         setError(null);
         const res = await fetchLearningPathsByCourse(courseId);
         setData(res);
+        const mainCourse = await getCourseById(courseId);
+        setMainCourse(mainCourse);
       } catch (e) {
         setError(e.message || 'Không thể tải chi tiết khóa học');
       } finally {
@@ -52,6 +77,14 @@ const CourseIntroduction = () => {
       }
     })();
   }, [courseId]);
+
+  useEffect(() => {
+    if (!isFetched && mainCourse && mainCourse.cou_course_id) {
+      setIsFetched(true);
+      fetchAllPreCourses(mainCourse.cou_course_id);
+    } 
+  }, [mainCourse,isFetched]);
+  
 
   const statusText = useMemo(() => {
     const raw = (data?.course?.course_status || data?.course?.status || '').toString().toUpperCase();
@@ -287,6 +320,7 @@ const CourseIntroduction = () => {
                               <StudentRegistration
                                 courseName={data.course?.course_name || ''}
                                 courseId={courseId}
+                                preCourse={preCourses}
                               />
                             </div>
                           </section>
