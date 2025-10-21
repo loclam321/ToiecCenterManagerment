@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ConfirmRegistration from './ConfirmRegistration';
 import './StudentRegistration.css';
 
-const StudentRegistration = ({ courseName = '', courseId = '' }) => {
+const StudentRegistration = ({ courseName = '', courseId = '' , preCourse}) => {
     const [formData, setFormData] = useState({
         name: '',           // Đổi từ fullName
         phone: '',
@@ -387,6 +387,7 @@ const StudentRegistration = ({ courseName = '', courseId = '' }) => {
                 onConfirm={handleConfirmSubmit}
                 formData={formData}
                 courseId={courseId}
+                preCourse={preCourse}
             />
         </>
     );
