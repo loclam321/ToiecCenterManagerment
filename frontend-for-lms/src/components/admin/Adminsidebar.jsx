@@ -94,13 +94,13 @@ function AdminSidebar({
     const isActive = (path) => {
         const currentPath = normalize(location.pathname);
         const targetPath = normalize(path);
-        if (!targetPath) {
-            return false;
+        if (!targetPath) return false;
+        // Dashboard chỉ active khi đúng path
+        if (targetPath === '/teachers' || targetPath === '/admin') {
+            return currentPath === targetPath;
         }
-        if (currentPath === targetPath) {
-            return true;
-        }
-        return currentPath.startsWith(`${targetPath}/`);
+        // Các mục khác active khi bắt đầu đúng path, nhưng không phải dashboard
+        return currentPath.startsWith(targetPath) && currentPath !== '/teachers' && currentPath !== '/admin';
     };
 
     const displayRole = roleLabel || (localStorage.getItem('role') || 'admin').toString().toUpperCase();

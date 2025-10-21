@@ -451,6 +451,8 @@ body {
 }
 
 .section-title {
+  display: flex;
+  justify-content: center;
   font-weight: 800;
   color: var(--gray-900);
   font-size: clamp(2rem, 3vw + 1rem, 2.75rem);

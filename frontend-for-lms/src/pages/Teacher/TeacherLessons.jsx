@@ -784,9 +784,9 @@ function TeacherLessons() {
   return (
     <div className="teacher-lessons">
       <form className="card lesson-form" onSubmit={handleSubmit}>
-        <div className="card-header d-flex flex-column flex-md-row justify-content-between gap-2">
-          <div>
-            <h5 className="mb-1">
+        <div className="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 py-3" style={{ borderBottom: '1px solid #f0f0f0' }}>
+          <div className="d-flex flex-column gap-1">
+            <h5 className="mb-0 fw-bold">
               {editingLessonId ? (
                 <>
                   Chỉnh sửa bài học <span className="badge bg-warning text-dark ms-2">Đang sửa</span>
@@ -803,12 +803,20 @@ function TeacherLessons() {
               <small className="text-muted">Chọn lớp phụ trách để bắt đầu</small>
             )}
           </div>
-          <div className="d-flex gap-2 align-items-center">
-            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={resetForm} disabled={submitting}>
-              {editingLessonId ? 'Hủy chỉnh sửa' : 'Đặt lại'}
+          <div className="d-flex flex-row gap-2 flex-wrap align-items-center justify-content-md-end mt-2 mt-md-0">
+            <button type="button" className="btn btn-light border px-3 py-2" onClick={resetForm} disabled={submitting}>
+              {editingLessonId ? (
+                <><span className="me-1" aria-hidden="true">↩️</span>Hủy chỉnh sửa</>
+              ) : (
+                <><span className="me-1" aria-hidden="true">🧹</span>Đặt lại</>
+              )}
             </button>
-            <button type="submit" className="btn btn-primary btn-sm" disabled={submitting}>
-              {submitting ? 'Đang lưu...' : (editingLessonId ? 'Cập nhật bài học' : 'Lưu bài học')}
+            <button type="submit" className="btn btn-primary px-3 py-2 fw-semibold" disabled={submitting}>
+              {submitting ? (
+                <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang lưu...</>
+              ) : (
+                editingLessonId ? 'Cập nhật bài học' : 'Lưu bài học'
+              )}
             </button>
           </div>
         </div>
@@ -817,104 +825,122 @@ function TeacherLessons() {
           {error && <div className="alert alert-danger small mb-3">{error}</div>}
           {successMessage && <div className="alert alert-success small mb-3">{successMessage}</div>}
 
-          <div className="row g-3 mb-4">
+          <div className="row g-3 mb-4 align-items-stretch">
             <div className="col-md-4">
-              <label className="form-label">Lớp phụ trách</label>
-              <select
-                className="form-select"
-                value={form.class_id}
-                onChange={(e) => updateFormField('class_id', e.target.value)}
-                required
-              >
-                {classes.map((cls) => (
-                  <option key={cls.class_id} value={cls.class_id}>
-                    {cls.class_name || cls.class_id}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-4">
-              <label className="form-label">Part TOEIC</label>
-              <select
-                className="form-select"
-                value={form.part_id}
-                onChange={(e) => updateFormField('part_id', e.target.value)}
-                required
-              >
-                {parts.map((part) => (
-                  <option key={part.part_id} value={part.part_id}>
-                    {part.part_section} · {part.part_code}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-4">
-              <label className="form-label">Ngày mở (YYYY-MM-DD)</label>
-              <input
-                type="date"
-                className="form-control"
-                value={form.available_from}
-                min={classDateConstraints?.min || undefined}
-                max={classDateConstraints?.max || undefined}
-                onChange={(e) => updateFormField('available_from', e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="row g-3 mb-4">
-            <div className="col-md-6">
-              <label className="form-label">Tên bài học</label>
-              <input
-                type="text"
-                className="form-control"
-                value={form.lesson_name}
-                onChange={(e) => updateFormField('lesson_name', e.target.value)}
-                required
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Video bài học (lưu tại public/video → đường dẫn /video/...)</label>
-              <div className="input-group input-group-sm">
-                <input
-                  type="text"
-                  className="form-control"
-                  list="teacher-video-options"
-                  placeholder="/video/ten_file.mp4"
-                  value={form.video_link}
-                  onChange={(e) => updateFormField('video_link', e.target.value)}
-                />
-                <label className="btn btn-outline-secondary mb-0" style={{ minWidth: '110px' }}>
-                  {uploadingTarget?.mediaType === 'video' ? 'Đang tải...' : 'Chọn tệp'}
-                  <input
-                    type="file"
-                    accept="video/mp4,video/webm,video/quicktime,video/x-matroska"
-                    hidden
-                    disabled={uploadingTarget?.mediaType === 'video'}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      handleFileUpload('video', file);
-                      if (e.target) e.target.value = '';
-                    }}
-                  />
-                </label>
+              <div className="card h-100 shadow-sm border-0 p-3 d-flex flex-column justify-content-center" style={{ background: '#f8fafc' }}>
+                <label className="form-label mb-1">Lớp phụ trách</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={form.class_id}
+                  onChange={(e) => updateFormField('class_id', e.target.value)}
+                  required
+                >
+                  {classes.map((cls) => (
+                    <option key={cls.class_id} value={cls.class_id}>
+                      {cls.class_name || cls.class_id}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <small className="text-muted">Các tệp sẽ được lưu trên server tại frontend-for-lms/public/video</small>
-              <datalist id="teacher-video-options">
-                {mediaLibrary.video.map((file) => (
-                  <option key={file.path} value={file.path}>
-                    {file.name}
-                  </option>
-                ))}
-              </datalist>
+            </div>
+            <div className="col-md-4">
+              <div className="card h-100 shadow-sm border-0 p-3 d-flex flex-column justify-content-center" style={{ background: '#f8fafc' }}>
+                <label className="form-label mb-1">Part TOEIC</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={form.part_id}
+                  onChange={(e) => updateFormField('part_id', e.target.value)}
+                  required
+                >
+                  {parts.map((part) => (
+                    <option key={part.part_id} value={part.part_id}>
+                      {part.part_section} · {part.part_code}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="card h-100 shadow-sm border-0 p-3 d-flex flex-column justify-content-center" style={{ background: '#f8fafc' }}>
+                <label className="form-label mb-1">Ngày mở (YYYY-MM-DD)</label>
+                <input
+                  type="date"
+                  className="form-control form-control-sm"
+                  value={form.available_from}
+                  min={classDateConstraints?.min || undefined}
+                  max={classDateConstraints?.max || undefined}
+                  onChange={(e) => updateFormField('available_from', e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-3">
-            <span className="text-muted small">Chọn cách nhập câu hỏi:</span>
-            <div className="btn-group btn-group-sm" role="group" aria-label="Chọn cách nhập câu hỏi">
+          <div className="row g-3 mb-4 align-items-stretch">
+            <div className="col-md-6 d-flex flex-column h-100">
+              <div className="card shadow-sm border-0 h-100" style={{ background: '#f8fafc', minHeight: 90 }}>
+                <div className="card-body py-2 px-3 d-flex flex-column justify-content-center h-100">
+                  <label className="form-label mb-1">Tên bài học</label>
+                  <div className="d-flex align-items-center gap-2">
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      style={{ minWidth: 0, flex: 1 }}
+                      value={form.lesson_name}
+                      onChange={(e) => updateFormField('lesson_name', e.target.value)}
+                      required
+                      placeholder="Nhập tên bài học..."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-6 d-flex flex-column h-100">
+              <div className="video-input-group card shadow-sm border-0 h-100" style={{ background: '#f8fafc', minHeight: 90 }}>
+                <div className="card-body py-2 px-3 d-flex flex-column justify-content-center h-100">
+                  <label className="form-label mb-1">Video bài học</label>
+                  <div style={{ maxWidth: 420, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      style={{ minWidth: 0, flex: 1 }}
+                      list="teacher-video-options"
+                      placeholder="/video/ten_file.mp4"
+                      value={form.video_link}
+                      onChange={(e) => updateFormField('video_link', e.target.value)}
+                    />
+                    <label className="btn btn-outline-secondary btn-sm mb-0" style={{ minWidth: 80 }}>
+                      {uploadingTarget?.mediaType === 'video' ? 'Đang tải...' : 'Chọn tệp'}
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime,video/x-matroska"
+                        hidden
+                        disabled={uploadingTarget?.mediaType === 'video'}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          handleFileUpload('video', file);
+                          if (e.target) e.target.value = '';
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <datalist id="teacher-video-options">
+                    {mediaLibrary.video.map((file) => (
+                      <option key={file.path} value={file.path}>
+                        {file.name}
+                      </option>
+                    ))}
+                  </datalist>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3">
+            <span className="text-muted small mb-2 mb-md-0">Chọn cách nhập câu hỏi:</span>
+            <div className="btn-group" role="group" aria-label="Chọn cách nhập câu hỏi">
               <button
                 type="button"
-                className={`btn ${inputMode === 'manual' ? 'btn-primary' : 'btn-outline-primary'}`}
+                className={`btn ${inputMode === 'manual' ? 'btn-primary' : 'btn-outline-primary'} px-4 py-2`}
                 onClick={() => switchInputMode('manual')}
               >
                 <span className="me-1" aria-hidden="true">
@@ -927,7 +953,7 @@ function TeacherLessons() {
               </button>
               <button
                 type="button"
-                className={`btn ${inputMode === 'bulk' ? 'btn-primary' : 'btn-outline-primary'}`}
+                className={`btn ${inputMode === 'bulk' ? 'btn-primary' : 'btn-outline-primary'} px-4 py-2`}
                 onClick={() => switchInputMode('bulk')}
               >
                 <span className="me-1" aria-hidden="true">
@@ -988,19 +1014,11 @@ function TeacherLessons() {
             </div>
           )}
 
-          <div className="d-flex justify-content-between align-items-center flex-column flex-md-row gap-2 mb-3">
+          <div className="d-flex justify-content-between align-items-center flex-column flex-md-row gap-3 mb-3">
             <div className="text-center text-md-start">
               <h6 className="mb-0">Câu hỏi luyện tập ({items.length})</h6>
               <small className="text-muted">Dữ liệu chỉ được lưu khi bạn bấm "Lưu bài học".</small>
             </div>
-            <button
-              type="button"
-              className="btn btn-outline-primary btn-sm"
-              onClick={addItem}
-              disabled={submitting || isBulkMode}
-            >
-              + Thêm câu hỏi
-            </button>
           </div>
 
           <div className="lesson-items">
@@ -1089,6 +1107,16 @@ function TeacherLessons() {
                 );
               })
             )}
+            <div className="d-flex justify-content-end mt-3">
+              <button
+                type="button"
+                className="btn btn-outline-primary px-4 py-2"
+                onClick={addItem}
+                disabled={submitting || isBulkMode}
+              >
+                + Thêm câu hỏi
+              </button>
+            </div>
           </div>
         </div>
       </form>
@@ -1102,56 +1130,62 @@ function TeacherLessons() {
             </small>
           </div>
           <div className="card-body">
-            <div className="row g-3">
+            <div className="row g-4">
               {lessonHistory.map((lesson) => (
                 <div key={lesson.lesson_id} className="col-md-6 col-lg-4">
-                  <div className="card shadow-sm h-100 lesson-history-card">
-                    <div className="card-body">
-                      <h6 className="card-title mb-2">{lesson.lesson_name}</h6>
-                      <div className="lesson-meta text-muted small mb-3">
-                        <div className="mb-1">
-                          <strong>Part:</strong> {lesson.part?.part_section || 'N/A'} - {lesson.part?.part_code || 'N/A'}
+                  <div className="card shadow-sm h-100 lesson-history-card border-0" style={{ borderRadius: 16, boxShadow: '0 2px 12px #e9ecef' }}>
+                    <div className="card-body d-flex flex-column align-items-center justify-content-between p-4 h-100">
+                      <div className="w-100 d-flex flex-column align-items-center" style={{ background: '#f8fafc', borderRadius: 16, padding: '18px 12px 12px 12px', minHeight: 320 }}>
+                        <div className="w-100 text-center mb-3">
+                          <div className="fw-bold fs-5 mb-1" style={{ color: '#222', letterSpacing: 0.2 }}>{lesson.lesson_name}</div>
                         </div>
-                        <div className="mb-1">
-                          <strong>Ngày mở:</strong> {lesson.available_from ? new Date(lesson.available_from).toLocaleDateString('vi-VN') : 'Chưa đặt'}
+                        <div className="w-100 mb-3" style={{ borderBottom: '1px solid #ececec', marginBottom: 18 }}></div>
+                        <div className="lesson-meta w-100 mb-3" style={{ fontSize: 15, color: '#444', lineHeight: 1.8 }}>
+                          <div className="d-flex justify-content-between mb-1"><span className="fw-semibold">Part</span><span>{lesson.part?.part_section || 'N/A'} - {lesson.part?.part_code || 'N/A'}</span></div>
+                          <div className="d-flex justify-content-between mb-1"><span className="fw-semibold">Ngày mở</span><span>{lesson.available_from ? new Date(lesson.available_from).toLocaleDateString('vi-VN') : 'Chưa đặt'}</span></div>
+                          <div className="d-flex justify-content-between"><span className="fw-semibold">Số câu hỏi</span><span>{lesson.item_count || 0}</span></div>
                         </div>
-                        <div>
-                          <strong>Số câu hỏi:</strong> {lesson.item_count || 0}
+                        <div className="w-100 mb-2" style={{ borderBottom: '1px solid #ececec' }}></div>
+                        <div className="d-flex flex-row w-100 justify-content-center gap-3 mt-2">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-light border-primary text-primary px-4 fw-semibold shadow-none"
+                            onClick={() => handleViewLesson(lesson.lesson_id)}
+                            disabled={submitting}
+                            style={{ borderWidth: 2 }}
+                          >
+                            <span className="me-1" aria-hidden="true">👁️</span> Xem
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-light border-secondary text-secondary px-4 fw-semibold shadow-none"
+                            onClick={() => handleCloneLesson(lesson.lesson_id)}
+                            disabled={submitting}
+                            style={{ borderWidth: 2 }}
+                          >
+                            <span className="me-1" aria-hidden="true">📄</span> Sao chép
+                          </button>
                         </div>
-                      </div>
-                      <div className="d-flex gap-2 flex-wrap">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => handleViewLesson(lesson.lesson_id)}
-                          disabled={submitting}
-                        >
-                          Xem
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={() => handleCloneLesson(lesson.lesson_id)}
-                          disabled={submitting}
-                        >
-                          Sao chép
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-warning"
-                          onClick={() => handleEditLesson(lesson.lesson_id)}
-                          disabled={submitting}
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleDeleteLesson(lesson.lesson_id)}
-                          disabled={submitting}
-                        >
-                          Xóa
-                        </button>
+                        <div className="d-flex flex-row w-100 justify-content-center gap-3 mt-2">
+                          <button
+                            type="button"
+                            className="btn btn-link text-warning px-0 fw-semibold shadow-none"
+                            onClick={() => handleEditLesson(lesson.lesson_id)}
+                            disabled={submitting}
+                            style={{ fontSize: 15 }}
+                          >
+                            <span className="me-1" aria-hidden="true">✏️</span> Sửa
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-link text-danger px-0 fw-semibold shadow-none"
+                            onClick={() => handleDeleteLesson(lesson.lesson_id)}
+                            disabled={submitting}
+                            style={{ fontSize: 15 }}
+                          >
+                            <span className="me-1" aria-hidden="true">🗑️</span> Xóa
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
