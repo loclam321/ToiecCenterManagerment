@@ -30,16 +30,6 @@ class Teacher(db.Model):
         return f"<Teacher {self.user_id}: {self.user_name}>"
     
     def _avatar_web_path(self):
-        """Normalize stored tch_avtlink to a web path served by frontend (e.g. /avatar1/3.png).
-
-        Rules applied (best-effort):
-        - If the value is an absolute URL (http/https) or data URI, return as-is.
-        - Prefer an existing '/avatar1/' substring, then '/avatar/' if present.
-        - If the value contains '/public/', strip everything up to '/public' and use the remainder.
-        - If the value looks like a bare filename, map it to '/avatar1/<filename>'.
-        - As a fallback try to extract the filename and map to '/avatar1/<filename>'.
-        - Collapse duplicate slashes and ensure a leading '/'.
-        """
         if not self.tch_avtlink:
             return None
 
@@ -101,7 +91,6 @@ class Teacher(db.Model):
             'tch_specialization': self.tch_specialization,
             'tch_qualification': self.tch_qualification,
             'tch_hire_date': self.tch_hire_date.strftime('%Y-%m-%d') if self.tch_hire_date else None,
-            # Return normalized avatar path for frontend consumption
             'tch_avtlink': self._avatar_web_path(),
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

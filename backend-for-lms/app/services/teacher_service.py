@@ -25,7 +25,7 @@ class TeacherService:
         """Lấy teacher theo ID (trả về dict hoặc None)"""
         try:
             teacher = self.db.session.query(Teacher).filter(Teacher.user_id == user_id).first()
-            return teacher.to_dict() if teacher else None
+            return teacher
         except Exception as e:
             print(f"Lỗi khi lấy teacher theo ID: {str(e)}")
             return None

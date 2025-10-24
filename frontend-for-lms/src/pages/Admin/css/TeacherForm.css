@@ -1,6 +1,7 @@
 .teacher-form-container {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
+  padding: 0 16px;
 }
 
 .teacher-form {
@@ -9,107 +10,59 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: var(--spacing-xl);
+
+  /* ensure content stretches and centers nicely */
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.form-header {
-  text-align: center;
-  margin-bottom: var(--spacing-xl);
-  padding-bottom: var(--spacing-lg);
-  border-bottom: 1px solid var(--border-primary);
-}
-
-.form-title {
-  margin: 0 0 var(--spacing-sm);
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.form-description {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-}
-
+/* Use a stronger two-column layout: main form + side column (avatar/account) */
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-xl);
+  grid-template-columns: 1fr 1fr !important;
+  gap: 32px;
   margin-bottom: var(--spacing-xl);
+  align-items: start;
 }
 
+/* Ensure each column stretches full height so sections align */
 .form-section {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+  width: 100% !important;
 }
 
-.section-title {
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-lg);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.form-group {
-  margin-bottom: var(--spacing-lg);
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+/* Ensure consistent spacing inside each column */
+.form-section {
+  display: flex;
+  flex-direction: column;
   gap: var(--spacing-md);
+  height: 100%;
+  width: 100% !important;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: var(--spacing-sm);
-  color: var(--text-primary);
-  font-weight: var(--font-medium);
-  font-size: var(--text-sm);
+/* Make each form-group lay out fields with consistent gaps */
+.form-group {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
 }
 
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 2px solid var(--border-primary);
-  border-radius: var(--radius-md);
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: var(--text-sm);
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px var(--primary-50);
-}
-
-.form-group input.error,
-.form-group select.error {
-  border-color: var(--error-500);
-  box-shadow: 0 0 0 3px var(--error-50);
-}
-
-.error-message {
-  display: block;
-  margin-top: var(--spacing-xs);
-  color: var(--error-500);
-  font-size: var(--text-xs);
-}
-
+/* Evenly space form-actions across the full width */
 .form-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between; /* <-- distribute buttons to edges */
   gap: var(--spacing-md);
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--border-primary);
+  align-items: center;
+  width: 100%;
 }
 
 .btn {
@@ -213,16 +166,170 @@
   }
   
   .form-actions {
-    flex-direction: column;
+    flex-direction: column-reverse;
+    align-items: stretch;
   }
   
   .btn {
     width: 100%;
-    justify-content: center;
   }
+
+  .modern-avatar-upload {
+    flex-direction: row;
+    gap: 12px;
+  }
+
+  .avatar-actions {
+    justify-content: flex-start;
+    min-width: 0;
+  }
+}
+
+/* On smaller screens stack columns and account inputs */
+@media (max-width: 880px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .account-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .btn {
+    width: 100%;
+  }
+}
+
+/* Tweak spacing for neatness */
+.section-title {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
 }
 
 .required {
   color: var(--error-500);
   margin-left: var(--spacing-xs);
+}
+
+/* Modern form grid */
+.modern-form-grid {
+  gap: 48px;
+  align-items: flex-start;
+}
+
+/* Right column specifics (avatar + account) */
+.account-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* Make password fields share the row on wide screens */
+.account-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+/* ensure action buttons on right column don't overflow */
+.avatar-actions {
+  min-width: 120px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+}
+
+/* keep avatar block visually balanced in its column */
+.avatar-wrapper {
+  margin-right: 8px;
+}
+
+/* Wrapper with gradient ring */
+.avatar-wrapper {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(16,185,129,0.12));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+}
+.avatar-wrapper:active { transform: scale(.98); }
+
+/* Inner image */
+.avatar-image {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+  border: 3px solid white;
+  box-shadow: 0 4px 12px rgba(15,23,42,0.08);
+}
+
+/* Placeholder */
+.avatar-placeholder {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: linear-gradient(180deg,#f3f4f6,#eef2ff);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#9ca3af;
+  border: 3px solid white;
+}
+
+/* overlay edit icon */
+.avatar-overlay {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  display: flex;
+  gap: 8px;
+}
+.avatar-edit-btn {
+  background: var(--bg-primary);
+  border: 2px solid white;
+  color: var(--text-primary);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 12px rgba(15,23,42,0.08);
+  cursor: pointer;
+  transition: background .12s ease, transform .12s ease;
+}
+.avatar-edit-btn:hover { transform: translateY(-2px); }
+
+/* actions */
+.avatar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 120px;
+}
+
+/* Responsive: smaller avatar on mobile */
+@media (max-width: 480px) {
+  .avatar-wrapper { width: 72px; height: 72px; padding: 3px; }
+  .avatar-image, .avatar-placeholder { width: 66px; height: 66px; border-width: 2px; }
+  .avatar-edit-btn { width: 32px; height: 32px; }
 }

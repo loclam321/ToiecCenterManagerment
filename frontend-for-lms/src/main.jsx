@@ -41,6 +41,7 @@ import TeacherClasses from './pages/Teacher/TeacherClasses';
 import TeacherResources from './pages/Teacher/TeacherResources';
 import TeacherLessons from './pages/Teacher/TeacherLessons';
 import TeacherTests from './pages/Teacher/TeacherTests';
+import TeacherProfileEditor from './components/layout/TeacherProfileEditor';
 
 
 
@@ -51,6 +52,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/*" element={<App />} />
         <Route path="/login" element={<AuthPage />} />
         <Route path="/Teacher_intro" element={<TeacherIntroduction />} />
+        
         
   <Route path="/logout" element={<Logout />} />
         {/* Admin area (teachers may share admin UI). */}
@@ -218,6 +220,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="tests" element={<StudentTests />} />
           <Route path="tests/:testId" element={<TestRunner />} />
           <Route path="profile" element={<StudentProfile />} />
+
+          
         </Route>
       </Routes>
     </BrowserRouter>

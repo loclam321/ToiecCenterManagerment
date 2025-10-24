@@ -264,49 +264,39 @@ export const mapTeacherToApi = (teacherData) => {
  * Map dữ liệu từ API sang định dạng frontend 
  * @param {Object} apiTeacher - Dữ liệu giáo viên từ API response
  */
-export const mapTeacherFromApi = (apiTeacher) => {
-  const normalizeAvatarPath = (p) => {
-    if (!p) return '';
-    if (/^(https?:|data:)/i.test(p)) return p; // absolute url or data uri
-    let path = String(p).replace(/\\/g, '/');
-    const lower = path.toLowerCase();
-    const publicIdx = lower.indexOf('/public/');
-    if (publicIdx !== -1) {
-      path = path.substring(publicIdx + '/public'.length); // keep leading slash before avatar
-    }
-    const avatarIdx = path.toLowerCase().indexOf('/avatar/');
-    if (avatarIdx !== -1) {
-      path = path.substring(avatarIdx);
-    }
-    if (!path.startsWith('/')) path = '/' + path;
-    return path;
+// ...existing code...
+export function mapTeacherFromApi(api) {
+  if (!api) return {
+    name: '',
+    email: '',
+    phone: '',
+    birthday: '',
+    gender: 'male',
+    specialization: '',
+    qualification: '',
+    hireDate: '',
+    tch_avtlink: null,
+    // keep password fields empty for safety
+    password: '',
+    confirmPassword: ''
   };
 
   return {
-    id: apiTeacher.user_id,
-    name: apiTeacher.user_name,
-    email: apiTeacher.user_email,
-    phone: apiTeacher.user_telephone,
-    birthday: apiTeacher.user_birthday,
-    gender: apiTeacher.user_gender === 'M' ? 'male' : 
-            apiTeacher.user_gender === 'F' ? 'female' : 'other',
-    specialization: apiTeacher.tch_specialization,
-    qualification: apiTeacher.tch_qualification,
-    hireDate: apiTeacher.tch_hire_date,
-    status: apiTeacher.tch_status || 'active',
-    
-  // Avatar (đã normalize về web path)
-  avatarPath: normalizeAvatarPath(apiTeacher.tch_avtlink),
-    
-    // Metadata
-    createdAt: apiTeacher.created_at || apiTeacher.user_created_at,
-    updatedAt: apiTeacher.updated_at || apiTeacher.user_updated_at,
-    
-    // Additional computed fields
-    displayName: apiTeacher.user_name || 'Không có tên',
-    isActive: apiTeacher.tch_status === 'active'
+    name: api.user_name ?? '',
+    email: api.user_email ?? '',
+    phone: api.user_telephone ?? '',
+    birthday: api.user_birthday ?? '',
+    gender: api.user_gender === 'M' ? 'male' : api.user_gender === 'F' ? 'female' : 'other',
+    specialization: api.tch_specialization ?? '',
+    qualification: api.tch_qualification ?? '',
+    hireDate: api.tch_hire_date ?? '',
+    tch_avtlink: api.tch_avtlink ?? null,
+    // don't map created_at/updated_at into editable fields
+    password: '',
+    confirmPassword: ''
   };
-};
+}
+// ...existing code...
 
 // Cập nhật export default
 const teacherService = {

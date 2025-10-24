@@ -382,6 +382,7 @@ class LessonService:
 
     def upload_media_file(self, media_type: str, file_storage) -> Dict[str, Any]:
         media_type = (media_type or "").lower()
+        print(f"Uploading media file: {file_storage.filename} as {media_type}")
         if media_type not in self._MEDIA_DIRECTORIES:
             return {
                 "success": False,

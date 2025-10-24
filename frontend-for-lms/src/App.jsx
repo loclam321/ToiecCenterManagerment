@@ -15,7 +15,10 @@ import { fetchLearningPathsWithCourse, toggleCourseStatus } from './services/cou
 import AuthPage from './pages/AuthPage';
 import FacilityPage from './pages/facility/facility';
 
+
 import TeacherProfileEditor from './components/layout/TeacherProfileEditor';
+import StudentDashboard from './pages/student/Dashboard';
+
 // Giữ HomePage content trong App nhưng chỉ hiển thị nó ở route "/"
 function HomeContent() {
   const [showDropOverlay, setShowDropOverlay] = useState(false);
@@ -83,8 +86,8 @@ function HomeContent() {
       <section id="intro" className="section container py-6">
         <div className="text-center mb-5">
           <h2 className="section-title mb-3">Về Trung Tâm TOEIC</h2>
-          <p className="section-desc mx-auto" style={{maxWidth: '720px'}}>
-            Môi trường học hiện đại, lộ trình cá nhân hóa theo mục tiêu. 
+          <p className="section-desc mx-auto" style={{ maxWidth: '720px' }}>
+            Môi trường học hiện đại, lộ trình cá nhân hóa theo mục tiêu.
             Hệ thống theo dõi tiến độ từng tuần và kho đề cập nhật liên tục theo format mới.
           </p>
         </div>
@@ -95,7 +98,7 @@ function HomeContent() {
             <div className="stats-card text-center p-4 h-100 rounded-3 border bg-white shadow-sm">
               <div className="stats-icon mb-3 mx-auto">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <div className="stats-value mb-1">10.000+</div>
@@ -106,8 +109,8 @@ function HomeContent() {
             <div className="stats-card text-center p-4 h-100 rounded-3 border bg-white shadow-sm">
               <div className="stats-icon mb-3 mx-auto">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M22 4L12 14.01l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M22 4L12 14.01l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <div className="stats-value mb-1">92%</div>
@@ -118,7 +121,7 @@ function HomeContent() {
             <div className="stats-card text-center p-4 h-100 rounded-3 border bg-white shadow-sm">
               <div className="stats-icon mb-3 mx-auto">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2V3zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7V3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2V3zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7V3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <div className="stats-value mb-1">8+ năm</div>
@@ -129,8 +132,8 @@ function HomeContent() {
             <div className="stats-card text-center p-4 h-100 rounded-3 border bg-white shadow-sm">
               <div className="stats-icon mb-3 mx-auto">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <div className="stats-value mb-1">100+</div>
@@ -146,8 +149,8 @@ function HomeContent() {
               <div className="feature-icon-wrapper mb-3">
                 <div className="feature-icon">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
               </div>
@@ -160,8 +163,8 @@ function HomeContent() {
               <div className="feature-icon-wrapper mb-3">
                 <div className="feature-icon">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
               </div>
@@ -174,8 +177,8 @@ function HomeContent() {
               <div className="feature-icon-wrapper mb-3">
                 <div className="feature-icon">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
                   </svg>
                 </div>
               </div>
@@ -188,8 +191,8 @@ function HomeContent() {
               <div className="feature-icon-wrapper mb-3">
                 <div className="feature-icon">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
-                    <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
+                    <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
               </div>
@@ -205,7 +208,7 @@ function HomeContent() {
             <div className="col-md-5">
               <div className="commitment-badge mb-3">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <h3 className="commitment-title mb-3">Cam kết đầu ra rõ ràng</h3>
@@ -450,6 +453,7 @@ function App() {
           <Route path="/toeic-test/:testId" element={<ToeicTestPage />} />
           <Route path="/facility" element={<FacilityPage />} />
           <Route path="/teacher-profile" element={<TeacherProfileEditor />} />
+          <Route path="/student-dashboard" element={<StudentDashboard />} />
           {/* Thêm các routes khác ở đây */}
         </Routes>
       </main>

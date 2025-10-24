@@ -5,6 +5,8 @@ import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import { createTeacher, updateTeacher, getTeacherById, mapTeacherFromApi, mapTeacherToApi } from '../../services/teacherService';
 import { toast } from 'react-toastify';
 import './css/TeacherForm.css';
+import { uploadTeacherMedia } from '../../services/teacherLessonService';
+import { mapStudentToApi } from '../../services/studentService';
 
 function TeacherForm() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -158,70 +160,76 @@ function TeacherForm() {
 
     setSaving(true);
     try {
-      // Build payload fields expected by backend (match your API)
-      const jsonPayload = {
-        user_name: teacher.name || undefined,
-        user_email: teacher.email || undefined,
-        user_gender: teacher.gender === 'male' ? 'M' : teacher.gender === 'female' ? 'F' : undefined,
-        user_birthday: teacher.birthday || undefined,        // YYYY-MM-DD
-        user_telephone: teacher.phone || undefined,
-        tch_specialization: teacher.specialization || undefined,
-        tch_qualification: teacher.qualification || undefined,
-        tch_hire_date: teacher.hireDate || undefined,        // YYYY-MM-DD
-        // if avatar provided as external link, send it; if file upload, handled below
-        tch_avtlink: avatarPreview && avatarPreview.startsWith('http') ? avatarPreview : undefined,
-        user_password: teacher.password || undefined,
-        // backend expects is_email_verified true by your earlier note
-        is_email_verified: true
-      };
-
       const token = localStorage.getItem('token');
 
+      // Upload avatar file first only if user selected one.
+      let avatarUrl = teacher.tch_avtlink ?? null;
       if (avatarFile) {
-        // send multipart/form-data (combine fields + file)
-        const form = new FormData();
-        Object.entries(jsonPayload).forEach(([k, v]) => {
-          if (v !== undefined && v !== null) form.append(k, v);
-        });
-        form.append('avatar', avatarFile);
-
-        const url = isEditing
-          ? `http://127.0.0.1:5000/api/teachers/${id}`
-          : `http://127.0.0.1:5000/api/teachers`;
-        const method = isEditing ? 'PUT' : 'POST';
-
-        const res = await fetch(url, {
-          method,
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-          body: form
-        });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(json?.message || 'Lưu giáo viên thất bại');
-        const mapped = mapTeacherFromApi(json?.data || json);
-        setTeacher(prev => ({ ...mapped, password: '', confirmPassword: '' }));
-      } else {
-        // send JSON payload
-        const url = isEditing
-          ? `http://127.0.0.1:5000/api/teachers/${id}`
-          : `http://127.0.0.1:5000/api/teachers`;
-        const method = isEditing ? 'PUT' : 'POST';
-
-        const res = await fetch(url, {
-          method,
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
-          },
-          body: JSON.stringify(jsonPayload)
-        });
-
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(json?.message || 'Lưu giáo viên thất bại');
-        const mapped = mapTeacherFromApi(json?.data || json);
-        setTeacher(prev => ({ ...mapped, password: '', confirmPassword: '' }));
+        avatarUrl = await uploadAvatarFile(avatarFile);
+        if (!avatarUrl) {
+          setErrors(prev => ({ ...prev, avatar: 'Upload avatar thất bại' }));
+          toast.error('Upload avatar thất bại');
+          setSaving(false);
+          return;
+        }
+        // update local state for preview / payload
+        setTeacher(prev => ({ ...prev, tch_avtlink: avatarUrl }));
+        setAvatarPreview(avatarUrl);
+        setAvatarFile(null);
+        if (isEditing) {
+          await updateTeacher(id, { tch_avtlink: avatarUrl });
+          toast.success('Đã cập nhật avatar và lưu vào hệ thống');
+        }
       }
 
-      toast.success(isEditing ? 'Cập nhật giáo viên thành công' : 'Thêm giáo viên thành công');
+      const jsonPayload = {
+        user_name: teacher.name,
+        user_email: teacher.email,
+        user_gender:
+          teacher.gender === 'male' ? 'M' :
+            teacher.gender === 'female' ? 'F' : undefined,
+        user_birthday: teacher.birthday,
+        user_telephone: teacher.phone,
+        tch_specialization: teacher.specialization,
+        tch_qualification: teacher.qualification,
+        tch_hire_date: teacher.hireDate,
+        tch_avtlink: avatarUrl,
+        is_email_verified: true,
+      };
+
+      // include password only when creating a new teacher
+      if (!isEditing && teacher.password) {
+        jsonPayload.user_password = teacher.password;
+      }
+
+      console.log('Prepared JSON payload for submission:', jsonPayload);
+      console.log('Is Editing:', isEditing);
+      // Always send JSON (avatar already uploaded above). Use trailing slash for create to avoid 308.
+      const url = isEditing
+        ? `http://127.0.0.1:5000/api/teachers/${id}`
+        : `http://127.0.0.1:5000/api/teachers/`;
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(jsonPayload)
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.message || 'Lưu giáo viên thất bại');
+      const apiTeacher = json?.data?.teacher ?? json?.data ?? json;
+      const mapped = mapTeacherFromApi(apiTeacher);
+      // ensure controlled inputs stay defined
+      setTeacher({ ...mapped, password: '', confirmPassword: '' });
+
+      // update preview if backend returned avatar link
+      setAvatarPreview(mapped.tch_avtlink ?? '');
+
+      toast.success('Thêm giáo viên thành công');
       navigate('/admin/teachers');
     } catch (err) {
       console.error('Error saving teacher:', err);
@@ -237,29 +245,41 @@ function TeacherForm() {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
+  // Hàm upload file avatar, trả về đường dẫn ảnh hoặc null nếu lỗi
+  const uploadAvatarFile = async (file) => {
+    try {
+      // Gọi API uploadTeacherMedia để lấy đường dẫn file
+      const result = await uploadTeacherMedia('avatar', file);
+      // Nếu upload thành công, trả về đường dẫn file
+      if (result && result.path) {
+        console.log('Uploaded avatar path:', result.path);
+        return result.path;
+      }
+      return null;
+    } catch (err) {
+      console.error('Error uploading avatar:', err);
+      return null;
+    }
+  };
+
   // handle file selection + preview
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setAvatarFile(file);
+    setErrors(prev => ({ ...prev, avatar: '' }));
+
+    // Hiển thị preview ngay
     const reader = new FileReader();
     reader.onload = () => setAvatarPreview(reader.result);
     reader.readAsDataURL(file);
+  };
 
-    // Gửi file lên backend và lấy link trả về
-    const form = new FormData();
-    form.append('avatar', file);
-    const token = localStorage.getItem('token');
-    const res = await fetch('http://127.0.0.1:5000/api/upload-avatar', {
-      method: 'POST',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: form
-    });
-    const data = await res.json();
-    if (res.ok && data.avatar_url) {
-      // Lưu link ảnh vào state để gửi cùng thông tin giáo viên
-      setTeacher(prev => ({ ...prev, tch_avtlink: data.avatar_url }));
-    }
+  // Thêm: xóa avatar hiện tại (clear)
+  const handleAvatarRemove = () => {
+    setAvatarFile(null);
+    setAvatarPreview('');
+    setTeacher(prev => ({ ...prev, tch_avtlink: null }));
   };
 
   useEffect(() => {
@@ -295,17 +315,7 @@ function TeacherForm() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="teacher-form">
-                <div className="form-header">
-                  <h2 className="form-title">
-                    {isEditing ? 'Chỉnh sửa thông tin giáo viên' : 'Thêm giáo viên mới'}
-                  </h2>
-                  <p className="form-description">
-                    {isEditing
-                      ? 'Cập nhật thông tin chi tiết của giáo viên'
-                      : 'Điền đầy đủ thông tin để tạo tài khoản giáo viên mới'
-                    }
-                  </p>
-                </div>
+
 
                 {errors.submit && (
                   <div className="alert alert-error">
@@ -324,7 +334,7 @@ function TeacherForm() {
                         type="text"
                         id="name"
                         name="name"
-                        value={teacher.name}
+                        value={teacher.name ?? ''}
                         onChange={handleInputChange}
                         className={errors.name ? 'error' : ''}
                         placeholder="Nhập họ và tên đầy đủ"
@@ -338,7 +348,7 @@ function TeacherForm() {
                         type="email"
                         id="email"
                         name="email"
-                        value={teacher.email}
+                        value={teacher.email ?? ''}
                         onChange={handleInputChange}
                         className={errors.email ? 'error' : ''}
                         placeholder="example@email.com"
@@ -353,7 +363,7 @@ function TeacherForm() {
                         type="tel"
                         id="phone"
                         name="phone"
-                        value={teacher.phone}
+                        value={teacher.phone ?? ''}
                         onChange={handleInputChange}
                         className={errors.phone ? 'error' : ''}
                         placeholder="0912345678"
@@ -368,7 +378,7 @@ function TeacherForm() {
                           type="date"
                           id="birthday"
                           name="birthday"
-                          value={teacher.birthday}
+                          value={teacher.birthday ?? ''}
                           onChange={handleInputChange}
                           className={errors.birthday ? 'error' : ''}
                         />
@@ -380,7 +390,7 @@ function TeacherForm() {
                         <select
                           id="gender"
                           name="gender"
-                          value={teacher.gender}
+                          value={teacher.gender ?? 'male'}
                           onChange={handleInputChange}
                         >
                           <option value="male">Nam</option>
@@ -399,7 +409,7 @@ function TeacherForm() {
                       <select
                         id="specialization"
                         name="specialization"
-                        value={teacher.specialization}
+                        value={teacher.specialization ?? ''}
                         onChange={handleInputChange}
                         className={errors.specialization ? 'error' : ''}
                       >
@@ -420,7 +430,7 @@ function TeacherForm() {
                         type="text"
                         id="qualification"
                         name="qualification"
-                        value={teacher.qualification}
+                        value={teacher.qualification ?? ''}
                         onChange={handleInputChange}
                         className={errors.qualification ? 'error' : ''}
                         placeholder="Cử nhân, Thạc sĩ..."
@@ -434,7 +444,7 @@ function TeacherForm() {
                         type="date"
                         id="hireDate"
                         name="hireDate"
-                        value={teacher.hireDate}
+                        value={teacher.hireDate ?? ''}
                         onChange={handleInputChange}
                         className={errors.hireDate ? 'error' : ''}
                       />
@@ -442,33 +452,34 @@ function TeacherForm() {
                     </div>
 
                     {!isEditing && (
-                      <div className="form-section">
+                      <div className="form-section account-section">
                         <h3 className="section-title">Thông tin tài khoản</h3>
+                        <div className="account-grid">
+                          <div className="form-group">
+                            <label htmlFor="password">Mật khẩu <span className="required">*</span></label>
+                            <input
+                              type="password"
+                              id="password"
+                              name="password"
+                              value={teacher.password ?? ''}
+                              onChange={handleInputChange}
+                              className={errors.password ? 'error' : ''}
+                            />
+                            {errors.password && <span className="error-message">{errors.password}</span>}
+                          </div>
 
-                        <div className="form-group">
-                          <label htmlFor="password">Mật khẩu <span className="required">*</span></label>
-                          <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            value={teacher.password}
-                            onChange={handleInputChange}
-                            className={errors.password ? 'error' : ''}
-                          />
-                          {errors.password && <span className="error-message">{errors.password}</span>}
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlFor="confirmPassword">Xác nhận mật khẩu <span className="required">*</span></label>
-                          <input
-                            type="password"
-                            id="confirmPassword"
-                            name="confirmPassword"
-                            value={teacher.confirmPassword}
-                            onChange={handleInputChange}
-                            className={errors.confirmPassword ? 'error' : ''}
-                          />
-                          {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
+                          <div className="form-group">
+                            <label htmlFor="confirmPassword">Xác nhận mật khẩu <span className="required">*</span></label>
+                            <input
+                              type="password"
+                              id="confirmPassword"
+                              name="confirmPassword"
+                              value={teacher.confirmPassword ?? ''}
+                              onChange={handleInputChange}
+                              className={errors.confirmPassword ? 'error' : ''}
+                            />
+                            {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -478,13 +489,47 @@ function TeacherForm() {
                 {/* Avatar upload UI */}
                 <div className="form-group">
                   <label>Ảnh đại diện</label>
-                  <div className="avatar-upload">
-                    {avatarPreview ? (
-                      <img src={avatarPreview} alt="preview" className="avatar-preview" />
-                    ) : (
-                      <div className="avatar-placeholder">No image</div>
-                    )}
-                    <input type="file" accept="image/*" onChange={handleAvatarChange} />
+                  <div className="avatar-upload modern-avatar-upload">
+                    <div
+                      className="avatar-wrapper"
+                      onClick={() => document.getElementById('avatarInput')?.click()}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('avatarInput')?.click(); }}
+                      aria-label="Chọn ảnh đại diện"
+                    >
+                      {avatarPreview ? (
+                        <img src={avatarPreview} alt="preview" className="avatar-image" />
+                      ) : (
+                        <div className="avatar-placeholder">
+                          <i className="bi bi-person" style={{ fontSize: 28 }}></i>
+                        </div>
+                      )}
+                      <div className="avatar-overlay">
+                        <button type="button" className="avatar-edit-btn" title="Thay ảnh">
+                          <i className="bi bi-pencil"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <input
+                      id="avatarInput"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      style={{ display: 'none' }}
+                    />
+
+                    <div className="avatar-actions">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary avatar-remove-btn"
+                        onClick={handleAvatarRemove}
+                        disabled={!avatarPreview && !avatarFile}
+                      >
+                        <i className="bi bi-trash"></i> Xóa
+                      </button>
+                    </div>
                   </div>
                   <small className="muted">Định dạng: JPG, PNG. Kích thước tối đa: 2MB.</small>
                 </div>
