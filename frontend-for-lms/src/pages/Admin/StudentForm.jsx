@@ -1,30 +1,43 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import AdminSidebar from '../../components/admin/Adminsidebar';
 import './css/StudentForm.css';
+import { message } from 'antd';
+import { createStudent, updateStudent, mapStudentToApi } from '../../services/studentService';
 
 function StudentForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const isEditMode = !!id;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    birthday: '',
-    gender: 'male',
+
+  const prefill = location.state?.prefill || {};
+
+  console.log('Prefill data:', prefill);
+
+  const [formData, setFormData] = useState(() => ({
+    start_level: prefill.start_level || '',
+    name: prefill.name || '',
+    email: prefill.email || '',
+    phone: prefill.phone || '',
+    course: prefill.course || '',
+    birthday: prefill.birthday || '',
+    gender: prefill.gender || 'male',
+    address: prefill.address || '',     // <-- thêm default
     status: 'active',
     password: '',
     confirmPassword: ''
-  });
+  }));
+
+  const VALID_LEVELS = ["", "300–450", "450–600", "600–750", "750–900"];
 
   const [errors, setErrors] = useState({});
 
+  // If navigating into edit mode, fetch data as before
   useEffect(() => {
     if (isEditMode) {
       fetchStudentData();
@@ -73,27 +86,30 @@ function StudentForm() {
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
+    if (!(formData.name || '').trim()) {
       newErrors.name = 'Vui lòng nhập họ tên';
     }
 
-    if (!formData.email.trim()) {
+    if (!(formData.email || '').trim()) {
       newErrors.email = 'Vui lòng nhập email';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email không hợp lệ';
     }
 
-    if (!formData.phone.trim()) {
+    if (!(formData.phone || '').trim()) {
       newErrors.phone = 'Vui lòng nhập số điện thoại';
-    } else if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ''))) {
+    } else if (!/^[0-9]{10,11}$/.test((formData.phone || '').replace(/\s/g, ''))) {
       newErrors.phone = 'Số điện thoại không hợp lệ';
     }
 
-    if (!formData.birthday) {
-      newErrors.birthday = 'Vui lòng chọn ngày sinh';
+    if (formData.birthday) {
+      const bd = new Date(formData.birthday);
+      if (isNaN(bd) || bd > new Date()) {
+        newErrors.birthday = 'Ngày sinh không hợp lệ';
+      }
     }
 
-    if (!formData.address.trim()) {
+    if (!(formData.address || '').trim()) {
       newErrors.address = 'Vui lòng nhập địa chỉ';
     }
 
@@ -118,26 +134,27 @@ function StudentForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validate()) {
-      // Scroll to first error
-      const firstError = document.querySelector('.form-error');
-      if (firstError) {
-        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
+    if (!validate()) return;
 
     setSaving(true);
     try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // chuyển dữ liệu form sang format API
+      const payload = mapStudentToApi(formData);
+      console.log('Payload:', payload);
 
-      // Redirect after successful save
+      if (isEditMode) {
+        //await updateStudent(id, payload);
+        message.success('Cập nhật học viên thành công');
+      } else {
+        //await createStudent(payload);
+        message.success('Tạo học viên thành công');
+      }
+
       navigate('/admin/students');
-
-    } catch (error) {
-      console.error('Error saving student:', error);
+    } catch (err) {
+      const errMsg = err.response?.message || err.message || 'Lỗi khi lưu học viên';
+      setErrors(prev => ({ ...prev, submit: errMsg }));
+      message.error(errMsg);
       setSaving(false);
     }
   };
@@ -183,7 +200,6 @@ function StudentForm() {
                 <form onSubmit={handleSubmit}>
                   <div className="form-section">
                     <h3 className="section-title">Thông tin cá nhân</h3>
-
                     <div className="row">
                       <div className="col-md-6 mb-3">
                         <div className="form-group">
@@ -264,95 +280,33 @@ function StudentForm() {
 
                       <div className="col-md-6 mb-3">
                         <div className="form-group">
-                          <label htmlFor="status" className="form-label">Trạng thái</label>
+                          <label htmlFor="start_level" className="form-label">Trình độ ban đầu</label>
                           <select
                             className="form-select"
-                            id="status"
-                            name="status"
-                            value={formData.status}
+                            id="start_level"
+                            name="start_level"
+                            value={formData.start_level}
                             onChange={handleChange}
                           >
-                            <option value="active">Đang học</option>
-                            <option value="inactive">Ngừng học</option>
-                            <option value="pending">Chờ xác nhận</option>
+                            {VALID_LEVELS.map(level => {
+                              if (level === '') {
+                                return <option key={level} value="">Chọn trình độ</option>;
+                              }
+                              return <option key={level} value={level}>{level}</option>;
+                            })}
                           </select>
-                        </div>
-                      </div>
-
-                      <div className="col-12 mb-3">
-                        <div className="form-group">
-                          <label htmlFor="address" className="form-label">Địa chỉ <span className="required">*</span></label>
-                          <input
-                            type="text"
-                            className={`form-control ${errors.address ? 'is-invalid' : ''}`}
-                            id="address"
-                            name="address"
-                            value={formData.address}
-                            onChange={handleChange}
-                          />
-                          {errors.address && <div className="form-error">{errors.address}</div>}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="form-section">
-                    <h3 className="section-title">Thông tin tài khoản</h3>
-
-                    <div className="row">
-                      <div className="col-md-6 mb-3">
-                        <div className="form-group">
-                          <label htmlFor="password" className="form-label">
-                            {isEditMode ? 'Mật khẩu mới (để trống nếu không thay đổi)' : 'Mật khẩu'}
-                            {!isEditMode && <span className="required">*</span>}
-                          </label>
-                          <input
-                            type="password"
-                            className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                            id="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                          />
-                          {errors.password && <div className="form-error">{errors.password}</div>}
-                        </div>
-                      </div>
-
-                      <div className="col-md-6 mb-3">
-                        <div className="form-group">
-                          <label htmlFor="confirmPassword" className="form-label">
-                            Xác nhận mật khẩu
-                            {!isEditMode && <span className="required">*</span>}
-                          </label>
-                          <input
-                            type="password"
-                            className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
-                            id="confirmPassword"
-                            name="confirmPassword"
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                          />
-                          {errors.confirmPassword && <div className="form-error">{errors.confirmPassword}</div>}
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <div className="form-actions">
-                    <button type="button" className="btn btn-light" onClick={() => navigate('/admin/students')}>
-                      Hủy
-                    </button>
                     <button type="submit" className="btn btn-primary" disabled={saving}>
-                      {saving ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                          Đang lưu...
-                        </>
-                      ) : (
-                        <>Lưu</>
-                      )}
+                      {saving ? 'Đang lưu...' : (isEditMode ? 'Cập nhật' : 'Tạo mới')}
                     </button>
                   </div>
+
+                  {errors.submit && <div className="form-error submit-error">{errors.submit}</div>}
                 </form>
               </div>
             </div>

@@ -42,6 +42,15 @@ class ConsultRegistrationService:
                     "error": f"Course is not available for registration (status: {course.status})",
                 }
 
+            # Validate cr_startlv
+            allowed_levels = ["300–450", "450–600", "600–750", "750–900"]
+            if data.get("cr_startlv"):
+                if data["cr_startlv"] not in allowed_levels:
+                    return {
+                        "success": False,
+                        "error": f"cr_startlv must be one of {allowed_levels}"
+                    }
+
             # Validate optional fields
             if data.get("cr_gender"):
                 try:
@@ -89,6 +98,7 @@ class ConsultRegistrationService:
                 cr_phone=data.get("cr_phone"),
                 cr_email=data.get("cr_email"),
                 cr_gender=data.get("cr_gender"),
+                cr_startlv=data.get("cr_startlv")
             )
             data = consultation.to_dict()
             email_sent = False
@@ -172,6 +182,7 @@ class ConsultRegistrationService:
                 cr_phone=data.get("cr_phone"),
                 cr_email=data.get("cr_email"),
                 cr_gender=data.get("cr_gender"),
+                cr_startlv=data.get("cr_startlv")
             )
 
             self.db.session.add(consultation)
@@ -187,3 +198,35 @@ class ConsultRegistrationService:
             self.db.session.rollback()
             current_app.logger.error(f"Error verifying email: {str(e)}")
             return {"success": False, "error": f"Error verifying email: {str(e)}"}
+    
+
+
+    def get_all_registrations(
+        self, page: int, per_page: int, filters: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        try:
+            query = ConsultRegistration.query
+
+            # Apply filters
+            if "course_id" in filters:
+                query = query.filter_by(course_id=filters["course_id"])
+            if "email" in filters:
+                query = query.filter(ConsultRegistration.cr_email.ilike(f"%{filters['email']}%"))
+            if "phone" in filters:
+                query = query.filter(ConsultRegistration.cr_phone.ilike(f"%{filters['phone']}%"))
+
+            # Pagination
+            total = query.count()
+            registrations = query.offset((page - 1) * per_page).limit(per_page).all()
+
+            return {
+                "success": True,
+                "data": [reg.to_dict(include_course=True) for reg in registrations],
+                "total": total,
+                "page": page,
+                "per_page": per_page,
+            }
+
+        except Exception as e:
+            current_app.logger.error(f"Error fetching registrations: {str(e)}")
+            return {"success": False, "error": f"Error fetching registrations: {str(e)}"}

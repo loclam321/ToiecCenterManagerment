@@ -119,14 +119,6 @@ class StudentService:
                 is_email_verified=data.get("is_email_verified", False),
             )
 
-            verify_email_token = generate_email_verification_token()
-            try:
-                send_verification_email(
-                     student.user_email, verify_email_token
-                )
-            except Exception as e:
-                current_app.logger.error(f"Error sending verification email: {e}")
-
             self.db.session.add(student)
             self.db.session.commit()
             

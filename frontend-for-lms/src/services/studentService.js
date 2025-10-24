@@ -324,7 +324,8 @@ export const mapStudentToApi = (studentData) => {
     user_gender: studentData.gender === 'male' ? 'M' : 
                  studentData.gender === 'female' ? 'F' : 'O',
     sd_startlv: studentData.startLevel || '',
-    sd_enrollmenttdate: studentData.enrollmentDate || null
+    sd_enrollmenttdate: studentData.enrollmentDate || null, 
+    is_email_verified: true,
     // Không gửi user_id vì sẽ được tạo bởi backend
   };
 };

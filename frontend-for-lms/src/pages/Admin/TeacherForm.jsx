@@ -23,7 +23,10 @@ function TeacherForm() {
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
-  
+  // upload avatar states
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
+
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
@@ -58,7 +61,7 @@ function TeacherForm() {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -70,39 +73,39 @@ function TeacherForm() {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!teacher.name.trim()) {
       newErrors.name = 'Tên giáo viên không được để trống';
     }
-    
+
     if (!teacher.email.trim()) {
       newErrors.email = 'Email không được để trống';
     } else if (!/\S+@\S+\.\S+/.test(teacher.email)) {
       newErrors.email = 'Email không hợp lệ';
     }
-    
+
     if (!teacher.phone.trim()) {
       newErrors.phone = 'Số điện thoại không được để trống';
     } else if (!/^[0-9+\-\s()]{10,15}$/.test(teacher.phone.replace(/\s/g, ''))) {
       newErrors.phone = 'Số điện thoại không hợp lệ';
     }
-    
+
     if (!teacher.birthday) {
       newErrors.birthday = 'Ngày sinh không được để trống';
     }
-    
+
     if (!teacher.specialization.trim()) {
       newErrors.specialization = 'Chuyên môn không được để trống';
     }
-    
+
     if (!teacher.qualification.trim()) {
       newErrors.qualification = 'Trình độ không được để trống';
     }
-    
+
     if (!teacher.hireDate) {
       newErrors.hireDate = 'Ngày bắt đầu làm việc không được để trống';
     }
-    
+
     // Validate password only for new teacher creation
     if (!isEditing) {
       if (!teacher.password) {
@@ -110,59 +113,166 @@ function TeacherForm() {
       } else if (teacher.password.length < 6) {
         newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
       }
-      
+
       if (!teacher.confirmPassword) {
         newErrors.confirmPassword = 'Xác nhận mật khẩu không được để trống';
       } else if (teacher.password !== teacher.confirmPassword) {
         newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
       }
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const applyPrefill = (data) => {
+    // data is the JSON you provided in the prompt
+    setTeacher(prev => ({
+      ...prev,
+      name: data.user_name || prev.name,
+      email: data.user_email || prev.email,
+      gender: data.user_gender === 'M' ? 'male' : data.user_gender === 'F' ? 'female' : prev.gender,
+      birthday: data.user_birthday || prev.birthday,
+      phone: data.user_telephone || prev.phone,
+      specialization: data.tch_specialization || prev.specialization,
+      qualification: data.tch_qualification || prev.qualification,
+      hireDate: data.tch_hire_date || prev.hireDate,
+      // Only set password if provided (be careful with plain-text passwords)
+      password: data.user_password || prev.password,
+      confirmPassword: data.user_password || prev.confirmPassword
+    }));
+
+    // if API returns an avatar link, use it as preview (no file upload)
+    if (data.tch_avtlink) {
+      setAvatarPreview(data.tch_avtlink);
+      setAvatarFile(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) {
+      console.log('Validation failed:', errors);
       return;
     }
-    
+
     setSaving(true);
     try {
-      const teacherData = mapTeacherToApi(teacher);
-      
-      let result;
-      if (isEditing) {
-        result = await updateTeacher(id, teacherData);
-        toast.success('Cập nhật thông tin giáo viên thành công!');
+      // Build payload fields expected by backend (match your API)
+      const jsonPayload = {
+        user_name: teacher.name || undefined,
+        user_email: teacher.email || undefined,
+        user_gender: teacher.gender === 'male' ? 'M' : teacher.gender === 'female' ? 'F' : undefined,
+        user_birthday: teacher.birthday || undefined,        // YYYY-MM-DD
+        user_telephone: teacher.phone || undefined,
+        tch_specialization: teacher.specialization || undefined,
+        tch_qualification: teacher.qualification || undefined,
+        tch_hire_date: teacher.hireDate || undefined,        // YYYY-MM-DD
+        // if avatar provided as external link, send it; if file upload, handled below
+        tch_avtlink: avatarPreview && avatarPreview.startsWith('http') ? avatarPreview : undefined,
+        user_password: teacher.password || undefined,
+        // backend expects is_email_verified true by your earlier note
+        is_email_verified: true
+      };
+
+      const token = localStorage.getItem('token');
+
+      if (avatarFile) {
+        // send multipart/form-data (combine fields + file)
+        const form = new FormData();
+        Object.entries(jsonPayload).forEach(([k, v]) => {
+          if (v !== undefined && v !== null) form.append(k, v);
+        });
+        form.append('avatar', avatarFile);
+
+        const url = isEditing
+          ? `http://127.0.0.1:5000/api/teachers/${id}`
+          : `http://127.0.0.1:5000/api/teachers`;
+        const method = isEditing ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method,
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: form
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json?.message || 'Lưu giáo viên thất bại');
+        const mapped = mapTeacherFromApi(json?.data || json);
+        setTeacher(prev => ({ ...mapped, password: '', confirmPassword: '' }));
       } else {
-        result = await createTeacher(teacherData);
-        toast.success('Thêm giáo viên mới thành công!');
+        // send JSON payload
+        const url = isEditing
+          ? `http://127.0.0.1:5000/api/teachers/${id}`
+          : `http://127.0.0.1:5000/api/teachers`;
+        const method = isEditing ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify(jsonPayload)
+        });
+
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json?.message || 'Lưu giáo viên thất bại');
+        const mapped = mapTeacherFromApi(json?.data || json);
+        setTeacher(prev => ({ ...mapped, password: '', confirmPassword: '' }));
       }
-      
+
+      toast.success(isEditing ? 'Cập nhật giáo viên thành công' : 'Thêm giáo viên thành công');
       navigate('/admin/teachers');
-    } catch (error) {
-      console.error('Error saving teacher:', error);
-      toast.error(isEditing 
-        ? 'Cập nhật thông tin giáo viên thất bại' 
-        : 'Thêm giáo viên mới thất bại'
-      );
-      setErrors({ submit: 'Có lỗi xảy ra khi lưu thông tin giáo viên' });
+    } catch (err) {
+      console.error('Error saving teacher:', err);
+      setErrors(prev => ({ ...prev, submit: err.message || 'Có lỗi xảy ra' }));
+      toast.error(err.message || 'Có lỗi xảy ra');
     } finally {
       setSaving(false);
     }
   };
 
+
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
+  // handle file selection + preview
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setAvatarPreview(reader.result);
+    reader.readAsDataURL(file);
+
+    // Gửi file lên backend và lấy link trả về
+    const form = new FormData();
+    form.append('avatar', file);
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://127.0.0.1:5000/api/upload-avatar', {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: form
+    });
+    const data = await res.json();
+    if (res.ok && data.avatar_url) {
+      // Lưu link ảnh vào state để gửi cùng thông tin giáo viên
+      setTeacher(prev => ({ ...prev, tch_avtlink: data.avatar_url }));
+    }
+  };
+
+  useEffect(() => {
+    // if editing and teacher data has avatar url, set preview
+    if (isEditing && teacher?.avatar_url) {
+      setAvatarPreview(teacher.avatar_url);
+    }
+  }, [isEditing, teacher?.avatar_url]);
+
   return (
     <div className="admin-layout">
       <AdminSidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
-      
+
       <div className={`admin-main ${sidebarCollapsed ? 'expanded' : ''}`}>
         <AdminPageHeader
           title={isEditing ? 'Chỉnh sửa giáo viên' : 'Thêm giáo viên mới'}
@@ -190,8 +300,8 @@ function TeacherForm() {
                     {isEditing ? 'Chỉnh sửa thông tin giáo viên' : 'Thêm giáo viên mới'}
                   </h2>
                   <p className="form-description">
-                    {isEditing 
-                      ? 'Cập nhật thông tin chi tiết của giáo viên' 
+                    {isEditing
+                      ? 'Cập nhật thông tin chi tiết của giáo viên'
                       : 'Điền đầy đủ thông tin để tạo tài khoản giáo viên mới'
                     }
                   </p>
@@ -207,7 +317,7 @@ function TeacherForm() {
                 <div className="form-grid">
                   <div className="form-section">
                     <h3 className="section-title">Thông tin cá nhân</h3>
-                    
+
                     <div className="form-group">
                       <label htmlFor="name">Họ và tên <span className="required">*</span></label>
                       <input
@@ -334,7 +444,7 @@ function TeacherForm() {
                     {!isEditing && (
                       <div className="form-section">
                         <h3 className="section-title">Thông tin tài khoản</h3>
-                        
+
                         <div className="form-group">
                           <label htmlFor="password">Mật khẩu <span className="required">*</span></label>
                           <input
@@ -347,7 +457,7 @@ function TeacherForm() {
                           />
                           {errors.password && <span className="error-message">{errors.password}</span>}
                         </div>
-                        
+
                         <div className="form-group">
                           <label htmlFor="confirmPassword">Xác nhận mật khẩu <span className="required">*</span></label>
                           <input
@@ -363,6 +473,20 @@ function TeacherForm() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Avatar upload UI */}
+                <div className="form-group">
+                  <label>Ảnh đại diện</label>
+                  <div className="avatar-upload">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="preview" className="avatar-preview" />
+                    ) : (
+                      <div className="avatar-placeholder">No image</div>
+                    )}
+                    <input type="file" accept="image/*" onChange={handleAvatarChange} />
+                  </div>
+                  <small className="muted">Định dạng: JPG, PNG. Kích thước tối đa: 2MB.</small>
                 </div>
 
                 <div className="form-actions">
