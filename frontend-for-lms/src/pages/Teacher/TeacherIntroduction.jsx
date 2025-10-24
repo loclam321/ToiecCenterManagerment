@@ -259,8 +259,7 @@ const TeacherIntroduction = () => {
                                                     <div className="overlay-row">📅 {teacher.experience || calculateYearsOfService(teacher.hireDate)} năm kinh nghiệm</div>
                                                     <div className="overlay-row">👤 {getGenderText(teacher.gender)}</div>
                                                     <div className="overlay-row">📍 Bắt đầu: {formatDate(teacher.hireDate)}</div>
-                                                    <div className="overlay-row">📧 {teacher.email}</div>
-                                                    {teacher.phone && <div className="overlay-row">📞 {teacher.phone}</div>}
+                                                    {/* Đã xoá email và phone overlay-row theo yêu cầu */}
                                                 </div>
                                             </div>
                                         </div>

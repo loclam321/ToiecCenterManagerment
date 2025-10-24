@@ -153,91 +153,112 @@ class StudentService:
             Dict with updated student data
         """
         try:
-            student = Student.query.filter_by(user_id=student_id).first()
+            # ensure student_id is a string
+            sid = str(student_id)
+
+            student = Student.query.filter_by(user_id=sid).first()
             if not student:
                 return {
                     "success": False,
-                    "error": f"Student with ID {student_id} not found",
+                    "error": f"Student with ID {sid} not found",
                 }
 
-            # Update fields if provided
-            if "user_name" in data:
-                student.user_name = data["user_name"]
+            # Only allow update of a safe subset of fields here (defence-in-depth)
+            allowed = {
+                "user_name",
+                "user_email",
+                "user_gender",
+                "user_birthday",
+                "user_telephone",
+                "sd_startlv",
+                "sd_enrollmenttdate",
+                # note: is_email_verified typically set by admin/verification flow
+            }
 
-            if "user_email" in data:
-                # Check if new email already exists
-                existing = Student.query.filter(
-                    Student.user_email == data["user_email"],
-                    Student.user_id != student_id,
-                ).first()
+            # sanitize & normalize input
+            cleaned: Dict[str, Any] = {}
+            for k, v in (data or {}).items():
+                if k not in allowed:
+                    continue
+                # trim strings
+                if isinstance(v, str):
+                    v = v.strip()
+                cleaned[k] = v
+
+            # user_email: check uniqueness if provided
+            if "user_email" in cleaned and cleaned["user_email"]:
+                existing = (
+                    Student.query.filter(
+                        Student.user_email == cleaned["user_email"],
+                        Student.user_id != sid,
+                    ).first()
+                )
                 if existing:
-                    return {
-                        "success": False,
-                        "error": "Email already in use by another student",
-                    }
-                student.user_email = data["user_email"]
+                    return {"success": False, "error": "Email already in use by another student"}
 
-            if "user_gender" in data:
-                student.user_gender = data["user_gender"]
+            # user_gender: validate
+            if "user_gender" in cleaned and cleaned["user_gender"]:
+                if cleaned["user_gender"] not in ("M", "F", "O"):
+                    return {"success": False, "error": "Invalid gender value"}
 
-            if "user_birthday" in data and data["user_birthday"]:
-                try:
-                    if isinstance(data["user_birthday"], str):
-                        student.user_birthday = datetime.strptime(
-                            data["user_birthday"], "%Y-%m-%d"
-                        ).date()
-                    else:
-                        student.user_birthday = data["user_birthday"]
-                except ValueError:
-                    return {
-                        "success": False,
-                        "error": "Invalid date format for birthday (use YYYY-MM-DD)",
-                    }
+            # Dates: robust parsing (accept YYYY-MM-DD or ISO)
+            def parse_date_field(val):
+                if val is None or val == "":
+                    return None
+                if isinstance(val, date):
+                    return val
+                if isinstance(val, str):
+                    try:
+                        return date.fromisoformat(val)
+                    except Exception:
+                        try:
+                            return datetime.strptime(val, "%Y-%m-%d").date()
+                        except Exception:
+                            return None
+                return None
 
-            if "user_telephone" in data:
-                student.user_telephone = data["user_telephone"]
+            if "user_birthday" in cleaned:
+                parsed = parse_date_field(cleaned["user_birthday"])
+                if cleaned["user_birthday"] and not parsed:
+                    return {"success": False, "error": "Invalid date format for birthday (use YYYY-MM-DD)"}
+                cleaned["user_birthday"] = parsed
 
-            if "sd_startlv" in data:
-                student.sd_startlv = data["sd_startlv"]
+            if "sd_startlv" in cleaned:
+                # keep whatever is provided but trim
+                cleaned["sd_startlv"] = cleaned["sd_startlv"] or None
 
-            if "sd_enrollmenttdate" in data:
-                try:
-                    if isinstance(data["sd_enrollmenttdate"], str):
-                        student.sd_enrollmenttdate = datetime.strptime(
-                            data["sd_enrollmenttdate"], "%Y-%m-%d"
-                        ).date()
-                    else:
-                        student.sd_enrollmenttdate = data["sd_enrollmenttdate"]
-                except ValueError:
-                    return {
-                        "success": False,
-                        "error": "Invalid date format for enrollment date (use YYYY-MM-DD)",
-                    }
+            if "sd_enrollmenttdate" in cleaned:
+                parsed = parse_date_field(cleaned["sd_enrollmenttdate"])
+                if cleaned["sd_enrollmenttdate"] and not parsed:
+                    return {"success": False, "error": "Invalid date format for enrollment date (use YYYY-MM-DD)"}
+                cleaned["sd_enrollmenttdate"] = parsed
 
-            if "is_email_verified" in data:
-                student.is_email_verified = data["is_email_verified"]
+            # phone: normalize basic
+            if "user_telephone" in cleaned and cleaned["user_telephone"]:
+                tel = str(cleaned["user_telephone"]).replace(" ", "").replace("-", "")
+                if len(tel) > 20:
+                    return {"success": False, "error": "Số điện thoại quá dài"}
+                cleaned["user_telephone"] = tel
 
-            if "user_password" in data and data["user_password"]:
-                student.set_password(data["user_password"])
+            # Apply updates
+            for k, v in cleaned.items():
+                setattr(student, k, v)
 
-            # Update timestamp
+            # Keep password change separate and explicit if ever allowed
+            if "user_password" in data and data.get("user_password"):
+                student.set_password(data.get("user_password"))
+
+            # touch updated_at
             student.updated_at = datetime.now()
 
             self.db.session.commit()
 
-            return {
-                "success": True,
-                "message": "Student updated successfully",
-                "data": student.to_dict(),
-            }
+            return {"success": True, "message": "Student updated successfully", "data": student.to_dict()}
 
         except IntegrityError as e:
             self.db.session.rollback()
             current_app.logger.error(f"Database integrity error: {str(e)}")
-            return {
-                "success": False,
-                "error": "Database integrity error. Student could not be updated.",
-            }
+            return {"success": False, "error": "Database integrity error. Student could not be updated."}
         except Exception as e:
             self.db.session.rollback()
             current_app.logger.error(f"Error updating student {student_id}: {str(e)}")

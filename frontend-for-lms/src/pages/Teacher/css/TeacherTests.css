@@ -64,3 +64,76 @@
 .teacher-tests .scoreboard-note {
   font-style: italic;
 }
+
+/* Enhanced layout for test history cards — centered, compact and responsive */
+.teacher-tests .test-history-card {
+  display: flex;
+  align-items: stretch;
+  min-height: 260px;
+  padding: 0; /* card-body handles inner padding */
+}
+
+.teacher-tests .test-history-card .card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+}
+
+.teacher-tests .test-history-card .teacher-card-name,
+.teacher-tests .test-history-card .fw-bold,
+.teacher-tests .test-history-card .fw-semibold {
+  text-align: center;
+}
+
+.teacher-tests .test-meta {
+  width: 100%;
+  display: block;
+}
+
+.teacher-tests .test-meta .row > [class*='col-'] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.teacher-tests .test-meta .fw-semibold {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.teacher-tests .test-meta span {
+  color: #555;
+}
+
+.teacher-tests .test-history-card .btn {
+  min-width: 86px;
+  padding-left: 0.8rem;
+  padding-right: 0.8rem;
+}
+
+/* Divider lines smaller and subtler */
+.teacher-tests .test-history-card .card-body > .w-100.mb-3 {
+  border-bottom-width: 1px;
+  border-bottom-color: #f0f0f0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+  .teacher-tests .test-history-card { min-height: 220px; }
+  .teacher-tests .choice-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+}
+
+@media (max-width: 575.98px) {
+  .teacher-tests .test-history-card { min-height: auto; }
+  .teacher-tests .test-history-card .card-body { padding: 1rem; }
+  .teacher-tests .test-meta .row > [class*='col-'] { align-items: center; }
+  .teacher-tests .d-flex.flex-wrap.justify-content-center.gap-2 { gap: 0.5rem; }
+  .teacher-tests .test-history-card .btn { font-size: 0.85rem; padding: 0.45rem 0.6rem; }
+}
+
+/* Small visual polish */
+.teacher-tests .test-history-card { background-clip: padding-box; }
+.teacher-tests .test-history-card .badge { font-size: 0.75rem; padding: 0.35rem 0.6rem; }

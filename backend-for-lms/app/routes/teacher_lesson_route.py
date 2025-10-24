@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 
 from app.services.lesson_service import LessonService
@@ -8,6 +8,10 @@ from app.utils.response_utils import (
     success_response,
     validation_error_response,
 )
+from app.models.lesson_model import Lesson
+from app.models.item_model import Item
+from app.models.choice_model import Choice
+from app.config import db
 
 teacher_lesson_bp = Blueprint(
     "teacher_lesson", __name__, url_prefix="/api/teacher/lessons"
@@ -196,23 +200,24 @@ def teacher_update_lesson(lesson_id: int):
 @teacher_lesson_bp.route("/<int:lesson_id>", methods=["DELETE"])
 @jwt_required()
 def teacher_delete_lesson(lesson_id: int):
-    """Xóa bài học và tất cả items/choices liên quan cho giáo viên."""
+    """Xóa bài học và tất cả items/choices liên quan cho giáo viên (chuẩn FK, cascade, kiểm tra quyền)."""
     auth = _ensure_teacher_role()
     if auth is None:
         return error_response(message="Permission denied", status_code=403)
 
     teacher_id, _ = auth
-    result = lesson_service.delete_lesson_for_teacher(teacher_id, lesson_id)
-    if result.get("success"):
-        return success_response(
-            data=result.get("data", {}),
-            message="Lesson deleted successfully"
-        )
+    lesson = Lesson.query.get(lesson_id)
+    if not lesson:
+        return jsonify({'message': 'Lesson not found'}), 404
 
-    status = result.get("status", 400)
-    error_message = result.get("error", "Unable to delete lesson")
-    if status == 404:
-        return not_found_response(message=error_message)
-    if status == 403:
-        return error_response(message=error_message, status_code=403)
-    return error_response(message=error_message, status_code=status)
+    # Kiểm tra quyền sở hữu (giả sử Lesson có trường owner_id)
+    if hasattr(lesson, "owner_id") and lesson.owner_id != int(teacher_id):
+        return error_response(message="Bạn không có quyền xóa bài học này", status_code=403)
+
+    try:
+        db.session.delete(lesson)  # Nếu đã cấu hình cascade="all, delete-orphan" ở relationship, chỉ cần dòng này
+        db.session.commit()
+        return jsonify({'message': 'Đã xóa bài học và toàn bộ dữ liệu liên quan'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return error_response(message=f"Lỗi khi xóa bài học: {str(e)}", status_code=500)

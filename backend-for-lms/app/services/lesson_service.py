@@ -25,7 +25,8 @@ class LessonService:
         self.db = database or db
 
     _VIDEO_PREFIXES = ("/video/", "http://", "https://")
-    _IMAGE_PREFIXES = ("/img-test/", "/assets/", "/assets1/", "http://", "https://")
+    # Acceptable image prefixes for item.image_path — include avatar1 so items can reference profile avatars
+    _IMAGE_PREFIXES = ("/img-test/", "/avatar1/", "/assets/", "/assets1/", "http://", "https://")
     _AUDIO_PREFIXES = ("/audio/", "/audio-for-test/", "http://", "https://")
 
     _PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -34,11 +35,15 @@ class LessonService:
         "video": ("/video/", _FRONTEND_PUBLIC / "video"),
         "audio": ("/audio-for-test/", _FRONTEND_PUBLIC / "audio-for-test"),
         "image": ("/img-test/", _FRONTEND_PUBLIC / "img-test"),
+        # Avatars are stored separately under public/avatar1 and served at /avatar1/
+        "avatar": ("/avatar1/", _FRONTEND_PUBLIC / "avatar1"),
     }
     _ALLOWED_EXTENSIONS = {
         "video": {".mp4", ".mov", ".webm", ".mkv"},
         "audio": {".mp3", ".wav", ".m4a", ".aac"},
         "image": {".png", ".jpg", ".jpeg", ".gif", ".webp"},
+        # Avatar uploads use the same image extensions
+        "avatar": {".png", ".jpg", ".jpeg", ".gif", ".webp"},
     }
 
     @staticmethod

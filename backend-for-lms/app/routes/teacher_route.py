@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from datetime import date, datetime
 from app.services.teacher_service import TeacherService
 from app.utils.response_helper import success_response, error_response
 from app.utils.validators import Validator
@@ -47,7 +48,24 @@ def get_teacher_by_id(user_id):
         teacher = teacher_service.get_by_id(user_id)
         if not teacher:
             return error_response("Không tìm thấy giáo viên", 404)
-        return success_response({"teacher": teacher})
+        # If caller requested raw DB fields (for debugging), return them with simple serialization
+        raw_flag = request.args.get('raw')
+        if raw_flag and str(raw_flag).lower() in ('1', 'true', 'yes'):
+            raw = {}
+            for col in teacher.__table__.columns:
+                val = getattr(teacher, col.name)
+                # Serialize dates/datetimes
+                if isinstance(val, (date, datetime)):
+                    raw[col.name] = val.isoformat()
+                else:
+                    try:
+                        # attempt to keep as-is for basic types
+                        raw[col.name] = val
+                    except Exception:
+                        raw[col.name] = str(val)
+            return success_response({"teacher_raw": raw})
+
+        return success_response({"teacher": teacher.to_dict()})
     except Exception as e:
         return error_response(f"Lỗi khi lấy thông tin giáo viên: {str(e)}", 500)
 

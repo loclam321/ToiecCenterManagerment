@@ -228,6 +228,19 @@ function TeacherTests() {
     };
   }, []);
 
+  // Auto-hide notifications after a short duration (2 seconds)
+  useEffect(() => {
+    if (!successMessage) return undefined;
+    const t = setTimeout(() => setSuccessMessage(''), 2000);
+    return () => clearTimeout(t);
+  }, [successMessage]);
+
+  useEffect(() => {
+    if (!error) return undefined;
+    const t = setTimeout(() => setError(''), 2000);
+    return () => clearTimeout(t);
+  }, [error]);
+
   const updateFormField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -563,7 +576,7 @@ function TeacherTests() {
   return (
     <div className="teacher-tests">
       <form className="card test-form" onSubmit={handleSubmit}>
-        <div className="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+        <div className="card-header bg-white d-flex flex-wrap justify-content-between align-items-center" style={{ borderBottom: 'none', paddingBottom: 0 }}>
           <div>
             <h5 className="mb-1">
               {editingTestId ? (
@@ -576,11 +589,22 @@ function TeacherTests() {
             </h5>
             <small className="text-muted">Chọn lớp phụ trách để bắt đầu</small>
           </div>
-          <div className="d-flex gap-2">
-            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={resetForm} disabled={submitting}>
+          <div className="d-flex flex-row gap-2 ms-auto" style={{ minWidth: 220, justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              className="btn btn-light border border-1 rounded-4 px-4 fw-semibold shadow-none"
+              onClick={resetForm}
+              disabled={submitting}
+              style={{ color: '#6c63ff', borderColor: '#e0e0e0', background: '#fafbfc' }}
+            >
               {editingTestId ? 'Hủy chỉnh sửa' : 'Đặt lại'}
             </button>
-            <button type="submit" className="btn btn-primary btn-sm" disabled={submitting}>
+            <button
+              type="submit"
+              className="btn rounded-4 px-4 fw-bold shadow-none"
+              disabled={submitting}
+              style={{ background: '#6c63ff', color: '#fff', border: 'none', boxShadow: '0 2px 8px #ececec' }}
+            >
               {submitting ? 'Đang lưu...' : (editingTestId ? 'Cập nhật bài kiểm tra' : 'Lưu bài kiểm tra')}
             </button>
           </div>
@@ -588,119 +612,113 @@ function TeacherTests() {
         <div className="card-body">
           {error && <div className="alert alert-danger small mb-3">{error}</div>}
           {successMessage && <div className="alert alert-success small mb-3">{successMessage}</div>}
-          <div className="row g-3 mb-4">
-            <div className="col-md-4">
-              <label className="form-label">Lớp phụ trách</label>
-              <select
-                className="form-select"
-                value={selectedClassId}
-                onChange={(e) => setSelectedClassId(e.target.value)}
-                required
-              >
-                {(classes || []).map((cls) => (
-                  <option key={cls.class_id} value={cls.class_id}>
-                    {cls.class_name || cls.class_id}
-                  </option>
-                ))}
-              </select>
+
+          <div className="form-section card mb-3 p-4 border-0 shadow-sm" style={{ background: '#f8fafc', borderRadius: 16, width: '100%' }}>
+            <div className="row g-3 align-items-end">
+              <div className="col-md-4">
+                <label className="form-label fw-semibold small mb-1">Lớp phụ trách</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={selectedClassId}
+                  onChange={(e) => setSelectedClassId(e.target.value)}
+                  required
+                >
+                  {(classes || []).map((cls) => (
+                    <option key={cls.class_id} value={cls.class_id}>
+                      {cls.class_name || cls.class_id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-5">
+                <label className="form-label fw-semibold small mb-1">Tên bài kiểm tra</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={form.test_name}
+                  onChange={(e) => updateFormField('test_name', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="col-md-3">
+                <label className="form-label fw-semibold small mb-1">Trạng thái</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={form.test_status}
+                  onChange={(e) => updateFormField('test_status', e.target.value)}
+                >
+                  <option value="ACTIVE">Mở cho học sinh</option>
+                  <option value="INACTIVE">Tạm khóa chỉnh sửa</option>
+                  <option value="ARCHIVED">Lưu trữ</option>
+                </select>
+              </div>
             </div>
-            <div className="col-md-4">
-              <label className="form-label">Tên bài kiểm tra</label>
-              <input
-                type="text"
-                className="form-control"
-                value={form.test_name}
-                onChange={(e) => updateFormField('test_name', e.target.value)}
-                required
-              />
+            <div className="row g-3 mt-2">
+              <div className="col-md-12">
+                <label className="form-label fw-semibold small mb-1">Mô tả</label>
+                <textarea
+                  className="form-control form-control-sm"
+                  rows={2}
+                  value={form.test_description}
+                  onChange={(e) => updateFormField('test_description', e.target.value)}
+                />
+              </div>
             </div>
-            <div className="col-md-4">
-              <label className="form-label">Trạng thái</label>
-              <select
-                className="form-select"
-                value={form.test_status}
-                onChange={(e) => updateFormField('test_status', e.target.value)}
-              >
-                <option value="ACTIVE">Mở cho học sinh</option>
-                <option value="INACTIVE">Tạm khóa chỉnh sửa</option>
-                <option value="ARCHIVED">Đã lưu trữ</option>
-              </select>
+            <div className="row g-3 mt-2">
+              <div className="col-md-4">
+                <label className="form-label fw-semibold small mb-1">Thời lượng (phút)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="form-control form-control-sm"
+                  value={form.test_duration_min}
+                  onChange={(e) => updateFormField('test_duration_min', e.target.value)}
+                />
+              </div>
+              <div className="col-md-4">
+                <label className="form-label fw-semibold small mb-1">Giới hạn lượt làm</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="form-control form-control-sm"
+                  value={form.max_attempts}
+                  onChange={(e) => updateFormField('max_attempts', e.target.value)}
+                />
+              </div>
+              <div className="col-md-4">
+                <label className="form-label fw-semibold small mb-1">Thời gian giới hạn (phút)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="form-control form-control-sm"
+                  value={form.time_limit_min}
+                  onChange={(e) => updateFormField('time_limit_min', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="row g-3 mt-2">
+              <div className="col-md-4">
+                <label className="form-label fw-semibold small mb-1">Mở từ (YYYY-MM-DD HH:MM)</label>
+                <input
+                  type="datetime-local"
+                  className="form-control form-control-sm"
+                  value={form.available_from}
+                  onChange={(e) => updateFormField('available_from', e.target.value)}
+                />
+              </div>
+              <div className="col-md-4">
+                <label className="form-label fw-semibold small mb-1">Đóng lúc (YYYY-MM-DD HH:MM)</label>
+                <input
+                  type="datetime-local"
+                  className="form-control form-control-sm"
+                  value={form.due_at}
+                  onChange={(e) => updateFormField('due_at', e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="row g-3 mb-4">
-            <div className="col-md-6">
-              <label className="form-label">Mô tả</label>
-              <textarea
-                className="form-control"
-                rows={2}
-                value={form.test_description}
-                onChange={(e) => updateFormField('test_description', e.target.value)}
-              />
-            </div>
-            <div className="col-md-3">
-              <label className="form-label">Thời lượng (phút)</label>
-              <input
-                type="number"
-                min="0"
-                className="form-control"
-                value={form.test_duration_min}
-                onChange={(e) => updateFormField('test_duration_min', e.target.value)}
-              />
-            </div>
-            <div className="col-md-3">
-              <label className="form-label">Giới hạn lượt làm</label>
-              <input
-                type="number"
-                min="1"
-                className="form-control"
-                value={form.max_attempts}
-                onChange={(e) => updateFormField('max_attempts', e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="row g-3 mb-4">
-            <div className="col-md-3">
-              <label className="form-label">Thời gian giới hạn (phút)</label>
-              <input
-                type="number"
-                min="0"
-                className="form-control"
-                value={form.time_limit_min}
-                onChange={(e) => updateFormField('time_limit_min', e.target.value)}
-              />
-            </div>
-            <div className="col-md-4">
-              <label className="form-label">Mở từ (YYYY-MM-DD HH:MM)</label>
-              <input
-                type="datetime-local"
-                className="form-control"
-                value={form.available_from}
-                onChange={(e) => updateFormField('available_from', e.target.value)}
-              />
-            </div>
-            <div className="col-md-4">
-              <label className="form-label">Đóng lúc (YYYY-MM-DD HH:MM)</label>
-              <input
-                type="datetime-local"
-                className="form-control"
-                value={form.due_at}
-                onChange={(e) => updateFormField('due_at', e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <div>
-              <h6 className="mb-0">Câu hỏi ({items.length})</h6>
-              <small className="text-muted">Thêm các câu hỏi trắc nghiệm với đáp án đúng</small>
-            </div>
-            <button type="button" className="btn btn-outline-primary btn-sm" onClick={addItem} disabled={submitting}>
-              + Thêm câu hỏi
-            </button>
-          </div>
-
+          {/* Danh sách câu hỏi */}
           {!items.length ? (
             <div className="card border-0 bg-light-subtle text-muted text-center py-4">
               Chưa có câu hỏi nào. Nhấn "Thêm câu hỏi" để bắt đầu.
@@ -809,14 +827,40 @@ function TeacherTests() {
                       ))}
                     </div>
                     <div className="text-end mt-2">
-                      <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => addChoice(item.id)}>
-                        + Thêm đáp án
+                      <button
+                        type="button"
+                        className="btn btn-add-choice rounded-4 px-3 fw-semibold shadow-sm"
+                        onClick={() => addChoice(item.id)}
+                        style={{ background: '#e0f2fe', color: '#0284c7', border: 'none', fontSize: 15, transition: 'all 0.2s' }}
+                        onMouseOver={e => e.currentTarget.style.background = '#bae6fd'}
+                        onMouseOut={e => e.currentTarget.style.background = '#e0f2fe'}
+                      >
+                        <span style={{ fontWeight: 700, fontSize: 17, marginRight: 4 }}>＋</span> Thêm đáp án
                       </button>
                     </div>
                   </div>
               </div>
             ))
           )}
+
+          {/* Header và nút thêm câu hỏi chuyển xuống dưới */}
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4 mb-3">
+            <div>
+              <h6 className="mb-0">Câu hỏi ({items.length})</h6>
+              <small className="text-muted">Thêm các câu hỏi trắc nghiệm với đáp án đúng</small>
+            </div>
+            <button
+              type="button"
+              className="btn btn-add-question rounded-4 px-4 fw-semibold shadow-sm"
+              onClick={addItem}
+              disabled={submitting}
+              style={{ background: '#f3e8ff', color: '#7c3aed', border: 'none', fontSize: 16, transition: 'all 0.2s' }}
+              onMouseOver={e => e.currentTarget.style.background = '#ede9fe'}
+              onMouseOut={e => e.currentTarget.style.background = '#f3e8ff'}
+            >
+              <span style={{ fontWeight: 700, fontSize: 18, marginRight: 4 }}>＋</span> Thêm câu hỏi
+            </button>
+          </div>
         </div>
       </form>
 
@@ -832,46 +876,75 @@ function TeacherTests() {
             <div className="text-muted small">Chưa có bài kiểm tra nào cho lớp này.</div>
           )}
           {!historyLoading && !historyError && history.length > 0 && (
-            <div className="list-group">
+            <div className="row g-4 teacher-tests-history-list">
               {history.map((test) => (
-                <div
-                  key={test.test_id}
-                  className="list-group-item d-flex flex-wrap justify-content-between align-items-start gap-3"
-                >
-                  <div>
-                    <div className="fw-semibold">{test.test_name || `Bài kiểm tra #${test.test_id}`}</div>
-                    <div className="text-muted small">
-                      Trạng thái: <span className="badge text-bg-light">{test.test_status || 'ACTIVE'}</span>
-                      {typeof test.total_questions === 'number' && (
-                        <span className="ms-2">• {test.total_questions} câu hỏi</span>
-                      )}
-                      {typeof test.question_count === 'number' && !test.total_questions && (
-                        <span className="ms-2">• {test.question_count} câu hỏi</span>
-                      )}
+                <div key={test.test_id} className="col-md-6 col-lg-4">
+                  <div className="card test-history-card border-0 shadow-sm h-100" style={{ borderRadius: 16, background: '#f8fafc', boxShadow: '0 2px 12px #e9ecef' }}>
+                    <div className="card-body d-flex flex-column align-items-center justify-content-between p-4 h-100">
+                      <div className="w-100 text-center mb-3">
+                        <div className="fw-bold fs-5 mb-1" style={{ color: '#222', letterSpacing: 0.2 }}>{test.test_name || `Bài kiểm tra #${test.test_id}`}</div>
+                      </div>
+                      <div className="w-100 mb-3" style={{ borderBottom: '1px solid #ececec', marginBottom: 18 }}></div>
+                      <div className="test-meta w-100 mb-3" style={{ fontSize: 15, color: '#444', lineHeight: 1.8 }}>
+                        <div className="row g-1">
+                            <div className="col-6 d-flex flex-column align-items-center text-center mb-1">
+                            <span className="fw-semibold">Trạng thái</span>
+                            <span className={`badge bg-light text-dark border border-1 border-secondary fw-normal mt-1`} style={{ fontSize: 13 }}>{test.test_status || 'ACTIVE'}</span>
+                          </div>
+                            <div className="col-6 d-flex flex-column align-items-center text-center mb-1">
+                            <span className="fw-semibold">Số câu hỏi</span>
+                            <span className="mt-1">{test.total_questions ?? test.question_count ?? 0}</span>
+                          </div>
+                            <div className="col-6 d-flex flex-column align-items-center text-center mb-1">
+                            <span className="fw-semibold">Mở</span>
+                            <span className="mt-1" style={{ fontSize: 13 }}>{test.available_from ? new Date(test.available_from).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}<br/>{test.available_from ? new Date(test.available_from).toLocaleDateString('vi-VN') : ''}</span>
+                          </div>
+                            <div className="col-6 d-flex flex-column align-items-center text-center mb-1">
+                            <span className="fw-semibold">Đóng</span>
+                            <span className="mt-1" style={{ fontSize: 13 }}>{test.due_at ? new Date(test.due_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}<br/>{test.due_at ? new Date(test.due_at).toLocaleDateString('vi-VN') : ''}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="w-100 mb-2" style={{ borderBottom: '1px solid #ececec' }}></div>
+                      <div className="d-flex flex-wrap justify-content-center gap-2 mt-2 w-100">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-2 px-3 fw-semibold"
+                          onClick={() => openDetail(test.test_id, 'view')}
+                          disabled={submitting}
+                          style={{ color: '#8e24aa' }}
+                        >
+                          <span aria-hidden="true">👁️</span> Xem
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-2 px-3 fw-semibold"
+                          onClick={() => openDetail(test.test_id, 'edit')}
+                          disabled={submitting}
+                          style={{ color: '#fb8c00' }}
+                        >
+                          <span aria-hidden="true">✏️</span> Sửa
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-2 px-3 fw-semibold"
+                          onClick={() => openScoreboard(test.test_id)}
+                          disabled={submitting}
+                          style={{ color: '#388e3c' }}
+                        >
+                          <span aria-hidden="true">📊</span> Bảng điểm
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-2 px-3 fw-semibold"
+                          onClick={() => handleDelete(test.test_id)}
+                          disabled={submitting}
+                          style={{ color: '#e53935' }}
+                        >
+                          <span aria-hidden="true">🗑️</span> Xóa
+                        </button>
+                      </div>
                     </div>
-                    <div className="text-muted small">
-                      {test.available_from && (
-                        <>
-                          Mở: {new Date(test.available_from).toLocaleString('vi-VN')}
-                          {test.due_at ? ' • ' : ''}
-                        </>
-                      )}
-                      {test.due_at && <>Đóng: {new Date(test.due_at).toLocaleString('vi-VN')}</>}
-                    </div>
-                  </div>
-                  <div className="btn-group btn-group-sm">
-                    <button type="button" className="btn btn-outline-secondary" onClick={() => openDetail(test.test_id, 'view')}>
-                      Xem
-                    </button>
-                    <button type="button" className="btn btn-outline-primary" onClick={() => openDetail(test.test_id, 'edit')}>
-                      Sửa
-                    </button>
-                    <button type="button" className="btn btn-outline-success" onClick={() => openScoreboard(test.test_id)}>
-                      Bảng điểm
-                    </button>
-                    <button type="button" className="btn btn-outline-danger" onClick={() => handleDelete(test.test_id)}>
-                      Xóa
-                    </button>
                   </div>
                 </div>
               ))}

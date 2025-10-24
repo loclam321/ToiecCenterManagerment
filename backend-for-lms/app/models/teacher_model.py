@@ -30,9 +30,19 @@ class Teacher(db.Model):
         return f"<Teacher {self.user_id}: {self.user_name}>"
     
     def _avatar_web_path(self):
-        """Normalize stored tch_avtlink to a web path served by frontend (e.g. /avatar/3.jpg)."""
+        """Normalize stored tch_avtlink to a web path served by frontend (e.g. /avatar1/3.png).
+
+        Rules applied (best-effort):
+        - If the value is an absolute URL (http/https) or data URI, return as-is.
+        - Prefer an existing '/avatar1/' substring, then '/avatar/' if present.
+        - If the value contains '/public/', strip everything up to '/public' and use the remainder.
+        - If the value looks like a bare filename, map it to '/avatar1/<filename>'.
+        - As a fallback try to extract the filename and map to '/avatar1/<filename>'.
+        - Collapse duplicate slashes and ensure a leading '/'.
+        """
         if not self.tch_avtlink:
             return None
+
         p = str(self.tch_avtlink).strip().replace('\\', '/')
         low = p.lower()
 
@@ -40,18 +50,41 @@ class Teacher(db.Model):
         if low.startswith('http://') or low.startswith('https://') or low.startswith('data:'):
             return p
 
-        # Prefer substring starting at /avatar/
+        # Prefer explicit avatar prefixes
+        ia1 = low.find('/avatar1/')
         ia = low.find('/avatar/')
-        if ia != -1:
+        if ia1 != -1:
+            p = p[ia1:]
+        elif ia != -1:
             p = p[ia:]
         else:
-            # If contains /public/, strip everything up to and including /public
+            # Strip up to '/public' if present
             ip = low.find('/public/')
             if ip != -1:
                 p = p[ip + len('/public'):]
+            else:
+                # Try to find avatar markers again (robustness) or convert filename to avatar1 path
+                found = None
+                for marker in ['/avatar1/', '/avatar/']:
+                    idx = low.find(marker)
+                    if idx != -1:
+                        found = p[idx:]
+                        break
+                if found:
+                    p = found
+                else:
+                    # Bare filename (no slash) => assume avatar1
+                    if '/' not in p:
+                        p = f'/avatar1/{p}'
+                    else:
+                        # Fallback: extract filename and place under avatar1
+                        filename = p.split('/')[-1]
+                        if filename:
+                            p = f'/avatar1/{filename}'
 
         if not p.startswith('/'):
             p = '/' + p
+
         # Collapse duplicate slashes
         p = re.sub(r'/+', '/', p)
         return p

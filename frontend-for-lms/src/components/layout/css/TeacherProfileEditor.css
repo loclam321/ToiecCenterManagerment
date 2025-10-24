@@ -1,0 +1,94 @@
+/* Optimized, accessible styles for Teacher Profile Editor */
+:root{
+  --tpe-max-w: 980px;
+  --tpe-gap: 24px;
+  --tpe-pad: 28px;
+  --tpe-radius: 10px;
+  --tpe-accent:  #4b33d6; /* primary brand */
+  --tpe-grad-from: #5b46e6;
+  --tpe-grad-to: #8b5cf6;
+  --tpe-muted: #7b8794;
+  --tpe-bg: #fff;
+  --tpe-shadow: 0 8px 30px rgba(28,32,39,0.06);
+  --tpe-border: rgba(99,102,241,0.06);
+  --tpe-inset: 0 6px 18px rgba(75,51,214,0.06);
+  --tpe-btn-shadow: 0 6px 18px rgba(139,92,246,0.10);
+}
+
+.teacher-profile-editor{
+  max-width: var(--tpe-max-w);
+  margin: calc(var(--header-height,4em) + 28px) auto 36px;
+  background: var(--tpe-bg);
+  border-radius: 14px;
+  box-shadow: var(--tpe-shadow);
+  padding: var(--tpe-pad);
+  border: 1px solid var(--tpe-border);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  color: #263238;
+}
+
+.teacher-profile-editor h3{ color: var(--tpe-accent); font-weight:700; font-size:20px; margin-bottom:12px }
+
+.teacher-profile-editor .profile-container{
+  display:grid; grid-template-columns: 1fr 320px; gap: var(--tpe-gap); align-items:start
+}
+
+.teacher-profile-editor .profile-form{ width:100% }
+
+.teacher-profile-editor label{ display:block; margin-bottom:6px; font-weight:600; font-size:13px }
+
+.teacher-profile-editor .form-control{ border-radius:8px; border:1px solid #e6e9ef; padding:10px 12px; height:40px; background:#fff; transition: box-shadow .16s ease, border-color .12s ease }
+.teacher-profile-editor .form-control:focus{ outline: none; border-color: rgba(75,51,214,0.85); box-shadow: var(--tpe-inset) }
+.teacher-profile-editor textarea.form-control{ min-height:86px; padding-top:8px }
+
+.teacher-profile-editor .row.g-3 > .col-md-6{ padding-bottom:10px }
+
+.teacher-profile-editor .avatar-column{ display:flex; flex-direction:column; align-items:center }
+.teacher-profile-editor .avatar-box{ width:180px; height:220px; border-radius:var(--tpe-radius); overflow:hidden; background:linear-gradient(180deg,#f8fafc 0%,#fff 100%); border:1px solid #eef2ff; display:flex; align-items:center; justify-content:center; margin-bottom:12px }
+.teacher-profile-editor .avatar-box img{ width:100%; height:100%; object-fit:cover; display:block }
+
+.teacher-profile-editor .file-input-wrapper{ width:100%; display:flex; gap:12px; align-items:center; margin-top:6px }
+.teacher-profile-editor .file-input-wrapper input[type='file']{ flex:1 1 auto }
+
+.teacher-profile-editor .hint{ font-size:12px; color:var(--tpe-muted); margin-top:8px }
+
+.teacher-profile-editor .action-row{ display:flex; gap:10px; margin-top:14px; align-items:center }
+
+/* Buttons: compact, accessible, GPU-accelerated transforms */
+.teacher-profile-editor .btn-primary,
+.teacher-profile-editor .btn-secondary{ display:inline-flex; align-items:center; gap:8px; position:relative; border-radius:8px; border:none; cursor:pointer; font-weight:700; font-size:13px; padding:8px 12px; transition: transform .14s cubic-bezier(.2,.9,.2,1), box-shadow .14s linear }
+
+.teacher-profile-editor .btn-primary{ background: linear-gradient(90deg,var(--tpe-grad-from),var(--tpe-grad-to)); color:#fff; box-shadow: var(--tpe-btn-shadow) }
+.teacher-profile-editor .btn-secondary{ background:#f2f4f7; color:#42515a }
+
+/* Icon pseudo-elements using small inline SVGs */
+.teacher-profile-editor .btn-primary::before,
+.teacher-profile-editor .btn-secondary::before{ content:''; width:14px; height:14px; display:inline-block; background-repeat:no-repeat; background-position:center; background-size:14px }
+.teacher-profile-editor .btn-primary::before{ background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23FFFFFF' d='M6.00039 10.8008L2.20039 7.00078L1.26606 7.93411L6.00039 12.6684L15.0004 3.66844L14.0671 2.73511L6.00039 10.8008Z'/></svg>") }
+.teacher-profile-editor .btn-secondary::before{ background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%2342515A' d='M11.3 4.7L8 8l3.3 3.3-1.4 1.4L6.6 9.4 3.3 12.7 1.9 11.3 5.2 8 1.9 4.7 3.3 3.3 6.6 6.6 9.9 3.3z'/></svg>") }
+
+/* Hover/active with GPU-accelerated transform; respect reduced motion */
+@media (prefers-reduced-motion: no-preference){
+  .teacher-profile-editor .btn-primary:hover, .teacher-profile-editor .btn-secondary:hover{ transform: translateY(-2px) scale(1.02); box-shadow: 0 10px 30px rgba(39,43,77,0.08) }
+  .teacher-profile-editor .btn-primary:active, .teacher-profile-editor .btn-secondary:active{ transform: translateY(0) scale(.995) }
+}
+
+.teacher-profile-editor .alert-success{ background:#f0fdf4; color:#087f2a; border-radius:8px; padding:10px 14px; margin-bottom:12px }
+
+/* Disabled inputs look muted and accessible */
+.teacher-profile-editor .form-control[disabled], .teacher-profile-editor input[disabled], .teacher-profile-editor select[disabled]{ background:#f6f7fb !important; color:#59636b; cursor:not-allowed }
+
+/* Focus-visible for keyboard users */
+.teacher-profile-editor .form-control:focus-visible { outline: 3px solid rgba(75,51,214,0.12); outline-offset: 2px }
+
+/* Responsive tweaks */
+@media (max-width:880px){
+  .teacher-profile-editor .profile-container{ grid-template-columns: 1fr }
+  .teacher-profile-editor .avatar-column{ flex-direction:row; gap:12px; align-items:center }
+  .teacher-profile-editor .avatar-box{ width:120px; height:150px }
+}
+
+/* Utilities */
+.teacher-profile-editor .muted{ color:var(--tpe-muted); font-size:13px }
+
+

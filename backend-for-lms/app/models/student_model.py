@@ -44,9 +44,12 @@ class Student(db.Model):
             'user_telephone': self.user_telephone,
             'sd_startlv': self.sd_startlv,
             'sd_enrollmenttdate': self.sd_enrollmenttdate.strftime('%Y-%m-%d') if self.sd_enrollmenttdate else None,
+            
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+
+    
     
     def set_password(self, password):
         """Hash và lưu mật khẩu"""
