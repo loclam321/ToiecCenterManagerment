@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { getCurrentUser } from '../../services/authService';
+import { updateOwnProfile } from '../../services/studentService';
 
 export default function StudentProfile() {
   const user = getCurrentUser();
@@ -19,6 +21,16 @@ export default function StudentProfile() {
   const userId = user.user_id ?? '-';
   const gender = user.user_gender === 'M' ? 'Nam' : user.user_gender === 'F' ? 'Nữ' : (user.user_gender ? 'Khác' : '-');
   const birthday = user.user_birthday ? new Date(user.user_birthday).toLocaleDateString() : '-';
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    user_name: user.user_name || '',
+    user_telephone: user.user_telephone || '',
+    user_gender: user.user_gender || '',
+    user_birthday: user.user_birthday || ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   // Note: Avatar/summary is shown in the StudentSidebar user-section, so we omit it here to avoid duplication
 
@@ -40,8 +52,17 @@ export default function StudentProfile() {
                 </div>
                 <div className="col-12 col-md-6">
                   <div className="p-3 border rounded-3">
-                    <div className="text-muted small mb-1">Họ và tên</div>
-                    <div className="fw-semibold">{name}</div>
+                    <div className="text-muted small mb-1 d-flex justify-content-between">
+                      <span>Họ và tên</span>
+                      {!editing && (
+                        <button className="btn btn-sm btn-outline-primary" onClick={() => setEditing(true)}>Chỉnh sửa</button>
+                      )}
+                    </div>
+                    {editing ? (
+                      <input className="form-control" value={form.user_name} onChange={(e) => setForm(f => ({...f, user_name: e.target.value}))} />
+                    ) : (
+                      <div className="fw-semibold">{name}</div>
+                    )}
                   </div>
                 </div>
 
@@ -54,23 +75,75 @@ export default function StudentProfile() {
                 <div className="col-12 col-md-6">
                   <div className="p-3 border rounded-3">
                     <div className="text-muted small mb-1">Số điện thoại</div>
-                    <div className="fw-semibold">{phone}</div>
+                    {editing ? (
+                      <input className="form-control" value={form.user_telephone} onChange={(e) => setForm(f => ({...f, user_telephone: e.target.value}))} />
+                    ) : (
+                      <div className="fw-semibold">{phone}</div>
+                    )}
                   </div>
                 </div>
 
                 <div className="col-12 col-md-6">
                   <div className="p-3 border rounded-3">
                     <div className="text-muted small mb-1">Giới tính</div>
-                    <div className="fw-semibold">{gender}</div>
+                    {editing ? (
+                      <select className="form-select" value={form.user_gender} onChange={(e) => setForm(f => ({...f, user_gender: e.target.value}))}>
+                        <option value="">Chọn</option>
+                        <option value="M">Nam</option>
+                        <option value="F">Nữ</option>
+                        <option value="O">Khác</option>
+                      </select>
+                    ) : (
+                      <div className="fw-semibold">{gender}</div>
+                    )}
                   </div>
                 </div>
                 <div className="col-12 col-md-6">
                   <div className="p-3 border rounded-3">
                     <div className="text-muted small mb-1">Ngày sinh</div>
-                    <div className="fw-semibold">{birthday}</div>
+                    {editing ? (
+                      <input type="date" className="form-control" value={form.user_birthday || ''} onChange={(e) => setForm(f => ({...f, user_birthday: e.target.value}))} />
+                    ) : (
+                      <div className="fw-semibold">{birthday}</div>
+                    )}
                   </div>
                 </div>
               </div>
+              {editing && (
+                <div className="mt-3 d-flex gap-2">
+                  <button className="btn btn-primary" disabled={loading} onClick={async () => {
+                    setError(''); setSuccess('');
+                    // simple validation
+                    if (!form.user_name || form.user_name.trim().length < 2) {
+                      setError('Tên phải có ít nhất 2 ký tự'); return;
+                    }
+                    if (form.user_telephone && form.user_telephone.length > 20) { setError('Số điện thoại không hợp lệ'); return; }
+                    setLoading(true);
+                    try {
+                      const updated = await updateOwnProfile({
+                        user_name: form.user_name,
+                        user_telephone: form.user_telephone,
+                        user_gender: form.user_gender,
+                        user_birthday: form.user_birthday || null
+                      });
+                      if (updated) {
+                        // reload page data briefly by replacing window user (simple approach)
+                        const stored = JSON.parse(localStorage.getItem('user') || '{}');
+                        const newUser = { ...stored, ...updated };
+                        localStorage.setItem('user', JSON.stringify(newUser));
+                        setSuccess('Cập nhật thành công');
+                        setEditing(false);
+                        setTimeout(()=>setSuccess(''), 2500);
+                      }
+                    } catch (e) {
+                      setError(e.message || 'Lưu thất bại');
+                    } finally { setLoading(false); }
+                  }}>Lưu</button>
+                  <button className="btn btn-secondary" disabled={loading} onClick={() => { setEditing(false); setError(''); setForm({ user_name: user.user_name || '', user_telephone: user.user_telephone || '', user_gender: user.user_gender || '', user_birthday: user.user_birthday || '' }); }}>Hủy</button>
+                </div>
+              )}
+              {error && <div className="text-danger mt-2">{error}</div>}
+              {success && <div className="text-success mt-2">{success}</div>}
             </div>
           </div>
 

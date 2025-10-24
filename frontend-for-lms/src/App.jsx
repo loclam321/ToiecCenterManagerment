@@ -15,6 +15,7 @@ import { fetchLearningPathsWithCourse, toggleCourseStatus } from './services/cou
 import AuthPage from './pages/AuthPage';
 import FacilityPage from './pages/facility/facility';
 
+import TeacherProfileEditor from './components/layout/TeacherProfileEditor';
 // Giữ HomePage content trong App nhưng chỉ hiển thị nó ở route "/"
 function HomeContent() {
   const [showDropOverlay, setShowDropOverlay] = useState(false);
@@ -448,6 +449,7 @@ function App() {
           <Route path="/toeic-test" element={<ToeicTestPage />} />
           <Route path="/toeic-test/:testId" element={<ToeicTestPage />} />
           <Route path="/facility" element={<FacilityPage />} />
+          <Route path="/teacher-profile" element={<TeacherProfileEditor />} />
           {/* Thêm các routes khác ở đây */}
         </Routes>
       </main>

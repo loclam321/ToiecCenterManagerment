@@ -228,6 +228,19 @@ function TeacherTests() {
     };
   }, []);
 
+  // Auto-hide notifications after a short duration (2 seconds)
+  useEffect(() => {
+    if (!successMessage) return undefined;
+    const t = setTimeout(() => setSuccessMessage(''), 2000);
+    return () => clearTimeout(t);
+  }, [successMessage]);
+
+  useEffect(() => {
+    if (!error) return undefined;
+    const t = setTimeout(() => setError(''), 2000);
+    return () => clearTimeout(t);
+  }, [error]);
+
   const updateFormField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -874,19 +887,19 @@ function TeacherTests() {
                       <div className="w-100 mb-3" style={{ borderBottom: '1px solid #ececec', marginBottom: 18 }}></div>
                       <div className="test-meta w-100 mb-3" style={{ fontSize: 15, color: '#444', lineHeight: 1.8 }}>
                         <div className="row g-1">
-                          <div className="col-6 d-flex flex-column align-items-start mb-1">
+                            <div className="col-6 d-flex flex-column align-items-center text-center mb-1">
                             <span className="fw-semibold">Trạng thái</span>
                             <span className={`badge bg-light text-dark border border-1 border-secondary fw-normal mt-1`} style={{ fontSize: 13 }}>{test.test_status || 'ACTIVE'}</span>
                           </div>
-                          <div className="col-6 d-flex flex-column align-items-start mb-1">
+                            <div className="col-6 d-flex flex-column align-items-center text-center mb-1">
                             <span className="fw-semibold">Số câu hỏi</span>
                             <span className="mt-1">{test.total_questions ?? test.question_count ?? 0}</span>
                           </div>
-                          <div className="col-6 d-flex flex-column align-items-start mb-1">
+                            <div className="col-6 d-flex flex-column align-items-center text-center mb-1">
                             <span className="fw-semibold">Mở</span>
                             <span className="mt-1" style={{ fontSize: 13 }}>{test.available_from ? new Date(test.available_from).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}<br/>{test.available_from ? new Date(test.available_from).toLocaleDateString('vi-VN') : ''}</span>
                           </div>
-                          <div className="col-6 d-flex flex-column align-items-start mb-1">
+                            <div className="col-6 d-flex flex-column align-items-center text-center mb-1">
                             <span className="fw-semibold">Đóng</span>
                             <span className="mt-1" style={{ fontSize: 13 }}>{test.due_at ? new Date(test.due_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}<br/>{test.due_at ? new Date(test.due_at).toLocaleDateString('vi-VN') : ''}</span>
                           </div>

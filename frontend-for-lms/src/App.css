@@ -293,7 +293,7 @@ body {
 
 .home-hero .hero-content {
   position: absolute;
-  top: 50%;
+  top: 65%;
   left: 0;
   right: 0;
   transform: translateY(-50%);
@@ -436,9 +436,8 @@ body {
 }
 
 /* Remove default margins from first/last sections */
-.content > *:first-child {
-  margin-top: 0 !important;
-}
+
+/* Loại bỏ rule margin-top: 0 !important để các trang có thể tự kiểm soát margin-top phù hợp với header fixed */
 
 .content > *:last-child {
   margin-bottom: 0 !important;

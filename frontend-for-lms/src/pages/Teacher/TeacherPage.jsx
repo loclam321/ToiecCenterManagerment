@@ -5,7 +5,7 @@ const teacherMenu = [
   {
     path: '/teachers',
     icon: 'bi bi-speedometer2',
-    label: 'Dashboard'
+    label: 'Tổng quan'
   },
   {
     path: '/teachers/schedule',

@@ -1066,7 +1066,29 @@ function TeacherLessons() {
                               <div className="bulk-preview-section mb-3">
                                 <strong className="d-block mb-1">Thông tin bổ sung</strong>
                                 {item.stimulus_text && <p className="mb-1">Mô tả: {item.stimulus_text}</p>}
-                                {item.image_path && <p className="mb-1">Hình: {item.image_path}</p>}
+                                 {item.image_path && (
+                                   item.image_path.startsWith('/avatar1/') ? (
+                                     <div className="mb-1">
+                                       <span>Avatar: </span>
+                                       <img
+                                         src={item.image_path}
+                                         alt="Avatar"
+                                         className="img-fluid rounded"
+                                         style={{ maxHeight: 80, maxWidth: 80, objectFit: 'cover', border: '2px solid #eee' }}
+                                       />
+                                     </div>
+                                   ) : (
+                                     <div className="mb-1">
+                                       <span>Hình: </span>
+                                       <img
+                                         src={item.image_path}
+                                         alt="Hình minh hoạ"
+                                         className="img-fluid rounded"
+                                         style={{ maxHeight: 220, objectFit: 'cover', border: '2px solid #eee' }}
+                                       />
+                                     </div>
+                                   )
+                                 )}
                                 {item.audio_path && <p className="mb-0">Audio: {item.audio_path}</p>}
                               </div>
                             )}

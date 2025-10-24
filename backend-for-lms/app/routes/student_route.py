@@ -66,7 +66,8 @@ def get_student(student_id):
     try:
         result = student_service.get_student_by_id(student_id)
         if result["success"]:
-            return success_response(data=result["data"])
+            # normalize to {'student': {...}} for frontend compatibility
+            return success_response(data={"student": result["data"]})
         return not_found_response(message=result["error"])
     except Exception as e:
         return error_response(message=f"Error retrieving student: {str(e)}")
@@ -142,7 +143,7 @@ def create_student():
         
         result = student_service.create_student(data)
         if result["success"]:
-            return created_response(data=result["data"], message=result["message"])
+            return created_response(data={"student": result["data"]}, message=result["message"])
         return validation_error_response(message=result["error"])
     except Exception as e:
         return error_response(message=f"Error creating student: {str(e)}")
@@ -159,7 +160,7 @@ def update_student(student_id):
         
         result = student_service.update_student(student_id, data)
         if result["success"]:
-            return success_response(data=result["data"], message=result["message"])
+            return success_response(data={"student": result["data"]}, message=result["message"])
         
         if "not found" in result["error"].lower():
             return not_found_response(message=result["error"])
@@ -188,17 +189,41 @@ def delete_student(student_id):
 def get_own_profile():
     """Học viên lấy thông tin cá nhân của mình"""
     try:
-        current_user = get_jwt_identity()
-        # Kiểm tra nếu người dùng hiện tại là học viên
-        if current_user.get("role") != "student":
+        # Support both identity-as-dict and identity-as-string from different JWT issuers
+        identity = get_jwt_identity()
+        claims = {}
+        try:
+            claims = get_jwt()
+        except Exception:
+            claims = {}
+
+        token_user_id = None
+        token_role = None
+
+        if isinstance(identity, dict):
+            token_user_id = identity.get("user_id") or identity.get("sub")
+            token_role = identity.get("role")
+        elif isinstance(identity, str):
+            token_user_id = identity
+
+        # Fallback to claims
+        if not token_role and isinstance(claims, dict):
+            token_role = claims.get("role")
+        if not token_user_id and isinstance(claims, dict):
+            token_user_id = claims.get("user_id") or claims.get("sub")
+
+        if token_role != "student":
             return error_response(message="Access denied", status_code=403)
-        
-        student_id = current_user.get("user_id")
+
+        if not token_user_id:
+            return error_response(message="Authentication required", status_code=401)
+
+        student_id = token_user_id
         result = student_service.get_student_by_id(student_id)
-        
+
         if result["success"]:
-            return success_response(data=result["data"])
-        return not_found_response(message=result["error"])
+            return success_response(data={"student": result["data"]})
+        return not_found_response(message=result.get("error") or "Student not found")
     except Exception as e:
         return error_response(message=f"Error retrieving profile: {str(e)}")
 
@@ -207,25 +232,46 @@ def get_own_profile():
 def update_own_profile():
     """Học viên cập nhật thông tin cá nhân"""
     try:
-        current_user = get_jwt_identity()
-        # Kiểm tra nếu người dùng hiện tại là học viên
-        if current_user.get("role") != "student":
+        # get_jwt_identity() may return a string (user_id) or a dict (identity payload)
+        identity = get_jwt_identity()
+        claims = {}
+        try:
+            claims = get_jwt()
+        except Exception:
+            claims = {}
+
+        token_user_id = None
+        token_role = None
+
+        if isinstance(identity, dict):
+            token_user_id = identity.get("user_id") or identity.get("sub")
+            token_role = identity.get("role")
+        elif isinstance(identity, str):
+            token_user_id = identity
+
+        # Fallback to claims if role not in identity
+        if not token_role and isinstance(claims, dict):
+            token_role = claims.get("role")
+        if not token_user_id and isinstance(claims, dict):
+            token_user_id = claims.get("user_id") or claims.get("sub")
+
+        if token_role != "student":
             return error_response(message="Access denied", status_code=403)
-        
+
         data = request.get_json()
         if not data:
             return validation_error_response(message="No data provided")
-        
-        # Giới hạn các trường được phép cập nhật
+
+        # Limit fields allowed to update
         allowed_fields = ["user_name", "user_telephone", "user_gender", "user_birthday"]
         update_data = {k: v for k, v in data.items() if k in allowed_fields}
-        
-        student_id = current_user.get("user_id")
+
+        student_id = token_user_id
         result = student_service.update_student(student_id, update_data)
-        
+
         if result["success"]:
-            return success_response(data=result["data"], message=result["message"])
-        return validation_error_response(message=result["error"])
+            return success_response(data={"student": result["data"]}, message=result.get("message"))
+        return validation_error_response(message=result.get("error", "Unable to update"))
     except Exception as e:
         return error_response(message=f"Error updating profile: {str(e)}")
 

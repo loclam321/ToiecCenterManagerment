@@ -212,6 +212,23 @@ export const checkEmailExists = async (email, excludeId = null) => {
  * @param {Object} teacherData - Dữ liệu giáo viên từ form frontend
  */
 export const mapTeacherToApi = (teacherData) => {
+  // If caller already passed API-shaped fields (user_name, user_gender, etc.), pass them through
+  const hasApiFields = teacherData && (teacherData.user_name || teacherData.user_email || teacherData.user_telephone || teacherData.user_gender || teacherData.tch_avtlink);
+  if (hasApiFields) {
+    // Build payload from known API field names, preserving any present values
+    const data = {};
+    const apiFields = [
+      'user_name', 'user_email', 'user_telephone', 'user_birthday', 'user_gender', 'user_password',
+      'tch_specialization', 'tch_qualification', 'tch_hire_date', 'tch_avtlink', 'tch_status'
+    ];
+    apiFields.forEach((f) => {
+      if (Object.prototype.hasOwnProperty.call(teacherData, f) && teacherData[f] !== undefined) {
+        data[f] = teacherData[f];
+      }
+    });
+    return data;
+  }
+
   const data = {
     // User fields (theo User model pattern)
     user_name: teacherData.name,
@@ -229,8 +246,10 @@ export const mapTeacherToApi = (teacherData) => {
   };
   
   // Đưa avatar path vào API nếu có
-  if (teacherData.avatarPath) {
-    data.tch_avtlink = teacherData.avatarPath;
+  // Accept either frontend's avatarPath or legacy tch_avtlink when mapping
+  const avatarPath = teacherData.avatarPath || teacherData.tch_avtlink || teacherData.avatar;
+  if (avatarPath) {
+    data.tch_avtlink = avatarPath;
   }
   
   // Chỉ thêm mật khẩu nếu có (khi tạo mới hoặc đổi mật khẩu)

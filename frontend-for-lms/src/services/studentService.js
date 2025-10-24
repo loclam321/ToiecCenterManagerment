@@ -268,6 +268,31 @@ export const updateStudent = async (id, studentData) => {
 };
 
 /**
+ * Cập nhật profile của chính user (endpoint /api/students/profile)
+ * Dùng khi student muốn cập nhật thông tin của chính họ
+ */
+export const updateOwnProfile = async (studentData) => {
+  try {
+    const response = await fetch(`${BASE_URL}/profile`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(studentData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || 'Cập nhật profile thất bại');
+    }
+
+    return result.data?.student || null;
+  } catch (error) {
+    console.error('Error updating own profile:', error);
+    throw error;
+  }
+};
+
+/**
  * Xóa học viên
  * @param {string} id - ID học viên
  */

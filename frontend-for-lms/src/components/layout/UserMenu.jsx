@@ -9,6 +9,38 @@ function UserMenu() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
 
+  // Resolve avatar from various possible user properties and normalize to web path
+  const resolveAvatar = (u) => {
+    if (!u) return null;
+    const candidates = [
+      u.user_avatar,
+      u.avatar,
+      u.avatarPath,
+      u.tch_avtlink,
+      u.avatar_url,
+      u.user_avatar_url,
+      u.avatar_path,
+      u.user_avatar_path
+    ];
+    const raw = candidates.find((c) => c !== undefined && c !== null && String(c).trim() !== '');
+    if (!raw) return null;
+    if (/^(https?:|data:)/i.test(raw)) return raw;
+    let path = String(raw).replace(/\\/g, '/');
+    const lower = path.toLowerCase();
+    const publicIdx = lower.indexOf('/public/');
+    if (publicIdx !== -1) {
+      path = path.substring(publicIdx + '/public'.length);
+    }
+    // Accept both /avatar1/ and /avatar/
+    const idx1 = path.toLowerCase().indexOf('/avatar1/');
+    const idx2 = path.toLowerCase().indexOf('/avatar/');
+    if (idx1 !== -1) path = path.substring(idx1);
+    else if (idx2 !== -1) path = path.substring(idx2);
+    if (!path.startsWith('/')) path = '/' + path;
+    return path;
+  };
+  const avatarSrc = resolveAvatar(currentUser) || '/avatar/default.svg';
+
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(event) {
@@ -41,16 +73,14 @@ function UserMenu() {
         aria-haspopup="true"
       >
         <div className="user-avatar">
-          <i className="bi bi-person-circle"></i>
+          <img src={avatarSrc} alt={currentUser?.user_name || 'Người dùng'} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/avatar/default.svg'; }} />
         </div>
       </button>
       
       {isOpen && (
         <div className="user-dropdown">
           <div className="user-info">
-            <div className="user-avatar-lg">
-              <i className="bi bi-person-circle"></i>
-            </div>
+
             <div className="user-details">
               <div className="user-name">{currentUser?.user_name || 'Người dùng'}</div>
               <div className="user-email">{currentUser?.user_email || ''}</div>
@@ -63,13 +93,23 @@ function UserMenu() {
             <li>
               <button onClick={() => navigate('/dashboard')}>
                 <i className="bi bi-speedometer2"></i>
-                Dashboard
+                Tổng quan
               </button>
             </li>
             <li>
-              <button onClick={() => navigate('/profile')}>
-                <i className="bi bi-person"></i>
-                Hồ sơ của tôi
+              <button onClick={() => {
+                const user = getCurrentUser();
+                const role = (user?.role || localStorage.getItem('role') || '').toString().toLowerCase();
+                if (role === 'student') {
+                  navigate('../student/profile');
+                } else if (role === 'teacher' || role === 'admin') {
+                  navigate('/teacher-profile');
+                } else {
+                  navigate('/Teacher_intro');
+                }
+              }}>
+                <i className="bi bi-pencil-square"></i>
+                Quản lý thông tin 
               </button>
             </li>
             <li className="dropdown-divider"></li>
