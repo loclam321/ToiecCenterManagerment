@@ -127,10 +127,13 @@ const TeacherIntroduction = () => {
     };
 
     // Chuẩn hóa đường dẫn avatar sang web path an toàn
+    // Trả về null khi không có đường dẫn hợp lệ để tránh đặt src="" trên thẻ <img>
     const normalizeAvatar = (p) => {
-        if (!p) return '';
-        if (/^(https?:|data:)/i.test(p)) return p;
-        let path = String(p).replace(/\\/g, '/');
+        if (!p) return null;
+        const raw = String(p).trim();
+        if (!raw) return null;
+        if (/^(https?:|data:)/i.test(raw)) return raw;
+        let path = raw.replace(/\\/g, '/');
         const lower = path.toLowerCase();
         const publicIdx = lower.indexOf('/public/');
         if (publicIdx !== -1) {
@@ -232,38 +235,45 @@ const TeacherIntroduction = () => {
                                 </div>
                             ) : (
                                 <div className="teachers-grid" ref={gridRef}>
-                                    {teachers.map((teacher) => (
-                                        <div key={teacher.id} className="teacher-card">
-                                            {/* Full-bleed image */}
-                                            <div className="teacher-card-img-wrap">
-                                                <img
-                                                    className="teacher-card-img"
-                                                    src={normalizeAvatar(teacher.avatarPath)}
-                                                    alt={teacher.displayName}
-                                                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/avatar/default.svg'; }}
-                                                />
-                                            </div>
-                                            {/* Status badge */}
-                                            <div className={`status-badge ${getStatusBadge(teacher.status).class}`}>
-                                                {getStatusBadge(teacher.status).text}
-                                            </div>
-                                            {/* Bottom band with name/title */}
-                                            <div className="teacher-card-bottom">
-                                                <div className="teacher-card-name">{teacher.displayName}</div>
-                                                <div className="teacher-card-title">{teacher.specialization || 'Chuyên gia TOEIC'}</div>
-                                            </div>
-                                            {/* Hover overlay with details */}
-                                            <div className="teacher-card-overlay">
-                                                <div className="teacher-overlay-content">
-                                                    <div className="overlay-row">🎓 {teacher.qualification || 'Chứng chỉ quốc tế'}</div>
-                                                    <div className="overlay-row">📅 {teacher.experience || calculateYearsOfService(teacher.hireDate)} năm kinh nghiệm</div>
-                                                    <div className="overlay-row">👤 {getGenderText(teacher.gender)}</div>
-                                                    <div className="overlay-row">📍 Bắt đầu: {formatDate(teacher.hireDate)}</div>
-                                                    {/* Đã xoá email và phone overlay-row theo yêu cầu */}
+                                    {teachers.map((teacher, idx) => {
+                                        const avatarPath = normalizeAvatar(teacher.avatarPath) || '/avatar/default.svg';
+                                        const mapKey = teacher.id || teacher.tch_id || teacher.user_id || teacher.userId || `teacher-${idx}`;
+                                        return (
+                                            <div key={mapKey} className="teacher-card">
+                                                {/* Full-bleed image */}
+                                                <div className="teacher-card-img-wrap">
+                                                    <img
+                                                        className="teacher-card-img"
+                                                        src={avatarPath}
+                                                        alt={teacher.displayName || 'Giáo viên'}
+                                                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/avatar/default.svg'; }}
+                                                    />
+                                                </div>
+
+                                                {/* Status badge */}
+                                                <div className={`status-badge ${getStatusBadge(teacher.status).class}`}>
+                                                    {getStatusBadge(teacher.status).text}
+                                                </div>
+
+                                                {/* Bottom band with name/title */}
+                                                <div className="teacher-card-bottom">
+                                                    <div className="teacher-card-name">{teacher.displayName}</div>
+                                                    <div className="teacher-card-title">{teacher.specialization || 'Chuyên gia TOEIC'}</div>
+                                                </div>
+
+                                                {/* Hover overlay with details */}
+                                                <div className="teacher-card-overlay">
+                                                    <div className="teacher-overlay-content">
+                                                        <div className="overlay-row">🎓 {teacher.qualification || 'Chứng chỉ quốc tế'}</div>
+                                                        <div className="overlay-row">📅 {teacher.experience || calculateYearsOfService(teacher.hireDate)} năm kinh nghiệm</div>
+                                                        <div className="overlay-row">👤 {getGenderText(teacher.gender)}</div>
+                                                        <div className="overlay-row">📍 Bắt đầu: {formatDate(teacher.hireDate)}</div>
+                                                        {/* Đã xoá email và phone overlay-row theo yêu cầu */}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
