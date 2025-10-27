@@ -17,7 +17,6 @@ function StudentForm() {
 
   const prefill = location.state?.prefill || {};
 
-  console.log('Prefill data:', prefill);
 
   const [formData, setFormData] = useState(() => ({
     start_level: prefill.start_level || '',
@@ -27,8 +26,6 @@ function StudentForm() {
     course: prefill.course || '',
     birthday: prefill.birthday || '',
     gender: prefill.gender || 'male',
-    address: prefill.address || '',     // <-- thêm default
-    status: 'active',
     password: '',
     confirmPassword: ''
   }));
@@ -109,9 +106,6 @@ function StudentForm() {
       }
     }
 
-    if (!(formData.address || '').trim()) {
-      newErrors.address = 'Vui lòng nhập địa chỉ';
-    }
 
     // Only validate passwords in create mode or if provided in edit mode
     if (!isEditMode || formData.password) {
@@ -133,11 +127,16 @@ function StudentForm() {
   };
 
   const handleSubmit = async (e) => {
+    console.log('Submitting form with data:', formData);
     e.preventDefault();
-    if (!validate()) return;
+    if (!validate()) {
+      console.log('Validation failed:', errors);
+      return;
+    }
 
     setSaving(true);
     try {
+      console.log('Form data to submit:', formData);
       // chuyển dữ liệu form sang format API
       const payload = mapStudentToApi(formData);
       console.log('Payload:', payload);
@@ -146,7 +145,8 @@ function StudentForm() {
         //await updateStudent(id, payload);
         message.success('Cập nhật học viên thành công');
       } else {
-        //await createStudent(payload);
+        await createStudent(payload);
+        
         message.success('Tạo học viên thành công');
       }
 
@@ -158,6 +158,7 @@ function StudentForm() {
       setSaving(false);
     }
   };
+  console.log(isEditMode ? 'Edit mode' : 'Create mode');
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -299,6 +300,49 @@ function StudentForm() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Account info section */}
+                  <div className="form-section">
+                    <h3 className="section-title">Thông tin tài khoản</h3>
+                    <div className="row">
+                      <div className="col-md-6 mb-3">
+                        <div className="form-group">
+                          <label htmlFor="password" className="form-label">
+                            Mật khẩu {isEditMode ? <small className="muted"> (để trống nếu không đổi)</small> : <span className="required">*</span>}
+                          </label>
+                          <input
+                            type="password"
+                            className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                            id="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            placeholder={isEditMode ? 'Để trống nếu không muốn thay đổi mật khẩu' : ''}
+                          />
+                          {errors.password && <div className="form-error">{errors.password}</div>}
+                        </div>
+                      </div>
+
+                      <div className="col-md-6 mb-3">
+                        <div className="form-group">
+                          <label htmlFor="confirmPassword" className="form-label">Xác nhận mật khẩu {isEditMode ? null : <span className="required">*</span>}</label>
+                          <input
+                            type="password"
+                            className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            placeholder={isEditMode ? 'Để trống nếu không muốn thay đổi mật khẩu' : ''}
+                          />
+                          {errors.confirmPassword && <div className="form-error">{errors.confirmPassword}</div>}
+                        </div>
+                      </div>
+
+                     
+                    </div>
+                  </div>
+                  {/* end account info section */}
 
                   <div className="form-actions">
                     <button type="submit" className="btn btn-primary" disabled={saving}>

@@ -5,7 +5,7 @@ from flask_mail import Message
 from app.config import mail
 
 
-def generate_email_verification_token(user_id,data):
+def generate_email_verification_token(user_id, data):
     """
     Tạo JWT token cho xác minh email (stateless)
 
@@ -17,7 +17,7 @@ def generate_email_verification_token(user_id,data):
     """
     payload = {
         "user_id": user_id,
-        "purpose": "email_verification",  # Mục đích sử dụng 
+        "purpose": "email_verification",  # Mục đích sử dụng
         "data": data,
         "iat": datetime.utcnow(),  # Thời điểm tạo
         "exp": datetime.utcnow() + timedelta(hours=24),  # Hết hạn sau 24h
@@ -55,6 +55,36 @@ def verify_email_token(token):
     except jwt.InvalidTokenError:
         # Token không hợp lệ
         return None
+
+
+def send_password_to_student(to_email, student_name, password):
+    """
+    Gửi email chứa mật khẩu cho học viên mới đăng ký.
+
+    Args:
+        to_email (str): Email của học viên.
+        student_name (str): Tên học viên.
+        password (str): Mật khẩu cần gửi.
+    """
+    from flask import current_app
+
+    subject = "Thông tin tài khoản LMS của bạn"
+    html_content = f"""
+        <h2>Chào {student_name},</h2>
+        <p>Bạn đã được đăng ký tài khoản trên hệ thống LMS.</p>
+        <p><strong>Tài khoản đăng nhập:</strong> {to_email}</p>
+        <p><strong>Mật khẩu:</strong> {password}</p>
+        <p>Vui lòng đăng nhập và đổi mật khẩu sau khi đăng nhập lần đầu.</p>
+        <p>Nếu bạn không yêu cầu đăng ký này, vui lòng bỏ qua email này.</p>
+    """
+
+    msg = Message(
+        subject=subject,
+        recipients=[to_email],
+        html=html_content,
+    )
+
+    mail.send(msg)
 
 
 def send_verification_email(to_email, token):

@@ -16,12 +16,18 @@ const ConfirmRegistration = ({
     const [selectedOption, setSelectedOption] = useState('current');
     // Lấy thông tin khóa học chính
     useEffect(() => {
+
         if (!isOpen || !courseId) return;
+        const fetchCourse = async () => {
+            const courseData = await getCourseById(courseId);
+            setCourse(courseData);
+        }
         const fetchData = async () => {
             setPreCourses(preCourse || []);
             setSelectedOption('current');
         };
         fetchData();
+        fetchCourse();
         setSelectedOption('current');
     }, [isOpen, courseId]);
     if (!isOpen) return null;

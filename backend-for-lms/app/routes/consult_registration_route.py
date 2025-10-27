@@ -93,6 +93,7 @@ def verify_consultation_email(token):
 
 @consult_registration_bp.route("/", methods=["GET"])
 @jwt_required()
+@admin_required
 def get_all_consultation_registrations():
     """
     Lấy danh sách tất cả đăng ký tư vấn (có phân trang và filter)
@@ -269,12 +270,15 @@ def get_consultation_statistics():
 
 @consult_registration_bp.route("/count", methods=["GET"])
 @jwt_required()
+@admin_required
 def get_consult_registration_count():
     count = ConsultRegistration.query.count()
     return jsonify({"success": True, "count": count})
 
 
 @consult_registration_bp.route("/all", methods=["GET"])
+@jwt_required()
+@admin_required
 def get_all_registrations():
     """
     Trả về toàn bộ đăng ký tư vấn (không phân trang).

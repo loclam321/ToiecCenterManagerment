@@ -100,11 +100,11 @@ function AuthPage() {
       const role = (localStorage.getItem('role') || '').toLowerCase();
       setTimeout(() => {
         if (role === 'admin') {
-          navigate('/admin');
+          navigate('/');
         } else if (role === 'teacher') {
-          navigate('/teachers');
+          navigate('/');
         } else if (role === 'student') {
-          navigate('/student');
+          navigate('/');
         } else {
           navigate('/');
         }
