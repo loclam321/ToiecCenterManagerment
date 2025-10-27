@@ -29,27 +29,52 @@ class AuthService:
             Dict với access_token, user_info và role nếu thành công,
             Dict với error nếu thất bại
         """
-        # Kiểm tra admin (hardcoded)
-        admin_email = "admin@lms.com"
-        admin_password = "Admin@123"
+        # Kiểm tra admin (cấu hình trong app config hoặc fallback)
+        # Lưu admin credentials trong cấu hình để không hard-code trong source
+        cfg_admin_email = current_app.config.get("ADMIN_EMAIL", "admin@lms.com")
+        cfg_admin_password = current_app.config.get("ADMIN_PASSWORD")
+        cfg_admin_password_hash = current_app.config.get("ADMIN_PASSWORD_HASH")
 
-        if email == admin_email and password == admin_password:
+        # Prefer hashed admin password comparison if provided in config
+        if email == cfg_admin_email:
+            if cfg_admin_password_hash:
+                # Use secure hash comparison
+                try:
+                    if check_password_hash(cfg_admin_password_hash, password):
+                        access_token = self._create_token("ADMIN001", "admin")
+                        return {
+                            "success": True,
+                            "access_token": access_token,
+                            "user": {
+                                "user_id": "ADMIN001",
+                                "user_email": cfg_admin_email,
+                                "user_full_name": "System Administrator",
+                                "is_active": True,
+                                "created_at": datetime.datetime.now().isoformat(),
+                                "role": "admin",
+                            },
+                            "role": "admin",
+                        }
+                except Exception:
+                    # If hash check raises, fall back to direct compare below
+                    pass
+            # Fallback to plain-text comparison only if ADMIN_PASSWORD is set (not recommended)
+            if cfg_admin_password and password == cfg_admin_password:
             # Tạo token với role admin
-            access_token = self._create_token("ADMIN001", "admin")
-            # Trả về thông tin admin
-            return {
-                "success": True,
-                "access_token": access_token,
-                "user": {
-                    "user_id": "ADMIN001",
-                    "user_email": admin_email,
-                    "user_full_name": "System Administrator",
-                    "is_active": True,
-                    "created_at": datetime.datetime.now().isoformat(),
+                access_token = self._create_token("ADMIN001", "admin")
+                return {
+                    "success": True,
+                    "access_token": access_token,
+                    "user": {
+                        "user_id": "ADMIN001",
+                        "user_email": cfg_admin_email,
+                        "user_full_name": "System Administrator",
+                        "is_active": True,
+                        "created_at": datetime.datetime.now().isoformat(),
+                        "role": "admin",
+                    },
                     "role": "admin",
-                },
-                "role": "admin",
-            }
+                }
 
         # Kiểm tra teacher
         teacher = self.db.session.query(Teacher).filter_by(user_email=email).first()

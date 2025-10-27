@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentUser, logout } from '../../services/authService';
+import { getCurrentUser, logout, isAdmin } from '../../services/authService';
 import './css/UserMenu.css';
 
 function UserMenu() {
@@ -92,13 +92,23 @@ function UserMenu() {
           <ul className="dropdown-menu-list">
             <li>
               <button onClick={() => {
-                const user = getCurrentUser();
-                const role = (user?.role || localStorage.getItem('role') || '').toString().toLowerCase();
                 // Close menu then navigate to base section per role
                 setIsOpen(false);
+                try {
+                  if (isAdmin()) {
+                    // Admin users -> admin dashboard
+                    navigate('/admin');
+                    return;
+                  }
+                } catch (e) {
+                  // fall back to role string if helper fails
+                }
+
+                const user = getCurrentUser();
+                const role = (user?.role || localStorage.getItem('role') || '').toString().toLowerCase();
                 if (role === 'student') {
                   navigate('/student');
-                } else if (role === 'teacher' || role === 'admin') {
+                } else if (role === 'teacher') {
                   navigate('/teachers');
                 } else {
                   navigate('/dashboard');

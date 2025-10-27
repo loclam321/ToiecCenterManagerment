@@ -21,6 +21,17 @@ export const getToken = () => {
 };
 
 /**
+ * Kiểm tra xem tài khoản hiện tại có phải admin không
+ * @returns {boolean}
+ */
+export const isAdmin = () => {
+  const role = (localStorage.getItem('role') || '').toString().trim().toLowerCase();
+  if (role === 'admin') return true;
+  const user = getCurrentUser();
+  return !!(user && (user.role || user.user_role || '').toString().toLowerCase() === 'admin');
+};
+
+/**
  * Xóa thông tin xác thực người dùng (logout)
  */
 export const logout = () => {
@@ -63,7 +74,6 @@ export const registerStudent = async (formData) => {
     sd_startlv: formData.startLevel || "BEGINNER" // Giá trị mặc định nếu không có
   };
   
-  console.log('Sending registration data:', registerData);
   
   try {
     const response = await fetch(`${API_BASE_URL}/auth/register/student`, {
@@ -74,8 +84,7 @@ export const registerStudent = async (formData) => {
       body: JSON.stringify(registerData)
     });
     
-    const data = await response.json();
-    console.log('Registration API response:', data);
+  const data = await response.json();
     
     if (!response.ok) {
       // Trích xuất thông báo lỗi chi tiết từ phản hồi API
@@ -119,7 +128,7 @@ export const loginUser = async (formData) => {
     });
     
     const data = await response.json();
-    console.log('Login API response:', data);
+  // Do not log sensitive authentication responses in console
     
     if (!response.ok) {
       const errorMsg = data.message || 'Đăng nhập thất bại';
