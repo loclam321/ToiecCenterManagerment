@@ -105,19 +105,15 @@ class StudentService:
                         "success": False,
                         "error": "Invalid date format for birthday (use YYYY-MM-DD)",
                     }
+                    
+                    
+            password = data.pop("user_password", None)  # Lấy password ra
+            if not password:
+                return {"success": False, "error": "Password is required"}
 
             # ✅ CÁCH 2: Tạo object trực tiếp (bớt 10 dòng code)
-            student = Student(
-                user_id=new_id,
-                user_name=data["user_name"],
-                user_email=data["user_email"],
-                user_gender=data.get("user_gender"),
-                user_birthday=data.get("user_birthday"),
-                user_telephone=data.get("user_telephone"),
-                sd_startlv=data.get("sd_startlv", ""),
-                sd_enrollmenttdate=data.get("sd_enrollmenttdate", date.today()),
-                is_email_verified=data.get("is_email_verified", False),
-            )
+            student = Student(user_id=new_id, **data)
+            student.set_password(password)  # Thiết lập mật khẩu sau
 
             self.db.session.add(student)
             self.db.session.commit()

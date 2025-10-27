@@ -341,16 +341,31 @@ export const mapStudentFromApi = (apiStudent) => {
  * @param {Object} studentData - Dữ liệu học viên từ form frontend
  */
 export const mapStudentToApi = (studentData) => {
-  return {
-    user_name: studentData.name,
-    user_email: studentData.email,
-    user_telephone: studentData.phone,
-    user_birthday: studentData.birthday,
-    user_gender: studentData.gender === 'male' ? 'M' : 
-                 studentData.gender === 'female' ? 'F' : 'O',
-    sd_startlv: studentData.startLevel || '',
-    sd_enrollmenttdate: studentData.enrollmentDate || null, 
-    is_email_verified: true,
-    // Không gửi user_id vì sẽ được tạo bởi backend
+  // Build payload using both frontend form keys and possible already-mapped keys
+  const payload = {
+    user_name: studentData.name ?? studentData.user_name ?? '',
+    user_email: studentData.email ?? studentData.user_email ?? '',
+    user_telephone: studentData.phone ?? studentData.user_telephone ?? '',
+    // map gender to API enum if provided
+    user_gender:
+      studentData.gender === 'male' ? 'M' :
+      studentData.gender === 'female' ? 'F' :
+      (studentData.user_gender ?? undefined),
+    // optional fields
+    user_birthday: studentData.birthday ?? studentData.user_birthday ?? undefined,
+    // include password only if provided (create use-case)
+    user_password: studentData.password ?? studentData.user_password ?? undefined,
+    // student-specific fields
+    sd_startlv: studentData.startLevel ?? studentData.sd_startlv ?? undefined,
+    sd_enrollmenttdate: studentData.enrollmentDate ?? studentData.sd_enrollmenttdate ?? undefined,
+    // verification flag: prefer explicit value, default to true if not provided
+    is_email_verified: (studentData.isEmailVerified ?? studentData.is_email_verified) ?? true
   };
+
+  // Remove keys with undefined so backend doesn't receive undefined values
+  Object.keys(payload).forEach((k) => {
+    if (payload[k] === undefined) delete payload[k];
+  });
+
+  return payload;
 };
