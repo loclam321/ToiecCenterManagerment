@@ -281,16 +281,33 @@ export function mapTeacherFromApi(api) {
     confirmPassword: ''
   };
 
+  // Helper to normalize gender and compute a frontend-friendly object
+  const gender = api.user_gender === 'M' ? 'male' : api.user_gender === 'F' ? 'female' : 'other';
+
+  // Compute display name and id
+  const id = api.user_id ?? api.tch_id ?? api.id ?? null;
+  const displayName = api.user_name ?? api.user_fullname ?? '';
+
+  // avatar path from backend is already normalized by teacher_model._avatar_web_path()
+  const avatarPath = api.tch_avtlink ?? null;
+
   return {
-    name: api.user_name ?? '',
-    email: api.user_email ?? '',
-    phone: api.user_telephone ?? '',
-    birthday: api.user_birthday ?? '',
-    gender: api.user_gender === 'M' ? 'male' : api.user_gender === 'F' ? 'female' : 'other',
+    // Frontend-friendly fields used by components
+    id,
+    displayName,
+    avatarPath,
     specialization: api.tch_specialization ?? '',
     qualification: api.tch_qualification ?? '',
     hireDate: api.tch_hire_date ?? '',
+    // keep original api field for forms/backwards compatibility
     tch_avtlink: api.tch_avtlink ?? null,
+    // normalized gender for UI
+    gender,
+    // status if backend provides it
+    status: api.tch_status ?? 'active',
+    // contact fields
+    user_email: api.user_email ?? '',
+    user_telephone: api.user_telephone ?? '',
     // don't map created_at/updated_at into editable fields
     password: '',
     confirmPassword: ''

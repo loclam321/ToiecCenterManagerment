@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getStudentTestResults } from '../../services/testService';
 import './StudentTestResults.css';
 
@@ -7,27 +7,56 @@ function StudentTestResults({ student, classId, onClose }) {
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
 
+  const modalRef = useRef(null);
+
   useEffect(() => {
+    const controller = new AbortController();
     let mounted = true;
+
     (async () => {
       if (!student?.user_id || !classId) return;
       try {
         setLoading(true);
         setError('');
-        const result = await getStudentTestResults(classId, student.user_id);
+        const result = await getStudentTestResults(classId, student.user_id, controller.signal);
         if (!mounted) return;
         setData(result);
       } catch (err) {
         if (!mounted) return;
+        if (err.name === 'AbortError') {
+          // fetch aborted; silently ignore
+          return;
+        }
         setError(err.message || 'Không thể tải kết quả bài kiểm tra');
       } finally {
         if (mounted) setLoading(false);
       }
     })();
+
+    // focus management: move focus into modal and restore on cleanup
+    const previousActive = document.activeElement;
+    setTimeout(() => {
+      try {
+        if (modalRef.current) modalRef.current.focus();
+      } catch (e) {
+        // ignore
+      }
+    }, 0);
+
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+
     return () => {
       mounted = false;
+      controller.abort();
+      window.removeEventListener('keydown', onKey);
+      try {
+        if (previousActive && previousActive.focus) previousActive.focus();
+      } catch (e) {}
     };
-  }, [student?.user_id, classId]);
+  }, [student?.user_id, classId, onClose]);
 
   const formatScore10 = (score) => {
     if (score === null || score === undefined) return '-';
@@ -44,7 +73,14 @@ function StudentTestResults({ student, classId, onClose }) {
 
   return (
     <div className="student-test-results-backdrop" onClick={onClose}>
-      <div className="student-test-results-modal card shadow-lg" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="student-test-results-modal card shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
+        ref={modalRef}
+      >
         <div className="card-header d-flex justify-content-between align-items-center">
           <div>
             <h5 className="mb-1">Kết quả bài kiểm tra</h5>

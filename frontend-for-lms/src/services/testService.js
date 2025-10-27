@@ -70,9 +70,9 @@ export const getTestAttempts = async (testId, userId) => {
   return data.data || { attempts: [], best_score: null, count: 0 };
 };
 
-export const getStudentTestResults = async (classId, userId) => {
+export const getStudentTestResults = async (classId, userId, signal = undefined) => {
   const url = `${BASE_URL}/class/${encodeURIComponent(classId)}/student-results?user_id=${encodeURIComponent(userId)}`;
-  const res = await fetch(url, { headers: getHeaders() });
+  const res = await fetch(url, { headers: getHeaders(), signal });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || 'Không thể tải kết quả bài kiểm tra');
   return data.data || { tests: [], total_tests: 0, student_info: {} };
