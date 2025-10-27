@@ -173,13 +173,7 @@ function CourseManagement() {
                             variant: 'primary',
                             onClick: () => window.location.href = '/admin/courses/add'
                         },
-                        {
-                            type: 'button',
-                            text: 'Xuất Excel',
-                            icon: 'bi bi-file-earmark-excel',
-                            variant: 'success',
-                            onClick: () => toast.info('Chức năng xuất Excel')
-                        }
+                 
                     ]}
                 />
 

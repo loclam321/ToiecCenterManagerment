@@ -34,16 +34,7 @@ const defaultMenuItems = [
         icon: 'bi bi-person-workspace',
         label: 'Giáo viên'
     },
-    {
-        path: '/admin/downloads',
-        icon: 'bi bi-file-earmark-text',
-        label: 'Tài liệu'
-    },
-    {
-        path: '/admin/settings',
-        icon: 'bi bi-gear',
-        label: 'Cài đặt'
-    }
+
 ];
 
 function AdminSidebar({

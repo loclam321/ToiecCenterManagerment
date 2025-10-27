@@ -116,18 +116,20 @@ function TeacherManagement() {
           title="Quản lý giáo viên"
           notificationCount={3}
           onNotificationClick={() => console.log('Notifications')}
+          actions={[
+            {
+              type: 'button',
+              text: 'Thêm giáo viên',
+              icon: 'bi bi-plus-circle',
+              variant: 'primary',
+              onClick: () => window.location.href = '/admin/teachers/add'
+            },
+          ]}
+
         />
 
         <div className="admin-content">
           <div className="teacher-management">
-            <div className="content-header">
-              <h1 className="page-title">Danh sách giáo viên</h1>
-              <Link to="/admin/teachers/add" className="btn-primary">
-                <i className="bi bi-plus-lg"></i>
-                <span>Thêm giáo viên mới</span>
-              </Link>
-            </div>
-
             <div className="content-filters">
               <TeacherFilters
                 filters={filters}
