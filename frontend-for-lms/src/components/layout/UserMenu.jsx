@@ -91,9 +91,21 @@ function UserMenu() {
           
           <ul className="dropdown-menu-list">
             <li>
-              <button onClick={() => navigate('/dashboard')}>
+              <button onClick={() => {
+                const user = getCurrentUser();
+                const role = (user?.role || localStorage.getItem('role') || '').toString().toLowerCase();
+                // Close menu then navigate to base section per role
+                setIsOpen(false);
+                if (role === 'student') {
+                  navigate('/student');
+                } else if (role === 'teacher' || role === 'admin') {
+                  navigate('/teachers');
+                } else {
+                  navigate('/dashboard');
+                }
+              }}>
                 <i className="bi bi-speedometer2"></i>
-                Tổng quan
+                Tổng quan 
               </button>
             </li>
             <li>
