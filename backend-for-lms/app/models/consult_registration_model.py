@@ -17,6 +17,7 @@ class ConsultRegistration(db.Model):
         cr_gender: Giới tính (M/F)
         created_at: Thời gian tạo
         updated_at: Thời gian cập nhật
+        cr_status: Trạng thái đăng ký tư vấn (pending/approved/rejected)
     """
 
     __tablename__ = "consult_registration"
@@ -67,7 +68,12 @@ class ConsultRegistration(db.Model):
         db.Enum("300–450", "450–600", "600–750", "750–900", name="student_levels"),
         nullable=True
     )  
-    
+    cr_status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="pending",
+        comment="Trạng thái đăng ký tư vấn (pending/approved/rejected)",
+    )
 
     # Timestamps
     created_at = db.Column(
@@ -113,6 +119,7 @@ class ConsultRegistration(db.Model):
             "cr_email": self.cr_email,
             "cr_gender": self.cr_gender,
             "cr_startlv": self.cr_startlv,
+            "cr_status": self.cr_status,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -152,5 +159,5 @@ class ConsultRegistration(db.Model):
         if phone and not re.match(r"^\d{10,15}$", phone):
             raise ValueError("Phone must be 10-15 digits")
         return phone
-    
-    
+
+
