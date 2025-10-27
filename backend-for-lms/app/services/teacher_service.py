@@ -12,18 +12,20 @@ class TeacherService:
         self.db = database or db
 
     # --------- READ ----------
-    def get_all(self) -> List[Teacher]:
-        """Lấy tất cả teachers"""
+    def get_all(self) -> List[Dict[str, Any]]:
+        """Lấy tất cả teachers (trả về list dict)"""
         try:
-            return self.db.session.query(Teacher).all()
+            teachers = self.db.session.query(Teacher).all()
+            return [t.to_dict() for t in teachers]
         except Exception as e:
             print(f"Lỗi khi lấy danh sách teachers: {str(e)}")
             return []
 
-    def get_by_id(self, user_id: str) -> Optional[Teacher]:
-        """Lấy teacher theo ID"""
+    def get_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Lấy teacher theo ID (trả về dict hoặc None)"""
         try:
-            return self.db.session.query(Teacher).filter(Teacher.user_id == user_id).first()
+            teacher = self.db.session.query(Teacher).filter(Teacher.user_id == user_id).first()
+            return teacher
         except Exception as e:
             print(f"Lỗi khi lấy teacher theo ID: {str(e)}")
             return None
@@ -34,9 +36,7 @@ class TeacherService:
             query = self.db.session.query(Teacher)
             total = query.count()
             teachers = query.offset(offset).limit(limit).all()
-            
             data = [teacher.to_dict() for teacher in teachers]
-            
             return {
                 "data": data,
                 "total": total
@@ -45,25 +45,26 @@ class TeacherService:
             print(f"Lỗi khi lấy teachers phân trang: {str(e)}")
             return {"data": [], "total": 0}
 
-    def search(self, keyword: str) -> List[Teacher]:
-        """Tìm kiếm teachers theo từ khóa"""
+    def search(self, keyword: str) -> List[Dict[str, Any]]:
+        """Tìm kiếm teachers theo từ khóa (trả về list dict)"""
         try:
             keyword = f"%{keyword}%"
-            return self.db.session.query(Teacher).filter(
+            teachers = self.db.session.query(Teacher).filter(
                 Teacher.user_name.ilike(keyword) |
                 Teacher.user_email.ilike(keyword) |
                 Teacher.tch_specialization.ilike(keyword)
             ).all()
+            return [t.to_dict() for t in teachers]
         except Exception as e:
             print(f"Lỗi khi tìm kiếm teachers: {str(e)}")
             return []
 
-    def get_senior_teachers(self) -> List[Teacher]:
+    def get_senior_teachers(self) -> List[Dict[str, Any]]:
         """Lấy danh sách giáo viên thâm niên (> 5 năm)"""
         try:
             teachers = self.db.session.query(Teacher).all()
-            senior_teachers = [teacher for teacher in teachers if teacher.is_senior_teacher()]
-            return senior_teachers
+            senior_teachers = [t for t in teachers if t.is_senior_teacher()]
+            return [t.to_dict() for t in senior_teachers]
         except Exception as e:
             print(f"Lỗi khi lấy giáo viên thâm niên: {str(e)}")
             return []
@@ -73,27 +74,26 @@ class TeacherService:
         try:
             total_teachers = self.db.session.query(Teacher).count()
             senior_teachers = len(self.get_senior_teachers())
-            
+            junior_teachers = total_teachers - senior_teachers
+
             # Thống kê theo giới tính
             gender_stats = self.db.session.query(
                 Teacher.user_gender,
                 self.db.func.count(Teacher.user_id)
             ).group_by(Teacher.user_gender).all()
-            
             gender_data = {gender: count for gender, count in gender_stats if gender}
-            
+
             # Thống kê theo chuyên môn
             specialization_stats = self.db.session.query(
                 Teacher.tch_specialization,
                 self.db.func.count(Teacher.user_id)
             ).group_by(Teacher.tch_specialization).all()
-            
             specialization_data = {spec: count for spec, count in specialization_stats if spec}
-            
+
             return {
                 "total_teachers": total_teachers,
                 "senior_teachers": senior_teachers,
-                "junior_teachers": total_teachers - senior_teachers,
+                "junior_teachers": junior_teachers,
                 "gender_distribution": gender_data,
                 "specialization_distribution": specialization_data
             }
@@ -108,12 +108,12 @@ class TeacherService:
             }
 
     # --------- CREATE ----------
-    def create(self, data: Dict[str, Any]) -> Optional[Teacher]:
-        """Tạo teacher mới"""
+    def create(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Tạo teacher mới, trả về dict hoặc None"""
         try:
             # Tạo user_id tự động
             user_id = self._generate_user_id()
-            
+
             teacher = Teacher(
                 user_id=user_id,
                 user_name=data.get('user_name'),
@@ -126,15 +126,15 @@ class TeacherService:
                 tch_hire_date=datetime.strptime(data['tch_hire_date'], '%Y-%m-%d').date() if data.get('tch_hire_date') else None,
                 tch_avtlink=data.get('tch_avtlink')
             )
-            
+
             # Set password nếu có
             if data.get('user_password'):
                 teacher.set_password(data['user_password'])
-            
+
             self.db.session.add(teacher)
             self.db.session.commit()
-            
-            return teacher
+
+            return teacher.to_dict()
         except IntegrityError as e:
             self.db.session.rollback()
             print(f"Lỗi integrity khi tạo teacher: {str(e)}")
@@ -145,13 +145,13 @@ class TeacherService:
             return None
 
     # --------- UPDATE ----------
-    def update(self, user_id: str, data: Dict[str, Any]) -> Optional[Teacher]:
-        """Cập nhật teacher"""
+    def update(self, user_id: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Cập nhật teacher, trả về dict hoặc None"""
         try:
-            teacher = self.get_by_id(user_id)
+            teacher = self.db.session.query(Teacher).filter(Teacher.user_id == user_id).first()
             if not teacher:
                 return None
-            
+
             # Cập nhật các trường
             if 'user_name' in data:
                 teacher.user_name = data['user_name']
@@ -173,9 +173,9 @@ class TeacherService:
                 teacher.tch_avtlink = data['tch_avtlink']
             if 'user_password' in data and data['user_password']:
                 teacher.set_password(data['user_password'])
-            
+
             self.db.session.commit()
-            return teacher
+            return teacher.to_dict()
         except Exception as e:
             self.db.session.rollback()
             print(f"Lỗi khi cập nhật teacher: {str(e)}")
@@ -185,10 +185,10 @@ class TeacherService:
     def delete(self, user_id: str) -> bool:
         """Xóa teacher"""
         try:
-            teacher = self.get_by_id(user_id)
+            teacher = self.db.session.query(Teacher).filter(Teacher.user_id == user_id).first()
             if not teacher:
                 return False
-            
+
             self.db.session.delete(teacher)
             self.db.session.commit()
             return True
@@ -200,16 +200,11 @@ class TeacherService:
     # --------- HELPER METHODS ----------
     def _generate_user_id(self) -> str:
         """Tạo user_id tự động"""
-        # Tìm user_id lớn nhất hiện tại
         max_id = self.db.session.query(self.db.func.max(Teacher.user_id)).scalar()
-        
         if max_id:
-            # Tăng số cuối cùng
             try:
                 number = int(max_id[2:])  # Bỏ "TC" ở đầu
                 return f"TC{number + 1:06d}"
             except ValueError:
                 pass
-        
-        # Nếu không có hoặc lỗi, bắt đầu từ TC000001
         return "TC000001"

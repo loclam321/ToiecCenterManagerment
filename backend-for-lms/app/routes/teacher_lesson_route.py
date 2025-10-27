@@ -102,9 +102,10 @@ def teacher_upload_media():
     auth = _ensure_teacher_role()
     if auth is None:
         return error_response(message="Permission denied", status_code=403)
-
+    
     media_type = request.args.get("type", "")
     file_storage = request.files.get("file")
+    print(f"Uploading media file: {file_storage.filename} as {media_type}")
 
     result = lesson_service.upload_media_file(media_type, file_storage)
     if result.get("success"):

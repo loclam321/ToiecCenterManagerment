@@ -5,6 +5,8 @@ import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import { createTeacher, updateTeacher, getTeacherById, mapTeacherFromApi, mapTeacherToApi } from '../../services/teacherService';
 import { toast } from 'react-toastify';
 import './css/TeacherForm.css';
+import { uploadTeacherMedia } from '../../services/teacherLessonService';
+import { mapStudentToApi } from '../../services/studentService';
 
 function TeacherForm() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -23,7 +25,10 @@ function TeacherForm() {
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
-  
+  // upload avatar states
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
+
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
@@ -58,7 +63,7 @@ function TeacherForm() {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -70,39 +75,39 @@ function TeacherForm() {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!teacher.name.trim()) {
       newErrors.name = 'Tên giáo viên không được để trống';
     }
-    
+
     if (!teacher.email.trim()) {
       newErrors.email = 'Email không được để trống';
     } else if (!/\S+@\S+\.\S+/.test(teacher.email)) {
       newErrors.email = 'Email không hợp lệ';
     }
-    
+
     if (!teacher.phone.trim()) {
       newErrors.phone = 'Số điện thoại không được để trống';
     } else if (!/^[0-9+\-\s()]{10,15}$/.test(teacher.phone.replace(/\s/g, ''))) {
       newErrors.phone = 'Số điện thoại không hợp lệ';
     }
-    
+
     if (!teacher.birthday) {
       newErrors.birthday = 'Ngày sinh không được để trống';
     }
-    
+
     if (!teacher.specialization.trim()) {
       newErrors.specialization = 'Chuyên môn không được để trống';
     }
-    
+
     if (!teacher.qualification.trim()) {
       newErrors.qualification = 'Trình độ không được để trống';
     }
-    
+
     if (!teacher.hireDate) {
       newErrors.hireDate = 'Ngày bắt đầu làm việc không được để trống';
     }
-    
+
     // Validate password only for new teacher creation
     if (!isEditing) {
       if (!teacher.password) {
@@ -110,59 +115,184 @@ function TeacherForm() {
       } else if (teacher.password.length < 6) {
         newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
       }
-      
+
       if (!teacher.confirmPassword) {
         newErrors.confirmPassword = 'Xác nhận mật khẩu không được để trống';
       } else if (teacher.password !== teacher.confirmPassword) {
         newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
       }
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const applyPrefill = (data) => {
+    // data is the JSON you provided in the prompt
+    setTeacher(prev => ({
+      ...prev,
+      name: data.user_name || prev.name,
+      email: data.user_email || prev.email,
+      gender: data.user_gender === 'M' ? 'male' : data.user_gender === 'F' ? 'female' : prev.gender,
+      birthday: data.user_birthday || prev.birthday,
+      phone: data.user_telephone || prev.phone,
+      specialization: data.tch_specialization || prev.specialization,
+      qualification: data.tch_qualification || prev.qualification,
+      hireDate: data.tch_hire_date || prev.hireDate,
+      // Only set password if provided (be careful with plain-text passwords)
+      password: data.user_password || prev.password,
+      confirmPassword: data.user_password || prev.confirmPassword
+    }));
+
+    // if API returns an avatar link, use it as preview (no file upload)
+    if (data.tch_avtlink) {
+      setAvatarPreview(data.tch_avtlink);
+      setAvatarFile(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) {
+      console.log('Validation failed:', errors);
       return;
     }
-    
+
     setSaving(true);
     try {
-      const teacherData = mapTeacherToApi(teacher);
-      
-      let result;
-      if (isEditing) {
-        result = await updateTeacher(id, teacherData);
-        toast.success('Cập nhật thông tin giáo viên thành công!');
-      } else {
-        result = await createTeacher(teacherData);
-        toast.success('Thêm giáo viên mới thành công!');
+      const token = localStorage.getItem('token');
+
+      // Upload avatar file first only if user selected one.
+      let avatarUrl = teacher.tch_avtlink ?? null;
+      if (avatarFile) {
+        avatarUrl = await uploadAvatarFile(avatarFile);
+        if (!avatarUrl) {
+          setErrors(prev => ({ ...prev, avatar: 'Upload avatar thất bại' }));
+          toast.error('Upload avatar thất bại');
+          setSaving(false);
+          return;
+        }
+        // update local state for preview / payload
+        setTeacher(prev => ({ ...prev, tch_avtlink: avatarUrl }));
+        setAvatarPreview(avatarUrl);
+        setAvatarFile(null);
+        if (isEditing) {
+          await updateTeacher(id, { tch_avtlink: avatarUrl });
+          toast.success('Đã cập nhật avatar và lưu vào hệ thống');
+        }
       }
-      
+
+      const jsonPayload = {
+        user_name: teacher.name,
+        user_email: teacher.email,
+        user_gender:
+          teacher.gender === 'male' ? 'M' :
+            teacher.gender === 'female' ? 'F' : undefined,
+        user_birthday: teacher.birthday,
+        user_telephone: teacher.phone,
+        tch_specialization: teacher.specialization,
+        tch_qualification: teacher.qualification,
+        tch_hire_date: teacher.hireDate,
+        tch_avtlink: avatarUrl,
+        is_email_verified: true,
+      };
+
+      // include password only when creating a new teacher
+      if (!isEditing && teacher.password) {
+        jsonPayload.user_password = teacher.password;
+      }
+
+      console.log('Prepared JSON payload for submission:', jsonPayload);
+      console.log('Is Editing:', isEditing);
+      // Always send JSON (avatar already uploaded above). Use trailing slash for create to avoid 308.
+      const url = isEditing
+        ? `http://127.0.0.1:5000/api/teachers/${id}`
+        : `http://127.0.0.1:5000/api/teachers/`;
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(jsonPayload)
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.message || 'Lưu giáo viên thất bại');
+      const apiTeacher = json?.data?.teacher ?? json?.data ?? json;
+      const mapped = mapTeacherFromApi(apiTeacher);
+      // ensure controlled inputs stay defined
+      setTeacher({ ...mapped, password: '', confirmPassword: '' });
+
+      // update preview if backend returned avatar link
+      setAvatarPreview(mapped.tch_avtlink ?? '');
+
+      toast.success('Thêm giáo viên thành công');
       navigate('/admin/teachers');
-    } catch (error) {
-      console.error('Error saving teacher:', error);
-      toast.error(isEditing 
-        ? 'Cập nhật thông tin giáo viên thất bại' 
-        : 'Thêm giáo viên mới thất bại'
-      );
-      setErrors({ submit: 'Có lỗi xảy ra khi lưu thông tin giáo viên' });
+    } catch (err) {
+      console.error('Error saving teacher:', err);
+      setErrors(prev => ({ ...prev, submit: err.message || 'Có lỗi xảy ra' }));
+      toast.error(err.message || 'Có lỗi xảy ra');
     } finally {
       setSaving(false);
     }
   };
 
+
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
+  // Hàm upload file avatar, trả về đường dẫn ảnh hoặc null nếu lỗi
+  const uploadAvatarFile = async (file) => {
+    try {
+      // Gọi API uploadTeacherMedia để lấy đường dẫn file
+      const result = await uploadTeacherMedia('avatar', file);
+      // Nếu upload thành công, trả về đường dẫn file
+      if (result && result.path) {
+        console.log('Uploaded avatar path:', result.path);
+        return result.path;
+      }
+      return null;
+    } catch (err) {
+      console.error('Error uploading avatar:', err);
+      return null;
+    }
+  };
+
+  // handle file selection + preview
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setErrors(prev => ({ ...prev, avatar: '' }));
+
+    // Hiển thị preview ngay
+    const reader = new FileReader();
+    reader.onload = () => setAvatarPreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  // Thêm: xóa avatar hiện tại (clear)
+  const handleAvatarRemove = () => {
+    setAvatarFile(null);
+    setAvatarPreview('');
+    setTeacher(prev => ({ ...prev, tch_avtlink: null }));
+  };
+
+  useEffect(() => {
+    // if editing and teacher data has avatar url, set preview
+    if (isEditing && teacher?.avatar_url) {
+      setAvatarPreview(teacher.avatar_url);
+    }
+  }, [isEditing, teacher?.avatar_url]);
+
   return (
     <div className="admin-layout">
       <AdminSidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
-      
+
       <div className={`admin-main ${sidebarCollapsed ? 'expanded' : ''}`}>
         <AdminPageHeader
           title={isEditing ? 'Chỉnh sửa giáo viên' : 'Thêm giáo viên mới'}
@@ -185,17 +315,7 @@ function TeacherForm() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="teacher-form">
-                <div className="form-header">
-                  <h2 className="form-title">
-                    {isEditing ? 'Chỉnh sửa thông tin giáo viên' : 'Thêm giáo viên mới'}
-                  </h2>
-                  <p className="form-description">
-                    {isEditing 
-                      ? 'Cập nhật thông tin chi tiết của giáo viên' 
-                      : 'Điền đầy đủ thông tin để tạo tài khoản giáo viên mới'
-                    }
-                  </p>
-                </div>
+
 
                 {errors.submit && (
                   <div className="alert alert-error">
@@ -207,14 +327,14 @@ function TeacherForm() {
                 <div className="form-grid">
                   <div className="form-section">
                     <h3 className="section-title">Thông tin cá nhân</h3>
-                    
+
                     <div className="form-group">
                       <label htmlFor="name">Họ và tên <span className="required">*</span></label>
                       <input
                         type="text"
                         id="name"
                         name="name"
-                        value={teacher.name}
+                        value={teacher.name ?? ''}
                         onChange={handleInputChange}
                         className={errors.name ? 'error' : ''}
                         placeholder="Nhập họ và tên đầy đủ"
@@ -228,7 +348,7 @@ function TeacherForm() {
                         type="email"
                         id="email"
                         name="email"
-                        value={teacher.email}
+                        value={teacher.email ?? ''}
                         onChange={handleInputChange}
                         className={errors.email ? 'error' : ''}
                         placeholder="example@email.com"
@@ -243,7 +363,7 @@ function TeacherForm() {
                         type="tel"
                         id="phone"
                         name="phone"
-                        value={teacher.phone}
+                        value={teacher.phone ?? ''}
                         onChange={handleInputChange}
                         className={errors.phone ? 'error' : ''}
                         placeholder="0912345678"
@@ -258,7 +378,7 @@ function TeacherForm() {
                           type="date"
                           id="birthday"
                           name="birthday"
-                          value={teacher.birthday}
+                          value={teacher.birthday ?? ''}
                           onChange={handleInputChange}
                           className={errors.birthday ? 'error' : ''}
                         />
@@ -270,7 +390,7 @@ function TeacherForm() {
                         <select
                           id="gender"
                           name="gender"
-                          value={teacher.gender}
+                          value={teacher.gender ?? 'male'}
                           onChange={handleInputChange}
                         >
                           <option value="male">Nam</option>
@@ -289,7 +409,7 @@ function TeacherForm() {
                       <select
                         id="specialization"
                         name="specialization"
-                        value={teacher.specialization}
+                        value={teacher.specialization ?? ''}
                         onChange={handleInputChange}
                         className={errors.specialization ? 'error' : ''}
                       >
@@ -310,7 +430,7 @@ function TeacherForm() {
                         type="text"
                         id="qualification"
                         name="qualification"
-                        value={teacher.qualification}
+                        value={teacher.qualification ?? ''}
                         onChange={handleInputChange}
                         className={errors.qualification ? 'error' : ''}
                         placeholder="Cử nhân, Thạc sĩ..."
@@ -324,7 +444,7 @@ function TeacherForm() {
                         type="date"
                         id="hireDate"
                         name="hireDate"
-                        value={teacher.hireDate}
+                        value={teacher.hireDate ?? ''}
                         onChange={handleInputChange}
                         className={errors.hireDate ? 'error' : ''}
                       />
@@ -332,37 +452,86 @@ function TeacherForm() {
                     </div>
 
                     {!isEditing && (
-                      <div className="form-section">
+                      <div className="form-section account-section">
                         <h3 className="section-title">Thông tin tài khoản</h3>
-                        
-                        <div className="form-group">
-                          <label htmlFor="password">Mật khẩu <span className="required">*</span></label>
-                          <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            value={teacher.password}
-                            onChange={handleInputChange}
-                            className={errors.password ? 'error' : ''}
-                          />
-                          {errors.password && <span className="error-message">{errors.password}</span>}
-                        </div>
-                        
-                        <div className="form-group">
-                          <label htmlFor="confirmPassword">Xác nhận mật khẩu <span className="required">*</span></label>
-                          <input
-                            type="password"
-                            id="confirmPassword"
-                            name="confirmPassword"
-                            value={teacher.confirmPassword}
-                            onChange={handleInputChange}
-                            className={errors.confirmPassword ? 'error' : ''}
-                          />
-                          {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
+                        <div className="account-grid">
+                          <div className="form-group">
+                            <label htmlFor="password">Mật khẩu <span className="required">*</span></label>
+                            <input
+                              type="password"
+                              id="password"
+                              name="password"
+                              value={teacher.password ?? ''}
+                              onChange={handleInputChange}
+                              className={errors.password ? 'error' : ''}
+                            />
+                            {errors.password && <span className="error-message">{errors.password}</span>}
+                          </div>
+
+                          <div className="form-group">
+                            <label htmlFor="confirmPassword">Xác nhận mật khẩu <span className="required">*</span></label>
+                            <input
+                              type="password"
+                              id="confirmPassword"
+                              name="confirmPassword"
+                              value={teacher.confirmPassword ?? ''}
+                              onChange={handleInputChange}
+                              className={errors.confirmPassword ? 'error' : ''}
+                            />
+                            {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
+                          </div>
                         </div>
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Avatar upload UI */}
+                <div className="form-group">
+                  <label>Ảnh đại diện</label>
+                  <div className="avatar-upload modern-avatar-upload">
+                    <div
+                      className="avatar-wrapper"
+                      onClick={() => document.getElementById('avatarInput')?.click()}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('avatarInput')?.click(); }}
+                      aria-label="Chọn ảnh đại diện"
+                    >
+                      {avatarPreview ? (
+                        <img src={avatarPreview} alt="preview" className="avatar-image" />
+                      ) : (
+                        <div className="avatar-placeholder">
+                          <i className="bi bi-person" style={{ fontSize: 28 }}></i>
+                        </div>
+                      )}
+                      <div className="avatar-overlay">
+                        <button type="button" className="avatar-edit-btn" title="Thay ảnh">
+                          <i className="bi bi-pencil"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <input
+                      id="avatarInput"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      style={{ display: 'none' }}
+                    />
+
+                    <div className="avatar-actions">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary avatar-remove-btn"
+                        onClick={handleAvatarRemove}
+                        disabled={!avatarPreview && !avatarFile}
+                      >
+                        <i className="bi bi-trash"></i> Xóa
+                      </button>
+                    </div>
+                  </div>
+                  <small className="muted">Định dạng: JPG, PNG. Kích thước tối đa: 2MB.</small>
                 </div>
 
                 <div className="form-actions">

@@ -79,6 +79,14 @@
   margin-bottom: var(--spacing-lg);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  position: relative; /* bắt buộc để ::after định vị đúng */
+  padding-bottom: 8px; /* đảm bảo khoảng trống tối thiểu dưới title */
+}
+
+/* Remove section-title pseudo-element */
+.section-title::after {
+  display: none !important;
+  content: none !important;
 }
 
 .form-group {

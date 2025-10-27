@@ -1,6 +1,10 @@
+from re import DEBUG
+import app
 from flask import Blueprint, request, jsonify, render_template
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.consultregistraion_service import ConsultRegistrationService
+from app.models.consult_registration_model import ConsultRegistration
+from app.utils.auth_utils import admin_required, teacher_required
 
 consult_registration_bp = Blueprint(
     "consult_registration", __name__, url_prefix="/api/consult-registrations"
@@ -258,6 +262,60 @@ def get_consultation_statistics():
             return jsonify(result), 200
         else:
             return jsonify(result), 400
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@consult_registration_bp.route("/count", methods=["GET"])
+@jwt_required()
+def get_consult_registration_count():
+    count = ConsultRegistration.query.count()
+    return jsonify({"success": True, "count": count})
+
+
+@consult_registration_bp.route("/all", methods=["GET"])
+def get_all_registrations():
+    """
+    Trả về toàn bộ đăng ký tư vấn (không phân trang).
+    Chỉ dành cho admin/consultant/staff.
+    Frontend admin có thể dùng route này để polling số lượng bản ghi.
+    """
+    try:
+
+        # Cho phép client truyền filter giống route phân trang
+        filters = {
+            "course_id": request.args.get("course_id"),
+            "email": request.args.get("email"),
+            "phone": request.args.get("phone"),
+            "gender": request.args.get("gender"),
+            "search": request.args.get("search"),
+            "sort_by": request.args.get("sort_by", "created_at"),
+            "sort_order": request.args.get("sort_order", "desc"),
+            "include_course": request.args.get("include_course", "false").lower()
+            == "true",
+        }
+        filters = {k: v for k, v in filters.items() if v is not None}
+
+        # Gọi service với per_page lớn để lấy toàn bộ bản ghi
+        # Nếu service có method riêng để lấy tất cả, có thể thay bằng method đó
+        result = consult_service.get_all_registrations(
+            page=1, per_page=10**9, filters=filters
+        )
+
+        if not result.get("success"):
+            return jsonify(result), 400
+
+        # Trả về danh sách và tổng (nếu service trả pagination)
+        data = result.get("data")
+        pagination = result.get("pagination", {})
+        total = (
+            pagination.get("total")
+            if pagination
+            else (len(data) if isinstance(data, list) else 0)
+        )
+
+        return jsonify({"success": True, "data": data, "total": total}), 200
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

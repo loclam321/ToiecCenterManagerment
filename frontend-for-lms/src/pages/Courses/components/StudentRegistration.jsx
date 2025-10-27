@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import ConfirmRegistration from './ConfirmRegistration';
 import './StudentRegistration.css';
+import { createConsultRegistration } from '../../../services/consultService';
+import { message } from 'antd';
 
-const StudentRegistration = ({ courseName = '', courseId = '' , preCourse}) => {
+const StudentRegistration = ({ courseName = '', courseId = '', preCourse }) => {
     const [formData, setFormData] = useState({
-        name: '',           // Đổi từ fullName
+        name: '',
         phone: '',
         email: '',
         gender: '',
-        birthday: ''        // Thêm ngày sinh
+        birthday: ''
     });
 
     const [errors, setErrors] = useState({});
@@ -78,42 +80,26 @@ const StudentRegistration = ({ courseName = '', courseId = '' , preCourse}) => {
     const handleConfirmSubmit = async (confirmData) => {
         setShowConfirmModal(false);
         setSubmitting(true);
-
+        setErrors({});
         try {
-            // Map dữ liệu theo format API
             const apiData = {
-                // Thông tin cá nhân
-                user_name: formData.name,
-                user_email: formData.email,
-                user_telephone: formData.phone,
-                user_birthday: formData.birthday,
-                user_gender: formData.gender === 'male' ? 'M' :
-                    formData.gender === 'female' ? 'F' : 'O',
-
-                // Thông tin học viên
-                sd_startlv: confirmData.startLevel || '', // Từ ConfirmRegistration
-                sd_enrollmenttdate: new Date().toISOString().split('T')[0], // Ngày hiện tại
-
-                // Thông tin khóa học
-                courseId: courseId,
-                courseName: courseName,
-
-                // Options từ ConfirmRegistration
-                selectedOption: confirmData.selectedOption,
-                includePreCourse: confirmData.includePreCourse,
-                preCourseId: confirmData.preCourseId || null,
-                preCourseName: confirmData.preCourseName || null
+                course_id: confirmData.course_id,
+                cr_fullname: confirmData.cr_fullname,
+                cr_birthday: confirmData.cr_birthday,
+                cr_phone: confirmData.cr_phone,
+                cr_email: confirmData.cr_email,
+                cr_gender: confirmData.cr_gender,
+                cr_startlv: confirmData.cr_startlv
             };
+            console.log(apiData);
 
-            console.log('📦 Final API Data:', apiData);
-
-            // TODO: Gọi API
-            // await submitRegistration(apiData);
-
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            setSubmitted(true);
-            setTimeout(() => {
+            // Gọi API và lấy response
+            const response = await createConsultRegistration(apiData);
+            console.log(response);
+            // Xử lý response thành công
+            if (response.data.success === true) {
+                message.success("Email xác nhận đã được gửi. Vui lòng kiểm tra email của bạn.");
+                setSubmitted(true);
                 setFormData({
                     name: '',
                     phone: '',
@@ -121,8 +107,13 @@ const StudentRegistration = ({ courseName = '', courseId = '' , preCourse}) => {
                     gender: '',
                     birthday: ''
                 });
-                setSubmitted(false);
-            }, 3000);
+                // Đặt lại submitted về false sau 3 giây để ẩn thông báo thành công
+                setTimeout(() => {
+                    setSubmitted(false);
+                }, 3000);
+            } else {
+                setErrors({ submit: 'Đăng ký không thành công. Vui lòng thử lại.' });
+            }
         } catch (error) {
             setErrors({ submit: 'Có lỗi xảy ra. Vui lòng thử lại sau.' });
         } finally {
@@ -144,8 +135,8 @@ const StudentRegistration = ({ courseName = '', courseId = '' , preCourse}) => {
                                     </svg>
                                 </div>
                             </div>
-                            <h3>Đăng ký thành công!</h3>
-                            <p>Cảm ơn bạn đã đăng ký. Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.</p>
+                            <h3>Đã gửi email xác thực!</h3>
+                            <p>Vui lòng kiểm tra email của bạn để xác thực.</p>
                             <div className="success-decoration">
                                 <span></span>
                                 <span></span>
@@ -246,9 +237,9 @@ const StudentRegistration = ({ courseName = '', courseId = '' , preCourse}) => {
                                     <div className={`input-wrapper select-wrapper ${errors.gender ? 'error' : ''} ${formData.gender ? 'filled' : ''}`}>
                                         <div className="input-icon">
                                             <i className={`bi ${formData.gender === 'male' ? 'bi-gender-male' :
-                                                    formData.gender === 'female' ? 'bi-gender-female' :
-                                                        formData.gender === 'other' ? 'bi-gender-ambiguous' :
-                                                            'bi-person-fill'
+                                                formData.gender === 'female' ? 'bi-gender-female' :
+                                                    formData.gender === 'other' ? 'bi-gender-ambiguous' :
+                                                        'bi-person-fill'
                                                 }`}></i>
                                         </div>
                                         <select
@@ -260,9 +251,9 @@ const StudentRegistration = ({ courseName = '', courseId = '' , preCourse}) => {
                                             className={formData.gender ? 'selected' : ''}
                                         >
                                             <option value="">Chọn giới tính</option>
-                                            <option value="male">Nam</option>
-                                            <option value="female">Nữ</option>
-                                            <option value="other">Khác</option>
+                                            <option value="M">Nam</option>
+                                            <option value="F">Nữ</option>
+                                            <option value="O">Khác</option>
                                         </select>
                                         <div className="select-arrow">
                                             <i className="bi bi-chevron-down"></i>

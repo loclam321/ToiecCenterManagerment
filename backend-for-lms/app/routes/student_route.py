@@ -132,8 +132,7 @@ def get_student_schedules(student_id):
         return error_response(message=f"Error retrieving student schedules: {str(e)}")
 
 @student_bp.route("", methods=["POST"])
-@jwt_required()
-@admin_required  # Chỉ admin mới được tạo học viên qua API này
+
 def create_student():
     """Tạo học viên mới"""
     try:

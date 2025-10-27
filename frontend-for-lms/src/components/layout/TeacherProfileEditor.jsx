@@ -22,10 +22,10 @@ function TeacherProfileEditor() {
       setLoading(true);
       setError('');
       try {
-  const response = await getTeacherById(currentUser?.user_id);
-  const teacher = response.data?.teacher;
-  setProfile(teacher);
-  setForm({ ...teacher });
+        const response = await getTeacherById(currentUser?.user_id);
+        const teacher = response.data?.teacher;
+        setProfile(teacher);
+        setForm({ ...teacher });
       } catch (err) {
         setError('Không thể tải thông tin giáo viên');
       } finally {
@@ -44,9 +44,10 @@ function TeacherProfileEditor() {
     setSuccess('');
     setLoading(true);
     try {
-  await updateTeacher(currentUser?.user_id, form);
+      await updateTeacher(currentUser?.user_id, form);
       setSuccess('Đã cập nhật thông tin thành công');
       setEditing(false);
+
       setProfile({ ...form });
     } catch (err) {
       setError('Cập nhật thất bại');
@@ -54,10 +55,10 @@ function TeacherProfileEditor() {
       setLoading(false);
     }
   };
-
   if (loading) return <div className="teacher-profile-editor card p-4">Đang tải...</div>;
   if (error) return <div className="teacher-profile-editor card p-4 text-danger">{error}</div>;
   if (!profile) return null;
+  console.log('Updated profile:', form);
 
   return (
     <div className="teacher-profile-editor card p-4">
@@ -124,17 +125,17 @@ function TeacherProfileEditor() {
                   setError('');
                   try {
                     // Giả sử có hàm uploadTeacherMedia(mediaType, file) trả về { path }
-                      const result = await uploadTeacherMedia('avatar', file);
-                      // Đường dẫn sẽ là /avatar1/tenfile.png
-                      const newPath = result.path;
-                      setForm((prev) => ({ ...prev, tch_avtlink: newPath }));
-                      // Persist to backend immediately
-                      try {
-                        await updateTeacher(currentUser?.user_id, { tch_avtlink: newPath });
-                        setSuccess('Đã cập nhật avatar và lưu vào hệ thống');
-                      } catch (uErr) {
-                        setError('Upload xong nhưng lưu avatar vào hệ thống thất bại');
-                      }
+                    const result = await uploadTeacherMedia('avatar', file);
+                    // Đường dẫn sẽ là /avatar1/tenfile.png
+                    const newPath = result.path;
+                    setForm((prev) => ({ ...prev, tch_avtlink: newPath }));
+                    // Persist to backend immediately
+                    try {
+                      await updateTeacher(currentUser?.user_id, { tch_avtlink: newPath });
+                      setSuccess('Đã cập nhật avatar và lưu vào hệ thống');
+                    } catch (uErr) {
+                      setError('Upload xong nhưng lưu avatar vào hệ thống thất bại');
+                    }
                   } catch (err) {
                     setError('Upload avatar thất bại');
                   } finally {

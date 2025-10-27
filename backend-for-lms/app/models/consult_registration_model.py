@@ -112,6 +112,7 @@ class ConsultRegistration(db.Model):
             "cr_phone": self.cr_phone,
             "cr_email": self.cr_email,
             "cr_gender": self.cr_gender,
+            "cr_startlv": self.cr_startlv,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
