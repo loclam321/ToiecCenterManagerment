@@ -103,6 +103,11 @@ function AdminPageHeader({
                 </div>
 
                 <div className="header-actions">
+                    {/* Button quay về trang chủ */}
+                    <Link to="/" className="btn btn-outline-secondary action-button" style={{marginRight: 8}}>
+                        <i className="bi bi-house-door"></i> Trang chủ
+                    </Link>
+
                     {/* Hỗ trợ addButtonText & addButtonLink (cách cũ) */}
                     {addButtonText && addButtonLink && (
                         <Link to={addButtonLink} className="btn btn-primary add-button">

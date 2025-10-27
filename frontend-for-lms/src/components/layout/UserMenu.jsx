@@ -57,6 +57,7 @@ function UserMenu() {
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+    console.log('Admin status:', !isAdmin);
   };
 
   const handleLogout = () => {

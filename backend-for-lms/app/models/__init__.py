@@ -40,8 +40,5 @@ __all__ = [
     "Attempt",
     "Room",
     "Schedule",
-    "Word",
-    "StudentWords",
-    "Vocabulary",
     "ConsultRegistration",
 ]

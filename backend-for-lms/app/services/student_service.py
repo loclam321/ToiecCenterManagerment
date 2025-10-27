@@ -8,7 +8,7 @@ from app.models.student_model import Student
 from datetime import datetime, date
 from werkzeug.security import generate_password_hash
 from werkzeug.exceptions import NotFound, BadRequest, Conflict
-from app.utils.email_utils import  generate_email_verification_token, send_verification_email
+from app.utils.email_utils import  generate_email_verification_token, send_verification_email,send_password_to_student
 
 
 class StudentService:
@@ -114,6 +114,12 @@ class StudentService:
             # ✅ CÁCH 2: Tạo object trực tiếp (bớt 10 dòng code)
             student = Student(user_id=new_id, **data)
             student.set_password(password)  # Thiết lập mật khẩu sau
+            
+            send_password_to_student(
+                to_email=student.user_email,
+                student_name=student.user_name,
+                password=password
+            )
 
             self.db.session.add(student)
             self.db.session.commit()

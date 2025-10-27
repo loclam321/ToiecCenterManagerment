@@ -25,8 +25,14 @@ export const getToken = () => {
  * @returns {boolean}
  */
 export const isAdmin = () => {
-  const role = (localStorage.getItem('role') || '').toString().trim().toLowerCase();
-  if (role === 'admin') return true;
+  const role = localStorage.getItem('role');
+  if (role === 'admin') {
+    console.log('Role from localStorage indicates admin',role);
+    return true;
+  }
+  else {
+    console.log('Role from localStorage indicates not admin',role);
+  }
   const user = getCurrentUser();
   return !!(user && (user.role || user.user_role || '').toString().toLowerCase() === 'admin');
 };
