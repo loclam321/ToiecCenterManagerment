@@ -300,6 +300,9 @@ body {
   color: #ffffff;
   z-index: 2;
   padding: 0 2rem;
+  /* constrain hero content width so it doesn't stretch too wide */
+  max-width: 53rem;
+  margin: 0 auto;
   animation: heroFadeIn 1.2s ease-out;
 }
 
@@ -328,7 +331,7 @@ body {
   line-height: 1.6;
   margin-bottom: 2rem;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-  max-width: 700px;
+  max-width: 51rem;
   animation: slideInRight 1s ease-out 0.5s both;
 }
 
@@ -1820,5 +1823,22 @@ html, body {
 
   .footer-cta-buttons {
     padding: 0 20px;
+  }
+}
+
+/* Prevent hero title/subtitle from wrapping on large screens while keeping responsive wrap on small devices */
+@media (min-width: 992px) {
+  .home-hero .hero-content .display-6 {
+    white-space: nowrap; /* force single line */
+    overflow: hidden; /* hide overflow if text too long */
+    text-overflow: ellipsis; /* show ... when clipped */
+    max-width: 100%;
+  }
+
+  .home-hero .hero-content .lead {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 }
