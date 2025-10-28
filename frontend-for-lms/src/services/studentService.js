@@ -356,8 +356,8 @@ export const mapStudentToApi = (studentData) => {
     // include password only if provided (create use-case)
     user_password: studentData.password ?? studentData.user_password ?? undefined,
     // student-specific fields
-    sd_startlv: studentData.startLevel ?? studentData.sd_startlv ?? undefined,
-    sd_enrollmenttdate: studentData.enrollmentDate ?? studentData.sd_enrollmenttdate ?? undefined,
+    sd_startlv: studentData.start_level ?? studentData.sd_startlv ?? undefined,
+    sd_enrollmenttdate: studentData.enrollment_date ?? studentData.sd_enrollmenttdate ?? undefined,
     // verification flag: prefer explicit value, default to true if not provided
     is_email_verified: (studentData.isEmailVerified ?? studentData.is_email_verified) ?? true
   };

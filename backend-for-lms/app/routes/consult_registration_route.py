@@ -272,7 +272,7 @@ def get_consultation_statistics():
 @jwt_required()
 @admin_required
 def get_consult_registration_count():
-    count = ConsultRegistration.query.count()
+    count = ConsultRegistration.query.filter(ConsultRegistration.cr_status == "PENDING").count()
     return jsonify({"success": True, "count": count})
 
 
@@ -320,6 +320,25 @@ def get_all_registrations():
         )
 
         return jsonify({"success": True, "data": data, "total": total}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+@consult_registration_bp.route("/approved/<id>", methods=["POST"])
+@jwt_required()
+@admin_required
+def get_approved_registrations(id):
+    """
+    Lấy danh sách đăng ký tư vấn đã được phê duyệt
+
+    URL: POST /api/consult-registrations/approved
+    """
+    try:
+        result = consult_service.approve_registration(id)
+
+        if result["success"]:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

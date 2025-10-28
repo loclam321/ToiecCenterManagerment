@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import AdminSidebar from '../../components/admin/Adminsidebar';
+import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import './css/StudentForm.css';
 import { message } from 'antd';
-import { createStudent, updateStudent, mapStudentToApi } from '../../services/studentService';
-
+import { createStudent, updateStudent, mapStudentToApi, getStudentById } from '../../services/studentService';
+import { approvedConsultRegistration } from '../../services/consultService';
 function StudentForm() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -43,21 +44,21 @@ function StudentForm() {
 
   const fetchStudentData = async () => {
     try {
-      // Mock data for demonstration
-      setTimeout(() => {
-        setFormData({
-          name: 'Nguyễn Văn A',
-          email: 'student@example.com',
-          phone: '0987654321',
-          address: '123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh',
-          birthday: '2000-01-15',
-          gender: 'male',
-          status: 'active',
-          password: '',
-          confirmPassword: ''
-        });
-        setLoading(false);
-      }, 800);
+      const studentData = await getStudentById(id); // Replace with actual API call
+      // Mock student data
+      console.log('Fetched student data:', studentData);
+      setFormData({
+        name: studentData.user_name || '',
+        email: studentData.user_email || '',
+        phone: studentData.user_telephone || '',
+        birthday: studentData.user_birthday || '',
+        gender: studentData.user_gender || 'male',
+        start_level: studentData.sd_startlv || '',
+
+        password: '',
+        confirmPassword: ''
+      });
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching student data:', error);
       setLoading(false);
@@ -146,7 +147,11 @@ function StudentForm() {
         message.success('Cập nhật học viên thành công');
       } else {
         await createStudent(payload);
-        
+        try {
+          await approvedConsultRegistration(prefill.notifications_id);
+        } catch (error) {
+          console.error('Error approving consult registration:', error);
+        }
         message.success('Tạo học viên thành công');
       }
 
@@ -169,19 +174,12 @@ function StudentForm() {
       <AdminSidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
 
       <div className={`admin-main ${sidebarCollapsed ? 'expanded' : ''}`}>
-        <div className="admin-header">
-          <div className="header-content">
-            <h1 className="page-title">
-              {isEditMode ? 'Chỉnh sửa học viên' : 'Thêm học viên mới'}
-            </h1>
-            <div className="header-actions">
-              <button className="btn-icon">
-                <i className="bi bi-bell"></i>
-                <span className="notification-badge">3</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        {/* Thêm header mới dùng AdminPageHeader */}
+        <AdminPageHeader
+          title={isEditMode ? 'Chỉnh sửa học viên' : 'Thêm học viên mới'}
+          subtitle={isEditMode ? 'Cập nhật thông tin học viên' : 'Nhập thông tin học viên mới'}
+          onNotificationClick={() => {}}
+        />
 
         <div className="admin-content">
           <div className="page-actions">
@@ -302,46 +300,45 @@ function StudentForm() {
                   </div>
 
                   {/* Account info section */}
-                  <div className="form-section">
-                    <h3 className="section-title">Thông tin tài khoản</h3>
-                    <div className="row">
-                      <div className="col-md-6 mb-3">
-                        <div className="form-group">
-                          <label htmlFor="password" className="form-label">
-                            Mật khẩu {isEditMode ? <small className="muted"> (để trống nếu không đổi)</small> : <span className="required">*</span>}
-                          </label>
-                          <input
-                            type="password"
-                            className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                            id="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            placeholder={isEditMode ? 'Để trống nếu không muốn thay đổi mật khẩu' : ''}
-                          />
-                          {errors.password && <div className="form-error">{errors.password}</div>}
+                  {!isEditMode && (
+                    <div className="form-section">
+                      <h3 className="section-title">Thông tin tài khoản</h3>
+                      <div className="row">
+                        <div className="col-md-6 mb-3">
+                          <div className="form-group">
+                            <label htmlFor="password" className="form-label">
+                              Mật khẩu <span className="required">*</span>
+                            </label>
+                            <input
+                              type="password"
+                              className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                              id="password"
+                              name="password"
+                              value={formData.password}
+                              onChange={handleChange}
+                            />
+                            {errors.password && <div className="form-error">{errors.password}</div>}
+                          </div>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <div className="form-group">
+                            <label htmlFor="confirmPassword" className="form-label">
+                              Xác nhận mật khẩu <span className="required">*</span>
+                            </label>
+                            <input
+                              type="password"
+                              className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
+                              id="confirmPassword"
+                              name="confirmPassword"
+                              value={formData.confirmPassword}
+                              onChange={handleChange}
+                            />
+                            {errors.confirmPassword && <div className="form-error">{errors.confirmPassword}</div>}
+                          </div>
                         </div>
                       </div>
-
-                      <div className="col-md-6 mb-3">
-                        <div className="form-group">
-                          <label htmlFor="confirmPassword" className="form-label">Xác nhận mật khẩu {isEditMode ? null : <span className="required">*</span>}</label>
-                          <input
-                            type="password"
-                            className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
-                            id="confirmPassword"
-                            name="confirmPassword"
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            placeholder={isEditMode ? 'Để trống nếu không muốn thay đổi mật khẩu' : ''}
-                          />
-                          {errors.confirmPassword && <div className="form-error">{errors.confirmPassword}</div>}
-                        </div>
-                      </div>
-
-                     
                     </div>
-                  </div>
+                  )}
                   {/* end account info section */}
 
                   <div className="form-actions">

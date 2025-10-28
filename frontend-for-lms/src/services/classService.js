@@ -277,6 +277,25 @@ export const getDisplayStatusBadgeClass = (status) => {
   }
 };
 
+/**
+ * Lấy danh sách lớp học theo student_id (chuỗi hoặc số)
+ * @param {string} studentId - Mã học viên (vd: "S00000001")
+ * @returns {Promise<Array>} - Mảng lớp học
+ */
+export const getClassesByStudentId = async (studentId) => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/api/classes/student/${studentId}`,
+      { headers: getAuthHeaders() }
+    );
+    // Trả về mảng lớp học (hoặc [] nếu không có)
+    return response.data.data || [];
+  } catch (error) {
+    console.error(`Error fetching classes for student ${studentId}:`, error);
+    throw error;
+  }
+};
+
 export default {
   getClassById,
   createClass,
@@ -290,5 +309,6 @@ export default {
   removeStudentFromClass,
   getClassStatusText,
   getClassStatusBadgeClass,
-  getDisplayStatusBadgeClass
+  getDisplayStatusBadgeClass,
+  getClassesByStudentId // Thêm hàm mới vào export
 };

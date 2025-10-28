@@ -73,15 +73,12 @@ function Schedule() {
     useEffect(() => {
         fetchScheduleData();
         fetchFilterOptions();
-    }, [filter.classId, filter.teacherId, filter.roomId, selectedDate]);
+    }, [selectedDate]);
 
     const fetchScheduleData = async () => {
         setLoading(true);
         try {
             const data = await getSchedules({
-                class_id: filter.classId,
-                teacher_id: filter.teacherId,
-                room_id: filter.roomId,
                 date: selectedDate.toISOString().split('T')[0]
             });
             setSchedules(data);
@@ -138,42 +135,6 @@ function Schedule() {
         }
     };
 
-    const handleFilterChange = (e) => {
-        const { name, value } = e.target;
-        setFilter(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    const handleDateChange = (e) => {
-        const selectedDateStr = e.target.value;
-        const newDate = weekDates.find(d => d.date.toISOString().split('T')[0] === selectedDateStr);
-        if (newDate) {
-            setSelectedDate(newDate.date);
-        }
-    };
-
-    const goToToday = () => {
-        setSelectedDate(new Date());
-    };
-
-    const goToPrevDay = () => {
-        const newDate = new Date(selectedDate);
-        newDate.setDate(newDate.getDate() - 1);
-        setSelectedDate(newDate);
-    };
-
-    const goToNextDay = () => {
-        const newDate = new Date(selectedDate);
-        newDate.setDate(newDate.getDate() + 1);
-        setSelectedDate(newDate);
-    };
-
-    const toggleSidebar = () => {
-        setSidebarCollapsed(!sidebarCollapsed);
-    };
-
     const handleAddSchedule = () => {
         setEditSchedule(null);
         setShowModal(true);
@@ -186,6 +147,36 @@ function Schedule() {
 
     const handleScheduleSuccess = (newSchedule) => {
         fetchScheduleData(); // Refresh data after add/edit
+    };
+
+    // Thêm hàm toggleSidebar
+    const toggleSidebar = () => {
+        setSidebarCollapsed(prev => !prev);
+    };
+
+    // Thêm các hàm điều hướng ngày
+    const goToPrevDay = () => {
+        setSelectedDate(prev => {
+            const d = new Date(prev);
+            d.setDate(d.getDate() - 1);
+            return d;
+        });
+    };
+
+    const goToNextDay = () => {
+        setSelectedDate(prev => {
+            const d = new Date(prev);
+            d.setDate(d.getDate() + 1);
+            return d;
+        });
+    };
+
+    const goToToday = () => {
+        setSelectedDate(new Date());
+    };
+
+    const handleDateChange = (e) => {
+        setSelectedDate(new Date(e.target.value));
     };
 
     return (
@@ -262,64 +253,6 @@ function Schedule() {
                                 <span className="day-badge">
                                     {getDayName(selectedDate.getDay())}
                                 </span>
-                            </div>
-                        </div>
-
-                        {/* Filter Panel */}
-                        <div className="filter-panel">
-                            <div className="filter-row">
-                                <div className="filter-item">
-                                    <label htmlFor="classId">
-                                        <i className="fas fa-chalkboard"></i> Lớp học
-                                    </label>
-                                    <select
-                                        id="classId"
-                                        name="classId"
-                                        value={filter.classId}
-                                        onChange={handleFilterChange}
-                                    >
-                                        <option value="">Tất cả lớp học</option>
-                                        {classes.map(cls => (
-                                            <option key={cls.id} value={cls.id}>{cls.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="filter-item">
-                                    <label htmlFor="teacherId">
-                                        <i className="fas fa-chalkboard-teacher"></i> Giáo viên
-                                    </label>
-                                    <select
-                                        id="teacherId"
-                                        name="teacherId"
-                                        value={filter.teacherId}
-                                        onChange={handleFilterChange}
-                                    >
-                                        <option value="">Tất cả giáo viên</option>
-                                        {teachers.map(teacher => (
-                                            <option key={teacher.id} value={teacher.id}>{teacher.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="filter-item">
-                                    <label htmlFor="roomId">
-                                        <i className="fas fa-door-open"></i> Phòng học
-                                    </label>
-                                    <select
-                                        id="roomId"
-                                        name="roomId"
-                                        value={filter.roomId}
-                                        onChange={handleFilterChange}
-                                    >
-                                        <option value="">Tất cả phòng học</option>
-                                        {rooms.map(room => (
-                                            <option key={room.id} value={room.id}>
-                                                {room.name} - {room.location}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
                             </div>
                         </div>
 

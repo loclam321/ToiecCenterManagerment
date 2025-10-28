@@ -120,6 +120,9 @@ class StudentService:
                 student_name=student.user_name,
                 password=password
             )
+            print("Student data:", data)
+            # hoặc dùng logger
+            current_app.logger.info(f"Student data: {data}")
 
             self.db.session.add(student)
             self.db.session.commit()

@@ -264,56 +264,44 @@ export const mapTeacherToApi = (teacherData) => {
  * Map dữ liệu từ API sang định dạng frontend 
  * @param {Object} apiTeacher - Dữ liệu giáo viên từ API response
  */
-// ...existing code...
 export function mapTeacherFromApi(api) {
   if (!api) return {
-    name: '',
-    email: '',
-    phone: '',
-    birthday: '',
-    gender: 'male',
+    id: '',
+    displayName: '',
+    avatarPath: '',
     specialization: '',
     qualification: '',
     hireDate: '',
-    tch_avtlink: null,
-    // keep password fields empty for safety
+    status: 'active',
+    birthday: '',
+    gender: 'male',
+    email: '',
+    phone: '',
     password: '',
     confirmPassword: ''
   };
 
-  // Helper to normalize gender and compute a frontend-friendly object
-  const gender = api.user_gender === 'M' ? 'male' : api.user_gender === 'F' ? 'female' : 'other';
-
-  // Compute display name and id
-  const id = api.user_id ?? api.tch_id ?? api.id ?? null;
-  const displayName = api.user_name ?? api.user_fullname ?? '';
-
-  // avatar path from backend is already normalized by teacher_model._avatar_web_path()
-  const avatarPath = api.tch_avtlink ?? null;
+  // Chuẩn hóa gender
+  const gender =
+    api.user_gender === 'M' ? 'male' :
+    api.user_gender === 'F' ? 'female' : 'other';
 
   return {
-    // Frontend-friendly fields used by components
-    id,
-    displayName,
-    avatarPath,
+    id: api.user_id ?? '',
+    displayName: api.user_name ?? '',
+    avatarPath: api.tch_avtlink ?? '',
     specialization: api.tch_specialization ?? '',
     qualification: api.tch_qualification ?? '',
     hireDate: api.tch_hire_date ?? '',
-    // keep original api field for forms/backwards compatibility
-    tch_avtlink: api.tch_avtlink ?? null,
-    // normalized gender for UI
-    gender,
-    // status if backend provides it
     status: api.tch_status ?? 'active',
-    // contact fields
-    user_email: api.user_email ?? '',
-    user_telephone: api.user_telephone ?? '',
-    // don't map created_at/updated_at into editable fields
+    birthday: api.user_birthday ?? '',
+    gender,
+    email: api.user_email ?? '',
+    phone: api.user_telephone ?? '',
     password: '',
     confirmPassword: ''
   };
 }
-// ...existing code...
 
 // Cập nhật export default
 const teacherService = {

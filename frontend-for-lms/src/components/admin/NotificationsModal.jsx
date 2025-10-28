@@ -11,6 +11,7 @@ const NotificationsModal = ({ visible, onClose, notifications = [], onMarkRead }
     const handleOpenStudentForm = (n) => {
         console.log('Opening Student Form with notification:', n);  
         const prefill = {
+            notifications_id: n.cr_id,
             start_level: n.cr_startlv || '',
             name: n.cr_fullname || '',
             email: n.cr_email || '',

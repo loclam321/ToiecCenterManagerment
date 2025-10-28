@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { getCurrentUser } from '../../services/authService';
 import { updateOwnProfile } from '../../services/studentService';
+import ChangePasswordModal from '../../components/student/ChangePassword';
 
 export default function StudentProfile() {
   const user = getCurrentUser();
   const role = (localStorage.getItem('role') || 'student').toString().trim().toLowerCase();
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   if (!user) {
     return (
@@ -59,7 +61,7 @@ export default function StudentProfile() {
                       )}
                     </div>
                     {editing ? (
-                      <input className="form-control" value={form.user_name} onChange={(e) => setForm(f => ({...f, user_name: e.target.value}))} />
+                      <input className="form-control" value={form.user_name} onChange={(e) => setForm(f => ({ ...f, user_name: e.target.value }))} />
                     ) : (
                       <div className="fw-semibold">{name}</div>
                     )}
@@ -76,7 +78,7 @@ export default function StudentProfile() {
                   <div className="p-3 border rounded-3">
                     <div className="text-muted small mb-1">Số điện thoại</div>
                     {editing ? (
-                      <input className="form-control" value={form.user_telephone} onChange={(e) => setForm(f => ({...f, user_telephone: e.target.value}))} />
+                      <input className="form-control" value={form.user_telephone} onChange={(e) => setForm(f => ({ ...f, user_telephone: e.target.value }))} />
                     ) : (
                       <div className="fw-semibold">{phone}</div>
                     )}
@@ -87,7 +89,7 @@ export default function StudentProfile() {
                   <div className="p-3 border rounded-3">
                     <div className="text-muted small mb-1">Giới tính</div>
                     {editing ? (
-                      <select className="form-select" value={form.user_gender} onChange={(e) => setForm(f => ({...f, user_gender: e.target.value}))}>
+                      <select className="form-select" value={form.user_gender} onChange={(e) => setForm(f => ({ ...f, user_gender: e.target.value }))}>
                         <option value="">Chọn</option>
                         <option value="M">Nam</option>
                         <option value="F">Nữ</option>
@@ -102,7 +104,7 @@ export default function StudentProfile() {
                   <div className="p-3 border rounded-3">
                     <div className="text-muted small mb-1">Ngày sinh</div>
                     {editing ? (
-                      <input type="date" className="form-control" value={form.user_birthday || ''} onChange={(e) => setForm(f => ({...f, user_birthday: e.target.value}))} />
+                      <input type="date" className="form-control" value={form.user_birthday || ''} onChange={(e) => setForm(f => ({ ...f, user_birthday: e.target.value }))} />
                     ) : (
                       <div className="fw-semibold">{birthday}</div>
                     )}
@@ -133,7 +135,7 @@ export default function StudentProfile() {
                         localStorage.setItem('user', JSON.stringify(newUser));
                         setSuccess('Cập nhật thành công');
                         setEditing(false);
-                        setTimeout(()=>setSuccess(''), 2500);
+                        setTimeout(() => setSuccess(''), 2500);
                       }
                     } catch (e) {
                       setError(e.message || 'Lưu thất bại');
@@ -165,11 +167,30 @@ export default function StudentProfile() {
                   </div>
                   <span className="badge text-bg-success">Đang sử dụng</span>
                 </li>
+                <li className="list-group-item px-0 d-flex align-items-center justify-content-between">
+                  <div>
+                    <div className="fw-semibold">Đổi mật khẩu</div>
+                    <div className="text-muted small">Bạn có thể thay đổi mật khẩu cá nhân</div>
+                  </div>
+                  <button
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={() => setShowChangePassword(true)}
+                  >
+                    Đổi mật khẩu
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
         </div>
       </div>
+      {/* Modal đổi mật khẩu */}
+      <ChangePasswordModal
+        show={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+        onSuccess={() => setShowChangePassword(false)}
+        user={user}
+      />
     </div>
   );
 }

@@ -426,7 +426,7 @@ class ClassService:
                 user_id=student_id, class_id=class_id
             ).first()
             from app.models.course_model import Course
-            
+
             course = Course.query.get(class_obj.course_id)
             if course:
                 pre_course_id = course.get_cou_course_id()
@@ -820,18 +820,24 @@ class ClassService:
 
                 if next_session:
                     class_dict["next_session"] = {
-                        "date": next_session.schedule_date.strftime("%Y-%m-%d")
-                        if next_session.schedule_date
-                        else None,
-                        "start_time": next_session.schedule_startime.strftime("%H:%M")
-                        if next_session.schedule_startime
-                        else None,
-                        "end_time": next_session.schedule_endtime.strftime("%H:%M")
-                        if next_session.schedule_endtime
-                        else None,
-                        "room_name": next_session.room.room_name
-                        if next_session.room
-                        else None,
+                        "date": (
+                            next_session.schedule_date.strftime("%Y-%m-%d")
+                            if next_session.schedule_date
+                            else None
+                        ),
+                        "start_time": (
+                            next_session.schedule_startime.strftime("%H:%M")
+                            if next_session.schedule_startime
+                            else None
+                        ),
+                        "end_time": (
+                            next_session.schedule_endtime.strftime("%H:%M")
+                            if next_session.schedule_endtime
+                            else None
+                        ),
+                        "room_name": (
+                            next_session.room.room_name if next_session.room else None
+                        ),
                     }
                 else:
                     class_dict["next_session"] = None
@@ -849,14 +855,18 @@ class ClassService:
                     student_dict = student.to_dict() if student else {}
                     students_data.append(
                         {
-                            "user_id": student.user_id if student else enrollment.user_id,
+                            "user_id": (
+                                student.user_id if student else enrollment.user_id
+                            ),
                             "name": student_dict.get("user_name"),
                             "email": student_dict.get("user_email"),
                             "telephone": student_dict.get("user_telephone"),
                             "status": enrollment.status,
-                            "enrolled_date": enrollment.enrolled_date.isoformat()
-                            if enrollment.enrolled_date
-                            else None,
+                            "enrolled_date": (
+                                enrollment.enrolled_date.isoformat()
+                                if enrollment.enrolled_date
+                                else None
+                            ),
                         }
                     )
 
@@ -884,9 +894,7 @@ class ClassService:
 
             return {"success": True, "data": result_data}
         except Exception as e:
-            current_app.logger.error(
-                f"Error in get_classes_for_teacher: {str(e)}"
-            )
+            current_app.logger.error(f"Error in get_classes_for_teacher: {str(e)}")
             return {
                 "success": False,
                 "error": f"Error retrieving teacher classes: {str(e)}",
@@ -980,4 +988,19 @@ class ClassService:
 
         except Exception as e:
             current_app.logger.error(f"Error in get_classes_list: {str(e)}")
+            return {"success": False, "error": f"Error retrieving classes: {str(e)}"}
+
+    def get_class_by_student(self, student_id):
+        try:
+            enrollments = (
+                Enrollment.query.filter_by(user_id=student_id)
+                .join(Class, Enrollment.class_id == Class.class_id)
+                .all()
+            )
+
+            classes = [enrollment.to_dict() for enrollment in enrollments]
+
+            return {"success": True, "data": classes}
+        except Exception as e:
+            current_app.logger.error(f"Error in get_class_by_student: {str(e)}")
             return {"success": False, "error": f"Error retrieving classes: {str(e)}"}

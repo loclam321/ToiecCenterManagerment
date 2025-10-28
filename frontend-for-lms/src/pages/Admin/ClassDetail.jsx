@@ -3,13 +3,13 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import AdminSidebar from '../../components/admin/Adminsidebar';
 import PageDetailHeader from '../../components/common/PageDetailHeader';
-import { 
-  getClassById, 
-  deleteClass, 
-  getClassStatusBadgeClass, 
-  getClassStatusText,
-  getClassEnrollments,
-  removeStudentFromClass // Thêm import
+import {
+    getClassById,
+    deleteClass,
+    getClassStatusBadgeClass,
+    getClassStatusText,
+    getClassEnrollments,
+    removeStudentFromClass // Thêm import
 } from '../../services/classService';
 import { formatDate } from '../../services/courseService';
 import './css/ClassDetail.css';
@@ -32,12 +32,14 @@ function ClassDetail() {
 
     useEffect(() => {
         fetchClassDetails();
+
     }, [id]);
 
     // Fetch students khi chuyển sang tab students hoặc thay đổi trang
     useEffect(() => {
         if (activeTab === 'students' && classData) {
             fetchEnrolledStudents();
+            console.log("Fetching enrolled students for class:", classData);
         }
     }, [activeTab, studentsPagination.page, classData]);
 
@@ -47,7 +49,7 @@ function ClassDetail() {
             const response = await getClassById(id);
             setClassData(response);
             console.log("Dữ liệu lớp học:", response);
-            
+
             // Mock data cho điểm danh - giữ lại vì chưa có API
             setAttendance([
                 {
@@ -80,7 +82,7 @@ function ClassDetail() {
         setStudentsLoading(true);
         try {
             const { enrollments, pagination } = await getClassEnrollments(
-                id, 
+                id,
                 studentsPagination.page
             );
             setStudents(enrollments);
@@ -230,9 +232,12 @@ function ClassDetail() {
                                                 <button className="btn btn-outline-primary">
                                                     <i className="bi bi-file-earmark-excel"></i> Xuất Excel
                                                 </button>
-                                                <Link to={`/admin/classes/${id}/add-students`} className="btn btn-primary">
-                                                    <i className="bi bi-plus"></i> Thêm học viên
-                                                </Link>
+                                                {/* Chỉ hiển thị nút thêm học viên nếu trạng thái lớp chưa phải là "Đã xác nhận" */}
+                                                {classData?.display_status === "Đã xác nhận" && (
+                                                    <Link to={`/admin/classes/${id}/add-students`} className="btn btn-primary">
+                                                        <i className="bi bi-plus"></i> Thêm học viên
+                                                    </Link>
+                                                )}
                                             </div>
                                         </div>
 
@@ -267,15 +272,15 @@ function ClassDetail() {
                                                                     <td>{renderStudentStatus(enrollment.status)}</td>
                                                                     <td>
                                                                         <div className="action-buttons">
-                                                                            <Link 
-                                                                                to={`/admin/students/${enrollment.user_id}`} 
-                                                                                className="btn-icon" 
+                                                                            <Link
+                                                                                to={`/admin/students/${enrollment.user_id}`}
+                                                                                className="btn-icon"
                                                                                 title="Xem chi tiết"
                                                                             >
                                                                                 <i className="bi bi-eye"></i>
                                                                             </Link>
-                                                                            <button 
-                                                                                className="btn-icon text-danger" 
+                                                                            <button
+                                                                                className="btn-icon text-danger"
                                                                                 title="Xóa khỏi lớp"
                                                                                 onClick={() => handleRemoveStudent(enrollment.user_id)}
                                                                             >
@@ -288,11 +293,11 @@ function ClassDetail() {
                                                         </tbody>
                                                     </table>
                                                 </div>
-                                                
+
                                                 {/* Thêm phân trang */}
                                                 {studentsPagination.pages > 1 && (
                                                     <div className="pagination-container">
-                                                        <button 
+                                                        <button
                                                             className="pagination-button"
                                                             disabled={!studentsPagination.has_prev}
                                                             onClick={() => handleChangePage(studentsPagination.page - 1)}
@@ -302,7 +307,7 @@ function ClassDetail() {
                                                         <span className="pagination-info">
                                                             Trang {studentsPagination.page} / {studentsPagination.pages}
                                                         </span>
-                                                        <button 
+                                                        <button
                                                             className="pagination-button"
                                                             disabled={!studentsPagination.has_next}
                                                             onClick={() => handleChangePage(studentsPagination.page + 1)}
@@ -319,9 +324,12 @@ function ClassDetail() {
                                                 </div>
                                                 <h3>Chưa có học viên nào</h3>
                                                 <p>Lớp học này chưa có học viên nào đăng ký.</p>
-                                                <Link to={`/admin/classes/${id}/add-students`} className="btn btn-primary">
-                                                    <i className="bi bi-plus"></i> Thêm học viên
-                                                </Link>
+                                                {/* Chỉ hiển thị nút thêm học viên nếu trạng thái lớp chưa phải là "Đã xác nhận" */}
+                                                {classData?.display_status !== "Đã xác nhận" && (
+                                                    <Link to={`/admin/classes/${id}/add-students`} className="btn btn-primary">
+                                                        <i className="bi bi-plus"></i> Thêm học viên
+                                                    </Link>
+                                                )}
                                             </div>
                                         )}
                                     </div>

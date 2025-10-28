@@ -43,7 +43,9 @@ function TeacherForm() {
     setLoading(true);
     try {
       const result = await getTeacherById(id);
-      const mappedTeacher = mapTeacherFromApi(result);
+      console.log('Fetched teacher data:', result);
+      const mappedTeacher = mapTeacherFromApi(result.data.teacher);
+      console.log('Mapped teacher data:', mappedTeacher);
       setTeacher({
         ...mappedTeacher,
         password: '',
@@ -334,7 +336,7 @@ function TeacherForm() {
                         type="text"
                         id="name"
                         name="name"
-                        value={teacher.name ?? ''}
+                        value={teacher.displayName ?? ''}
                         onChange={handleInputChange}
                         className={errors.name ? 'error' : ''}
                         placeholder="Nhập họ và tên đầy đủ"

@@ -1,79 +1,55 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import AdminSidebar from '../../components/admin/Adminsidebar';
+import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import './css/StudentDetail.css';
+import { getStudentById } from '../../services/studentService';
+import { getClassesByStudentId } from '../../services/classService';
 
 function StudentDetail() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [student, setStudent] = useState(null);
+  const [enrolledClasses, setEnrolledClasses] = useState([]);
   const { id } = useParams();
 
   useEffect(() => {
-    // Fetch student data
     fetchStudentDetails();
+    fetchEnrolledClasses();
   }, [id]);
 
   const fetchStudentDetails = async () => {
     setLoading(true);
     try {
-      // Mock data for demonstration
-      setTimeout(() => {
-        const mockStudent = {
-          id: id,
-          name: "Nguyễn Văn A",
-          email: "student@example.com",
-          phone: "0987654321",
-          address: "123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh",
-          birthday: "2000-01-15",
-          gender: "Nam",
-          status: "active",
-          avatar: "https://ui-avatars.com/api/?name=Nguyen+Van+A&background=random",
-          enrolledCourses: [
-            {
-              id: "C001",
-              name: "TOEIC 500+",
-              startDate: "2023-01-10",
-              endDate: "2023-04-10",
-              progress: 75,
-              status: "in-progress"
-            },
-            {
-              id: "C002",
-              name: "TOEIC 650+",
-              startDate: "2023-05-15",
-              endDate: "2023-08-15",
-              progress: 30,
-              status: "in-progress"
-            }
-          ],
-          activities: [
-            {
-              date: "2023-09-20T08:30:00",
-              type: "login",
-              description: "Đăng nhập vào hệ thống"
-            },
-            {
-              date: "2023-09-20T09:15:00",
-              type: "course",
-              description: "Hoàn thành bài học: TOEIC Listening Part 1"
-            },
-            {
-              date: "2023-09-19T14:20:00",
-              type: "quiz",
-              description: "Hoàn thành bài kiểm tra: TOEIC Reading Practice Test 03"
-            }
-          ],
-          registrationDate: "2023-01-05T10:30:00",
-          lastActive: "2023-09-20T09:15:00"
+      setTimeout(async () => {
+        const studentData = await getStudentById(id);
+        const mappedStudent = {
+          id: studentData.user_id,
+          name: studentData.user_name,
+          email: studentData.user_email,
+          phone: studentData.user_telephone,
+          birthday: studentData.user_birthday,
+          gender: studentData.user_gender === "M" ? "Nam" : studentData.user_gender === "F" ? "Nữ" : "Khác",
+          status: studentData.sd_status || "active",
+          address: "",
+          registrationDate: studentData.created_at,
+          lastActive: studentData.updated_at,
         };
-
-        setStudent(mockStudent);
+        setStudent(mappedStudent);
         setLoading(false);
       }, 800);
     } catch (error) {
       console.error('Error fetching student details:', error);
       setLoading(false);
+    }
+  };
+
+  const fetchEnrolledClasses = async () => {
+    try {
+      const classes = await getClassesByStudentId(id);
+      setEnrolledClasses(classes);
+    } catch (error) {
+      setEnrolledClasses([]);
     }
   };
 
@@ -98,17 +74,6 @@ function StudentDetail() {
       month: '2-digit',
       year: 'numeric'
     }).format(date);
-  };
-
-  const getActivityIcon = (type) => {
-    switch (type) {
-      case 'login': return 'bi-box-arrow-in-right';
-      case 'course': return 'bi-book';
-      case 'quiz': return 'bi-check-square';
-      case 'homework': return 'bi-file-earmark-text';
-      case 'payment': return 'bi-credit-card';
-      default: return 'bi-activity';
-    }
   };
 
   const getStatusClass = (status) => {
@@ -136,20 +101,13 @@ function StudentDetail() {
   return (
     <div className="admin-layout">
       <AdminSidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
-
       <div className={`admin-main ${sidebarCollapsed ? 'expanded' : ''}`}>
-        <div className="admin-header">
-          <div className="header-content">
-            <h1 className="page-title">Chi tiết học viên</h1>
-            <div className="header-actions">
-              <button className="btn-icon">
-                <i className="bi bi-bell"></i>
-                <span className="notification-badge">3</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
+        {/* Sử dụng AdminPageHeader */}
+        <AdminPageHeader
+          title="Chi tiết học viên"
+          subtitle="Thông tin chi tiết và học phần đang học"
+          onNotificationClick={() => { }}
+        />
         <div className="admin-content">
           <div className="page-actions">
             <Link to="/admin/students" className="btn btn-light">
@@ -159,9 +117,7 @@ function StudentDetail() {
               <Link to={`/admin/students/${id}/edit`} className="btn btn-primary me-2">
                 <i className="bi bi-pencil"></i> Chỉnh sửa
               </Link>
-              <button className="btn btn-outline-danger">
-                <i className="bi bi-trash"></i> Xóa
-              </button>
+              {/* Bỏ nút xóa nếu không cần */}
             </div>
           </div>
 
@@ -176,9 +132,6 @@ function StudentDetail() {
                 <div className="col-lg-4">
                   <div className="detail-card">
                     <div className="student-profile">
-                      <div className="profile-image">
-                        <img src={student.avatar} alt={student.name} />
-                      </div>
                       <div className="profile-info">
                         <h2>{student.name}</h2>
                         <p className="student-id">{student.id}</p>
@@ -187,7 +140,6 @@ function StudentDetail() {
                         </span>
                       </div>
                     </div>
-
                     <div className="info-section">
                       <h3 className="section-heading">Thông tin cá nhân</h3>
                       <ul className="info-list">
@@ -219,16 +171,8 @@ function StudentDetail() {
                             <span className="info-value">{student.gender}</span>
                           </div>
                         </li>
-                        <li>
-                          <i className="bi bi-geo-alt"></i>
-                          <div className="info-content">
-                            <span className="info-label">Địa chỉ</span>
-                            <span className="info-value">{student.address}</span>
-                          </div>
-                        </li>
                       </ul>
                     </div>
-
                     <div className="info-section">
                       <h3 className="section-heading">Tài khoản</h3>
                       <ul className="info-list">
@@ -250,80 +194,43 @@ function StudentDetail() {
                     </div>
                   </div>
                 </div>
-
                 <div className="col-lg-8">
                   <div className="detail-card">
-                    <h3 className="card-title">Khóa học đang học</h3>
-
-                    {student.enrolledCourses.length === 0 ? (
+                    <h3 className="card-title">Học phần đang học</h3>
+                    {enrolledClasses.length === 0 ? (
                       <div className="empty-state">
-                        <p>Học viên chưa đăng ký khóa học nào.</p>
+                        <p>Học viên chưa đăng ký học phần nào.</p>
                       </div>
                     ) : (
-                      <div className="enrolled-courses">
-                        {student.enrolledCourses.map(course => (
-                          <div className="course-item" key={course.id}>
-                            <div className="course-header">
-                              <h4>{course.name}</h4>
-                              <span className={getStatusClass(course.status)}>
-                                {getStatusText(course.status)}
+                      <div className="enrolled-classes">
+                        {enrolledClasses.map((item, idx) => (
+                          <div className="class-item" key={item.class_id || idx}>
+                            <div className="class-header">
+                              <h4>{item.class?.class_name || "Chưa có tên lớp"}</h4>
+                              <span className={getStatusClass(item.status?.toLowerCase())}>
+                                {getStatusText(item.status?.toLowerCase())}
                               </span>
                             </div>
-
-                            <div className="course-dates">
-                              <div>
-                                <span className="date-label">Ngày bắt đầu:</span>
-                                <span className="date-value">{formatDate(course.startDate)}</span>
-                              </div>
-                              <div>
-                                <span className="date-label">Ngày kết thúc:</span>
-                                <span className="date-value">{formatDate(course.endDate)}</span>
-                              </div>
+                            <div className="course-info">
+                              <span className="course-label">Khóa học:</span>
+                              <span className="course-value">{item.course?.course_name || ""}</span>
+                              <span className="course-label ms-3">Mã khóa:</span>
+                              <span className="course-value">{item.course?.course_code || ""}</span>
+                              <span className="course-label ms-3">Level:</span>
+                              <span className="course-value">{item.course?.level || ""}</span>
                             </div>
-
-                            <div className="progress-wrapper">
-                              <div className="progress-info">
-                                <span>Tiến độ</span>
-                                <span>{course.progress}%</span>
-                              </div>
-                              <div className="progress-bar">
-                                <div
-                                  className="progress-fill"
-                                  style={{ width: `${course.progress}%` }}
-                                ></div>
-                              </div>
-                            </div>
-
-                            <div className="course-actions">
-                              <Link to={`/admin/courses/${course.id}`} className="btn btn-sm btn-outline-primary">
+                            <div className="class-actions mt-2">
+                              <Link to={`/admin/classes/${item.class_id}`} className="btn btn-sm btn-outline-primary">
+                                Chi tiết lớp học
+                              </Link>
+                              <Link to={`/admin/courses/${item.course?.course_id}`} className="btn btn-sm btn-outline-secondary ms-2">
                                 Chi tiết khóa học
                               </Link>
-                              <button className="btn btn-sm btn-outline-secondary">
-                                Xem lịch học
-                              </button>
                             </div>
                           </div>
                         ))}
                       </div>
                     )}
-                  </div>
-
-                  <div className="detail-card mt-4">
-                    <h3 className="card-title">Hoạt động gần đây</h3>
-
-                    <div className="timeline">
-                      {student.activities.map((activity, index) => (
-                        <div className="timeline-item" key={index}>
-                          <div className="timeline-icon">
-                            <i className={`bi ${getActivityIcon(activity.type)}`}></i>
-                          </div>
-                          <div className="timeline-content">
-                            <p className="activity-description">{activity.description}</p>
-                            <p className="activity-time">{formatDate(activity.date, true)}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 </div>
               </div>

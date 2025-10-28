@@ -281,3 +281,17 @@ def get_classes_list_route():
 
     except Exception as e:
         return error_response(f"Error retrieving classes list: {str(e)}")
+
+
+@class_bp.route("/student/<student_id>", methods=["GET"])
+def get_class_by_student(student_id):
+    """Lấy lớp học theo student_id"""
+    try:
+        result = class_service.get_class_by_student(student_id)
+
+        if result["success"]:
+            return success_response(result["data"])
+        return error_response(result["error"])
+
+    except Exception as e:
+        return error_response(f"Error retrieving classes: {str(e)}")

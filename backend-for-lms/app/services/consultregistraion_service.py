@@ -18,6 +18,27 @@ from app.utils.email_utils import (
 class ConsultRegistrationService:
     def __init__(self):
         self.db = db
+        
+        
+    def approve_registration(self, cr_id: int) -> Dict[str, Any]:
+        try:
+            registration = ConsultRegistration.query.get(cr_id)
+            if not registration:
+                return {"success": False, "error": "Registration not found"}
+
+            registration.cr_status = "APPROVED"
+            self.db.session.commit()
+
+            return {
+                "success": True,
+                "message": "Registration approved successfully",
+                "data": registration.to_dict(include_course=True),
+            }
+
+        except Exception as e:
+            self.db.session.rollback()
+            current_app.logger.error(f"Error approving registration: {str(e)}")
+            return {"success": False, "error": f"Error approving registration: {str(e)}"}
 
     def send_verification_email(self, data: Dict[str, Any]) -> Dict[str, Any]:
         try:
@@ -98,7 +119,8 @@ class ConsultRegistrationService:
                 cr_phone=data.get("cr_phone"),
                 cr_email=data.get("cr_email"),
                 cr_gender=data.get("cr_gender"),
-                cr_startlv=data.get("cr_startlv")
+                cr_startlv=data.get("cr_startlv"),
+                cr_status="PENDING",  # Mặc định là PENDING
             )
             data = consultation.to_dict()
             email_sent = False
@@ -182,7 +204,8 @@ class ConsultRegistrationService:
                 cr_phone=data.get("cr_phone"),
                 cr_email=data.get("cr_email"),
                 cr_gender=data.get("cr_gender"),
-                cr_startlv=data.get("cr_startlv")
+                cr_startlv=data.get("cr_startlv"),
+                cr_status="PENDING",  # Cập nhật trạng thái thành PENDING
             )
 
             self.db.session.add(consultation)
@@ -205,7 +228,7 @@ class ConsultRegistrationService:
         self, page: int, per_page: int, filters: Dict[str, Any]
     ) -> Dict[str, Any]:
         try:
-            query = ConsultRegistration.query
+            query = ConsultRegistration.query.filter(ConsultRegistration.cr_status == "PENDING")
 
             # Apply filters
             if "course_id" in filters:

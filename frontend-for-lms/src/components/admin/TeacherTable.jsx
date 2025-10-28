@@ -233,17 +233,7 @@ function TeacherTable({ teachers, loading, pagination, onPageChange }) {
                         >
                           <i className="bi bi-pencil"></i>
                         </Link>
-                        <button
-                          className="btn-icon sm delete"
-                          title="Xóa giáo viên"
-                          onClick={() => {
-                            if (window.confirm('Bạn có chắc chắn muốn xóa giáo viên này?')) {
-                              console.log('Delete teacher:', teacher.user_id);
-                            }
-                          }}
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
+                      
                       </div>
                     </td>
                   </tr>

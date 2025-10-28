@@ -89,6 +89,8 @@ def change_password():
     role = data.get("role")
     old_password = data.get("old_password")
     new_password = data.get("new_password")
+    
+    print ("Change password data:", data)
 
     if not all([user_id, role, old_password, new_password]):
         return validation_error_response(message="All fields are required")

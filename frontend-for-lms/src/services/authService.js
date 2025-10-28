@@ -161,28 +161,33 @@ export const loginUser = async (formData) => {
  * @param {object} resetData - Dữ liệu đặt lại mật khẩu
  * @returns {Promise} - Promise chứa kết quả từ API
  */
-export const resetPassword = async (resetData) => {
+export const resetPassword = async (changeData) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/reset-password/${resetData.token}`, {
+    const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        // Nếu cần xác thực, thêm Authorization ở đây
+        // 'Authorization': `Bearer ${getToken()}`
       },
       body: JSON.stringify({
-        new_password: resetData.new_password
+        user_id: changeData.user_id,
+        role: changeData.role,
+        old_password: changeData.old_password,
+        new_password: changeData.new_password
       })
     });
-    
+
     const data = await response.json();
-    
-    if (!response.ok) {
-      const errorMsg = data.message || 'Đặt lại mật khẩu thất bại';
+
+    if (!response.ok || data.success === false) {
+      const errorMsg = data.message || data.error || 'Đổi mật khẩu thất bại';
       throw new Error(errorMsg);
     }
-    
+
     return data;
   } catch (error) {
-    console.error('Password reset error details:', error);
+    console.error('Password change error details:', error);
     if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
       throw new Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.');
     }
