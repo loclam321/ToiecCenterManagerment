@@ -1,6 +1,6 @@
 from app.config import db
 from sqlalchemy import func
-from datetime import date, time
+from datetime import date, time, datetime, timedelta
 from .room_model import Room
 from .class_model import Class
 from .teacher_model import Teacher
@@ -46,6 +46,9 @@ class Schedule(db.Model):
             'room_name': self.room.room_name if self.room and hasattr(self.room, 'room_name') else None,
             'class_name': self.class_obj.class_name if self.class_obj else None,
             'teacher_name': self.teacher.user_name if self.teacher else None
+            ,
+            # Trạng thái hiện tại của lịch (upcoming | ongoing | completed)
+            'status': self.get_status()
         }
     
     def is_today(self):
@@ -73,6 +76,108 @@ class Schedule(db.Model):
         
         duration = end_minutes - start_minutes
         return max(0, duration)  # Đảm bảo không âm
+
+    def get_status(self, current_dt: datetime = None) -> str:
+        """
+        Trả về trạng thái của lịch so với thời điểm hiện tại.
+
+        Trả về một trong: 'upcoming', 'ongoing', 'completed'.
+
+        - 'upcoming': hiện tại trước `schedule_startime` trên `schedule_date` (hoặc schedule_date > today)
+        - 'ongoing'  : hiện tại nằm trong [schedule_startime, schedule_endtime) trên cùng `schedule_date`
+        - 'completed': hiện tại >= `schedule_endtime` trên `schedule_date` hoặc schedule_date < today
+
+        Ghi chú:
+        - Nếu `schedule_startime` hoặc `schedule_endtime` bị thiếu, phương thức sẽ sử dụng so sánh theo ngày:
+          - schedule_date < today => 'completed'
+          - schedule_date > today => 'upcoming'
+          - schedule_date == today => 'upcoming' (vì thiếu thời gian cụ thể)
+        - current_dt mặc định là giờ server (datetime.now()).
+        """
+        if current_dt is None:
+            current_dt = datetime.now()
+
+        # Nếu không có schedule_date -> không xác định chính xác theo thời gian, trả upcoming làm mặc định
+        if not self.schedule_date:
+            return 'upcoming'
+
+        today_date = current_dt.date()
+        sched_date = self.schedule_date
+
+        # Nếu thiếu start/end times, dùng so sánh theo ngày
+        if not self.schedule_startime or not self.schedule_endtime:
+            if sched_date < today_date:
+                return 'completed'
+            if sched_date > today_date:
+                return 'upcoming'
+            # sched_date == today_date nhưng thiếu thời gian => treat as upcoming by default
+            return 'upcoming'
+
+        # Build datetimes for precise comparison
+        try:
+            start_dt = datetime.combine(sched_date, self.schedule_startime)
+            end_dt = datetime.combine(sched_date, self.schedule_endtime)
+        except Exception:
+            # Nếu combine lỗi vì kiểu dữ liệu lạ, fallback theo ngày
+            if sched_date < today_date:
+                return 'completed'
+            if sched_date > today_date:
+                return 'upcoming'
+            return 'upcoming'
+
+        # Normalize potential inconsistent end before start
+        if end_dt <= start_dt:
+            # Nếu end <= start, treat whole day slot: if date in past => completed, if future => upcoming, if today => ongoing
+            if sched_date < today_date:
+                return 'completed'
+            if sched_date > today_date:
+                return 'upcoming'
+            return 'ongoing'
+
+        if current_dt < start_dt:
+            return 'upcoming'
+        if start_dt <= current_dt < end_dt:
+            return 'ongoing'
+        return 'completed'
+
+    def slot_status(self, slot_time: time) -> str:
+        """
+        Trả về trạng thái của một "khung giờ" (slot) đối với lịch này.
+
+        slot_time: thời điểm bắt đầu của slot (time object). Quy ước slot đại diện cho khoảng [slot_time, slot_time + slot_length).
+        Phương thức này tiện cho frontend khi hiển thị từng ô giờ trong lưới.
+
+        Kết quả: 'upcoming' | 'ongoing' | 'completed'
+        """
+        if not self.schedule_date:
+            return 'upcoming'
+
+        # Nếu slot không phải ngày của lịch thì treat by date only (frontend nên gọi slot_status chỉ cho cùng ngày)
+        # Xây dựng slot datetime (giả sử slot là 1 giờ) - frontend có thể cung cấp slot end nếu cần.
+        slot_dt_start = datetime.combine(self.schedule_date, slot_time)
+        # assume slot length 1 hour for decision boundary - caller can adjust if needed
+        slot_dt_end = slot_dt_start + timedelta(hours=1)
+
+        # If schedule times missing, fall back to date comparison
+        if not self.schedule_startime or not self.schedule_endtime:
+            now = datetime.now()
+            if self.schedule_date < now.date():
+                return 'completed'
+            if self.schedule_date > now.date():
+                return 'upcoming'
+            return 'upcoming'
+
+        sched_start = datetime.combine(self.schedule_date, self.schedule_startime)
+        sched_end = datetime.combine(self.schedule_date, self.schedule_endtime)
+
+        # If slot entirely before schedule start => upcoming
+        if slot_dt_end <= sched_start:
+            return 'upcoming'
+        # If slot entirely after schedule end => completed
+        if slot_dt_start >= sched_end:
+            return 'completed'
+        # Otherwise there is overlap => ongoing
+        return 'ongoing'
     
     @classmethod
     def get_schedules_by_date(cls, date_obj):

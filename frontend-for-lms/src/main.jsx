@@ -38,7 +38,6 @@ import TeacherPage from './pages/Teacher/TeacherPage';
 import TeacherDashboard from './pages/Teacher/TeacherDashboard';
 import TeacherSchedule from './pages/Teacher/TeacherSchedule';
 import TeacherClasses from './pages/Teacher/TeacherClasses';
-import TeacherResources from './pages/Teacher/TeacherResources';
 import TeacherLessons from './pages/Teacher/TeacherLessons';
 import TeacherTests from './pages/Teacher/TeacherTests';
 import TeacherProfileEditor from './components/layout/TeacherProfileEditor';
@@ -200,7 +199,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="classes" element={<TeacherClasses />} />
           <Route path="lessons" element={<TeacherLessons />} />
           <Route path="tests" element={<TeacherTests />} />
-          <Route path="resources" element={<TeacherResources />} />
         </Route>
 
         {/* Student area */}
