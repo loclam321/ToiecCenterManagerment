@@ -118,6 +118,9 @@ function TeacherTests() {
 
   const [items, setItems] = useState([]);
   const [editingTestId, setEditingTestId] = useState(null);
+
+  // When editing an existing test, restrict edits to class, per-item part, and availability dates.
+  const isEditingExisting = Boolean(editingTestId);
   const [form, setForm] = useState({
     test_name: '',
     test_description: '',
@@ -356,6 +359,7 @@ function TeacherTests() {
               list={imageListId}
               value={item.image_path}
               onChange={(e) => updateItemField(item.id, 'image_path', e.target.value)}
+              disabled={isEditingExisting}
             />
             <label className="btn btn-outline-secondary mb-0" style={{ minWidth: '110px' }}>
               {uploadingTarget?.mediaType === 'image' && uploadingTarget?.itemId === item.id ? 'Đang tải...' : 'Chọn tệp'}
@@ -363,7 +367,7 @@ function TeacherTests() {
                 type="file"
                 accept="image/png,image/jpeg,image/webp,image/gif"
                 hidden
-                disabled={uploadingTarget?.mediaType === 'image' && uploadingTarget?.itemId === item.id}
+                disabled={isEditingExisting || (uploadingTarget?.mediaType === 'image' && uploadingTarget?.itemId === item.id)}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   handleFileUpload('image', file, item.id);
@@ -391,6 +395,7 @@ function TeacherTests() {
               list={audioListId}
               value={item.audio_path}
               onChange={(e) => updateItemField(item.id, 'audio_path', e.target.value)}
+              disabled={isEditingExisting}
             />
             <label className="btn btn-outline-secondary mb-0" style={{ minWidth: '110px' }}>
               {uploadingTarget?.mediaType === 'audio' && uploadingTarget?.itemId === item.id ? 'Đang tải...' : 'Chọn tệp'}
@@ -398,7 +403,7 @@ function TeacherTests() {
                 type="file"
                 accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/m4a,audio/aac"
                 hidden
-                disabled={uploadingTarget?.mediaType === 'audio' && uploadingTarget?.itemId === item.id}
+                disabled={isEditingExisting || (uploadingTarget?.mediaType === 'audio' && uploadingTarget?.itemId === item.id)}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   handleFileUpload('audio', file, item.id);
@@ -569,6 +574,14 @@ function TeacherTests() {
     }
   };
 
+  // Preview a single item (used when editing existing test to collapse full editor)
+  const [previewItem, setPreviewItem] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const openPreviewItem = (item) => {
+    setPreviewItem(item);
+    setPreviewOpen(true);
+  };
+
   if (loading) {
     return <div className="teacher-tests card p-4 text-center">Đang tải dữ liệu...</div>;
   }
@@ -588,6 +601,22 @@ function TeacherTests() {
               )}
             </h5>
             <small className="text-muted">Chọn lớp phụ trách để bắt đầu</small>
+            {isEditingExisting && (
+              <div style={{ display: 'inline-block', marginLeft: 8 }}>
+                <small
+                  style={{
+                    background: '#fff3cd',
+                    color: '#664d03',
+                    padding: '4px 8px',
+                    borderRadius: 6,
+                    fontWeight: 600,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
+                  }}
+                >
+                  Đang sửa — 🔒 Khóa: tên, mô tả, thời lượng, đáp án · ✏️ Cho phép: Lớp, Part, Ngày mở/đóng
+                </small>
+              </div>
+            )}
           </div>
           <div className="d-flex flex-row gap-2 ms-auto" style={{ minWidth: 220, justifyContent: 'flex-end' }}>
             <button
@@ -616,12 +645,19 @@ function TeacherTests() {
           <div className="form-section card mb-3 p-4 border-0 shadow-sm" style={{ background: '#f8fafc', borderRadius: 16, width: '100%' }}>
             <div className="row g-3 align-items-end">
               <div className="col-md-4">
-                <label className="form-label fw-semibold small mb-1">Lớp phụ trách</label>
+                <label className="form-label fw-semibold small mb-1">
+                  Lớp phụ trách
+                  <span style={{ marginLeft: 8, fontSize: 13, verticalAlign: 'middle', color: isEditingExisting ? '#6c757d' : '#0f5132' }}>
+                    {isEditingExisting ? ' 🔒' : ' ✏️'}
+                  </span>
+                </label>
                 <select
                   className="form-select form-select-sm"
                   value={selectedClassId}
                   onChange={(e) => setSelectedClassId(e.target.value)}
+                  disabled={isEditingExisting}
                   required
+                  style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
                 >
                   {(classes || []).map((cls) => (
                     <option key={cls.class_id} value={cls.class_id}>
@@ -637,15 +673,18 @@ function TeacherTests() {
                   className="form-control form-control-sm"
                   value={form.test_name}
                   onChange={(e) => updateFormField('test_name', e.target.value)}
+                  disabled={isEditingExisting}
                   required
+                  style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
                 />
               </div>
               <div className="col-md-3">
-                <label className="form-label fw-semibold small mb-1">Trạng thái</label>
+                <label className="form-label fw-semibold small mb-1">Trạng thái <small style={{marginLeft:6, color:'#0f5132'}}>✏️</small></label>
                 <select
                   className="form-select form-select-sm"
                   value={form.test_status}
                   onChange={(e) => updateFormField('test_status', e.target.value)}
+                  style={isEditingExisting ? { boxShadow: '0 0 0 4px rgba(16,185,129,0.06)', borderColor: '#10b981' } : undefined}
                 >
                   <option value="ACTIVE">Mở cho học sinh</option>
                   <option value="INACTIVE">Tạm khóa chỉnh sửa</option>
@@ -661,6 +700,8 @@ function TeacherTests() {
                   rows={2}
                   value={form.test_description}
                   onChange={(e) => updateFormField('test_description', e.target.value)}
+                  disabled={isEditingExisting}
+                  style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
                 />
               </div>
             </div>
@@ -673,6 +714,8 @@ function TeacherTests() {
                   className="form-control form-control-sm"
                   value={form.test_duration_min}
                   onChange={(e) => updateFormField('test_duration_min', e.target.value)}
+                  disabled={isEditingExisting}
+                  style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
                 />
               </div>
               <div className="col-md-4">
@@ -683,6 +726,8 @@ function TeacherTests() {
                   className="form-control form-control-sm"
                   value={form.max_attempts}
                   onChange={(e) => updateFormField('max_attempts', e.target.value)}
+                  disabled={isEditingExisting}
+                  style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
                 />
               </div>
               <div className="col-md-4">
@@ -693,6 +738,8 @@ function TeacherTests() {
                   className="form-control form-control-sm"
                   value={form.time_limit_min}
                   onChange={(e) => updateFormField('time_limit_min', e.target.value)}
+                  disabled={isEditingExisting}
+                  style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
                 />
               </div>
             </div>
@@ -704,6 +751,7 @@ function TeacherTests() {
                   className="form-control form-control-sm"
                   value={form.available_from}
                   onChange={(e) => updateFormField('available_from', e.target.value)}
+                  style={isEditingExisting ? { boxShadow: '0 0 0 4px rgba(16,185,129,0.06)', borderColor: '#10b981' } : undefined}
                 />
               </div>
               <div className="col-md-4">
@@ -713,135 +761,14 @@ function TeacherTests() {
                   className="form-control form-control-sm"
                   value={form.due_at}
                   onChange={(e) => updateFormField('due_at', e.target.value)}
+                  style={isEditingExisting ? { boxShadow: '0 0 0 4px rgba(16,185,129,0.06)', borderColor: '#10b981' } : undefined}
                 />
               </div>
             </div>
           </div>
 
           {/* Danh sách câu hỏi */}
-          {!items.length ? (
-            <div className="card border-0 bg-light-subtle text-muted text-center py-4">
-              Chưa có câu hỏi nào. Nhấn "Thêm câu hỏi" để bắt đầu.
-            </div>
-          ) : (
-            items.map((item, idx) => (
-              <div key={item.id} className="test-item card shadow-sm mb-3">
-                  <div className="card-header d-flex justify-content-between align-items-center">
-                    <span>Câu hỏi #{idx + 1}</span>
-                    <div className="d-flex gap-2">
-                      <button
-                        type="button"
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={() => removeItem(item.id)}
-                        disabled={submitting}
-                      >
-                        Xóa câu hỏi
-                      </button>
-                    </div>
-                  </div>
-                  <div className="card-body">
-                    <div className="row g-3 mb-3">
-                      <div className="col-md-4">
-                        <label className="form-label">Part TOEIC</label>
-                        <select
-                          className="form-select"
-                          value={item.part_id}
-                          onChange={(e) => updateItemField(item.id, 'part_id', e.target.value)}
-                        >
-                          {(parts || []).map((part) => (
-                            <option key={part.part_id} value={part.part_id}>
-                              {part.part_section} · {part.part_code}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="col-md-8">
-                        <label className="form-label">Nội dung câu hỏi</label>
-                        <textarea
-                          className="form-control"
-                          rows={2}
-                          value={item.question_text}
-                          onChange={(e) => updateItemField(item.id, 'question_text', e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="expanded-section">
-                      <div className="row g-3 mb-3">
-                        <div className="col-md-12">
-                          <label className="form-label">Mô tả tình huống</label>
-                          <textarea
-                            className="form-control"
-                            rows={2}
-                            value={item.stimulus_text}
-                            onChange={(e) => updateItemField(item.id, 'stimulus_text', e.target.value)}
-                            placeholder="(Không bắt buộc)"
-                          />
-                        </div>
-                      </div>
-                      {renderMediaInputs(item)}
-                    </div>
-
-                    <div className="choice-grid">
-                      {item.choices.map((choice) => (
-                        <div key={choice.id} className={`choice-card ${choice.is_correct ? 'correct' : ''}`}>
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <div className="form-check">
-                              <input
-                                className="form-check-input"
-                                type="radio"
-                                name={`correct-${item.id}`}
-                                checked={choice.is_correct}
-                                onChange={() => toggleCorrectChoice(item.id, choice.id)}
-                              />
-                              <label className="form-check-label">Đáp án đúng</label>
-                            </div>
-                            <button
-                              type="button"
-                              className="btn btn-link text-danger p-0"
-                              onClick={() => removeChoice(item.id, choice.id)}
-                              disabled={item.choices.length <= 2 || submitting}
-                            >
-                              Xóa
-                            </button>
-                          </div>
-                          <div className="mb-2">
-                            <label className="form-label small">Nhãn</label>
-                            <input
-                              type="text"
-                              className="form-control form-control-sm"
-                              value={choice.label}
-                              onChange={(e) => updateChoiceField(item.id, choice.id, 'label', e.target.value.toUpperCase().slice(0, 2))}
-                            />
-                          </div>
-                          <div>
-                            <label className="form-label small">Nội dung</label>
-                            <textarea
-                              className="form-control"
-                              rows={2}
-                              value={choice.content}
-                              onChange={(e) => updateChoiceField(item.id, choice.id, 'content', e.target.value)}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="text-end mt-2">
-                      <button
-                        type="button"
-                        className="btn btn-add-choice rounded-4 px-3 fw-semibold shadow-sm"
-                        onClick={() => addChoice(item.id)}
-                        style={{ background: '#e0f2fe', color: '#0284c7', border: 'none', fontSize: 15, transition: 'all 0.2s' }}
-                        onMouseOver={e => e.currentTarget.style.background = '#bae6fd'}
-                        onMouseOut={e => e.currentTarget.style.background = '#e0f2fe'}
-                      >
-                        <span style={{ fontWeight: 700, fontSize: 17, marginRight: 4 }}>＋</span> Thêm đáp án
-                      </button>
-                    </div>
-                  </div>
-              </div>
-            ))
-          )}
+          
 
           {/* Header và nút thêm câu hỏi chuyển xuống dưới */}
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4 mb-3">
@@ -853,7 +780,7 @@ function TeacherTests() {
               type="button"
               className="btn btn-add-question rounded-4 px-4 fw-semibold shadow-sm"
               onClick={addItem}
-              disabled={submitting}
+              disabled={isEditingExisting || submitting}
               style={{ background: '#f3e8ff', color: '#7c3aed', border: 'none', fontSize: 16, transition: 'all 0.2s' }}
               onMouseOver={e => e.currentTarget.style.background = '#ede9fe'}
               onMouseOut={e => e.currentTarget.style.background = '#f3e8ff'}
@@ -879,13 +806,13 @@ function TeacherTests() {
             <div className="row g-4 teacher-tests-history-list">
               {history.map((test) => (
                 <div key={test.test_id} className="col-md-6 col-lg-4">
-                  <div className="card test-history-card border-0 shadow-sm h-100" style={{ borderRadius: 16, background: '#f8fafc', boxShadow: '0 2px 12px #e9ecef' }}>
-                    <div className="card-body d-flex flex-column align-items-center justify-content-between p-4 h-100">
+                  <div className="card test-history-card compact border-0 shadow-sm h-100" style={{ borderRadius: 12, background: '#f8fafc', boxShadow: '0 1px 6px #e9ecef' }}>
+                    <div className="card-body d-flex flex-column align-items-center justify-content-between p-3 h-100">
                       <div className="w-100 text-center mb-3">
-                        <div className="fw-bold fs-5 mb-1" style={{ color: '#222', letterSpacing: 0.2 }}>{test.test_name || `Bài kiểm tra #${test.test_id}`}</div>
+                        <div className="fw-bold fs-6 mb-1" style={{ color: '#222', letterSpacing: 0.2 }}>{test.test_name || `Bài kiểm tra #${test.test_id}`}</div>
                       </div>
-                      <div className="w-100 mb-3" style={{ borderBottom: '1px solid #ececec', marginBottom: 18 }}></div>
-                      <div className="test-meta w-100 mb-3" style={{ fontSize: 15, color: '#444', lineHeight: 1.8 }}>
+                      <div className="w-100 mb-2" style={{ borderBottom: '1px solid #ececec', marginBottom: 12 }}></div>
+                      <div className="test-meta w-100 mb-2" style={{ fontSize: 13, color: '#444', lineHeight: 1.6 }}>
                         <div className="row g-1">
                             <div className="col-6 d-flex flex-column align-items-center text-center mb-1">
                             <span className="fw-semibold">Trạng thái</span>
@@ -906,10 +833,10 @@ function TeacherTests() {
                         </div>
                       </div>
                       <div className="w-100 mb-2" style={{ borderBottom: '1px solid #ececec' }}></div>
-                      <div className="d-flex flex-wrap justify-content-center gap-2 mt-2 w-100">
+                      <div className="d-flex flex-wrap justify-content-center gap-1 mt-2 w-100">
                         <button
                           type="button"
-                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-2 px-3 fw-semibold"
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1 px-2 fw-semibold"
                           onClick={() => openDetail(test.test_id, 'view')}
                           disabled={submitting}
                           style={{ color: '#8e24aa' }}
@@ -918,7 +845,7 @@ function TeacherTests() {
                         </button>
                         <button
                           type="button"
-                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-2 px-3 fw-semibold"
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1 px-2 fw-semibold"
                           onClick={() => openDetail(test.test_id, 'edit')}
                           disabled={submitting}
                           style={{ color: '#fb8c00' }}
@@ -927,7 +854,7 @@ function TeacherTests() {
                         </button>
                         <button
                           type="button"
-                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-2 px-3 fw-semibold"
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1 px-2 fw-semibold"
                           onClick={() => openScoreboard(test.test_id)}
                           disabled={submitting}
                           style={{ color: '#388e3c' }}
@@ -936,7 +863,7 @@ function TeacherTests() {
                         </button>
                         <button
                           type="button"
-                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-2 px-3 fw-semibold"
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1 px-2 fw-semibold"
                           onClick={() => handleDelete(test.test_id)}
                           disabled={submitting}
                           style={{ color: '#e53935' }}
@@ -1045,6 +972,57 @@ function TeacherTests() {
             </div>
             <div className="card-footer text-end">
               <button type="button" className="btn btn-secondary" onClick={() => setDetailModalOpen(false)}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {previewOpen && previewItem && (
+        <div className="tests-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="tests-modal card shadow-lg">
+            <div className="card-header d-flex justify-content-between align-items-center">
+              <div>
+                <h5 className="mb-1">Xem câu hỏi</h5>
+                <small className="text-muted">Xem nội dung câu hỏi đã lưu</small>
+              </div>
+              <button type="button" className="btn-close" onClick={() => setPreviewOpen(false)} aria-label="Đóng" />
+            </div>
+            <div className="card-body tests-modal-body">
+              <div className="fw-semibold mb-2">Part: {previewItem.part_id || '—'}</div>
+              {previewItem.question_text ? (
+                <p className="mb-2">{previewItem.question_text}</p>
+              ) : (
+                <p className="text-muted mb-2">(Chưa có nội dung)</p>
+              )}
+              {previewItem.stimulus_text && <p className="text-muted small mb-3">{previewItem.stimulus_text}</p>}
+
+              {(previewItem.image_path || previewItem.audio_path) && (
+                <div className="preview-media mb-3">
+                  {previewItem.image_path && (
+                    <img src={previewItem.image_path} alt="Hình minh hoạ" className="img-fluid rounded" style={{ maxHeight: 220, objectFit: 'cover' }} />
+                  )}
+                  {previewItem.audio_path && (
+                    <div className="mt-2">
+                      <audio controls src={previewItem.audio_path} style={{ width: '100%' }} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="preview-choice-list">
+                {(previewItem.choices || []).map((choice, choiceIdx) => (
+                  <div key={choice.id || choiceIdx} className={`preview-choice border rounded p-2 mb-2 ${choice.is_correct ? 'preview-choice-correct' : ''}`}>
+                    <strong className="me-2">{choice.label || String.fromCharCode(65 + choiceIdx)}.</strong>
+                    {choice.content || <span className="text-muted">(Trống)</span>}
+                    {choice.is_correct && <span className="badge bg-success ms-2">Đúng</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="card-footer text-end">
+              <button type="button" className="btn btn-secondary" onClick={() => setPreviewOpen(false)}>
                 Đóng
               </button>
             </div>
