@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchTeacherClasses } from '../../services/teacherClassService';
+import { getStudents, enrollStudentsToClass } from '../../services/studentService';
 import StudentTestResults from '../../components/teacher/StudentTestResults';
 import './css/TeacherClasses.css';
 
@@ -37,6 +38,9 @@ function TeacherClasses() {
   const [expanded, setExpanded] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedClassId, setSelectedClassId] = useState(null);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [showFullList, setShowFullList] = useState({});
 
   const loadTeacherClasses = useCallback(
     async (options = {}) => {
@@ -87,6 +91,82 @@ function TeacherClasses() {
     setExpanded((prev) =>
       prev.includes(classId) ? prev.filter((id) => id !== classId) : [...prev, classId]
     );
+  };
+
+  const toggleShowFullList = (classId) => {
+    setShowFullList((prev) => {
+      const next = !prev[classId];
+      // If opening the full list, prefetch system students for enrollment
+      if (next) fetchStudentsForClassView(classId, 1, 10, {});
+      return { ...prev, [classId]: next };
+    });
+  };
+
+  // States for the global student list (used when teacher wants to view all students and enroll)
+  const [allStudents, setAllStudents] = useState({}); // keyed by classId: { students, page, pages }
+  const [selectedForEnroll, setSelectedForEnroll] = useState({}); // keyed by classId: [studentIds]
+  const [studentsLoading, setStudentsLoading] = useState({});
+  const [enrolling, setEnrolling] = useState({});
+
+  const fetchStudentsForClassView = async (classId, page = 1, perPage = 10, filters = {}) => {
+    setStudentsLoading((s) => ({ ...s, [classId]: true }));
+    try {
+      const options = {
+        page,
+        perPage,
+        search: filters.name || filters.email || ''
+      };
+      const { students: studentsData, pagination } = await getStudents(options);
+      setAllStudents((prev) => ({
+        ...prev,
+        [classId]: { students: studentsData, pagination }
+      }));
+    } catch (err) {
+      console.error('Không thể tải danh sách học viên hệ thống', err);
+      alert('Không thể tải danh sách học viên hệ thống. Vui lòng thử lại sau.');
+    } finally {
+      setStudentsLoading((s) => ({ ...s, [classId]: false }));
+    }
+
+  };
+
+  const handleEnrollSelected = async (classId) => {
+    const toEnroll = selectedForEnroll[classId] || [];
+    if (!toEnroll.length) {
+      alert('Vui lòng chọn ít nhất một học viên để thêm vào lớp.');
+      return;
+    }
+    setEnrolling((s) => ({ ...s, [classId]: true }));
+    try {
+      const result = await enrollStudentsToClass(classId, toEnroll);
+      // Simple feedback and refresh classes list
+      alert(result.message || 'Hoàn tất thêm học viên');
+      await loadTeacherClasses({ showSpinner: true });
+      // clear selection for this class
+      setSelectedForEnroll((s) => ({ ...s, [classId]: [] }));
+      setShowFullList((s) => ({ ...s, [classId]: false }));
+    } catch (err) {
+      console.error('Lỗi khi thêm học viên:', err);
+      alert(err.message || 'Lỗi khi thêm học viên vào lớp');
+    } finally {
+      setEnrolling((s) => ({ ...s, [classId]: false }));
+    }
+  };
+
+  const handleAddStudent = async (e, classId) => {
+    e.preventDefault();
+    if (!studentSearch) return;
+    setAdding(true);
+    try {
+      // Placeholder: Ideally call API to add student to class.
+      // After adding, refresh the classes list.
+      await loadTeacherClasses({ showSpinner: true });
+      setStudentSearch('');
+    } catch (err) {
+      // ignore for now; loadTeacherClasses will set error
+    } finally {
+      setAdding(false);
+    }
   };
 
   const handleViewStudentResults = (student, classId) => {
@@ -181,16 +261,57 @@ function TeacherClasses() {
                   <div className="student-summary mt-3">
                     <div className="d-flex justify-content-between align-items-center">
                       <span className="meta-label text-uppercase">Học viên tham gia</span>
-                      <button
-                        type="button"
-                        className="btn btn-link btn-sm p-0"
-                        onClick={() => toggleExpanded(classId)}
-                      >
-                        {isExpanded ? 'Thu gọn danh sách' : 'Xem tất cả'}
-                      </button>
+                      <div className="d-flex gap-2 align-items-center">
+                        {isExpanded && (
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={() => toggleShowFullList(classId)}
+                          >
+                            {showFullList[classId] ? 'Ẩn danh sách' : 'Xem danh sách'}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="btn btn-link btn-sm p-0"
+                          onClick={() => toggleExpanded(classId)}
+                        >
+                          {isExpanded ? 'Thu gọn danh sách' : 'Xem tất cả'}
+                        </button>
+                      </div>
                     </div>
                     {students.length === 0 ? (
                       <p className="text-muted small mb-0">Chưa có học viên tham gia.</p>
+                    ) : isExpanded ? (
+                      // When class card is expanded: only show the student list when the teacher clicks "Xem danh sách"
+                      showFullList[classId] ? (
+                        <ul className="student-list mb-0 mt-2">
+                          {students.map((student) => (
+                            <li
+                              key={student.user_id}
+                              className="student-item clickable"
+                              onClick={() => handleViewStudentResults(student, classId)}
+                              role="button"
+                              tabIndex={0}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  handleViewStudentResults(student, classId);
+                                }
+                              }}
+                              title="Click để xem kết quả bài kiểm tra"
+                            >
+                              <div className="d-flex justify-content-between align-items-center">
+                                <div className="flex-grow-1">
+                                  <div className="fw-semibold">{student.name || student.user_id}</div>
+                                </div>
+                                <i className="bi bi-chevron-right text-muted" aria-hidden="true" />
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="text-muted small mt-2">Danh sách học viên đang ẩn — bấm "Xem danh sách" để mở.</div>
+                      )
                     ) : (
                       <ul className="student-list mb-0 mt-2">
                         {displayedStudents.map((student) => (

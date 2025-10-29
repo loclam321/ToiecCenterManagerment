@@ -235,25 +235,7 @@ function TeacherSchedule() {
       </div>
 
       <div className="schedule-filters">
-        <div className="filter-control">
-          <label htmlFor="course-filter">Khoá học</label>
-          <select
-            id="course-filter"
-            value={selectedCourse}
-            onChange={(event) => {
-              setSelectedCourse(event.target.value);
-              setSelectedClass('');
-            }}
-          >
-            <option value="">Tất cả khoá học</option>
-            {courseOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
+        {/* Course filter hidden per request — only show class filter */}
         <div className="filter-control">
           <label htmlFor="class-filter">Lớp học</label>
           <select
