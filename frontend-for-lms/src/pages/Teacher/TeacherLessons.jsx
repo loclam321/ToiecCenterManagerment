@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { 
   fetchTeacherLessonSetup, 
   createTeacherLesson, 
@@ -214,7 +214,14 @@ function TeacherLessons() {
   };
 
   const addItem = () => {
-    setItems((prev) => [...prev, buildEmptyItem(prev.length + 1)]);
+    // create new item so we can reference its id immediately
+    const newItem = buildEmptyItem(items.length + 1);
+    setItems((prev) => {
+      const next = [...prev, newItem];
+      return next;
+    });
+    // mark the new item as highlighted; an effect will handle scrolling and clearing the highlight
+    setHighlightedItemId(newItem.id);
   };
 
   const removeItem = (itemId) => {
@@ -399,6 +406,40 @@ function TeacherLessons() {
     setLessonPreviewItem(item);
     setLessonPreviewOpen(true);
   };
+
+  // Highlight newly added item briefly so user can spot it
+  const [highlightedItemId, setHighlightedItemId] = useState(null);
+  const highlightTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+    };
+  }, []);
+
+  // When highlightedItemId is set, scroll it into view and schedule clearing the highlight.
+  useEffect(() => {
+    if (!highlightedItemId) return undefined;
+
+    // small delay to ensure DOM has rendered the new item
+    const scrollTimer = setTimeout(() => {
+      const el = document.getElementById(`lesson-item-${highlightedItemId}`);
+      if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // After scrolling, expand the item so the editor becomes visible (makes the card longer)
+      setExpandedItems((prev) => (prev.includes(highlightedItemId) ? prev : [...prev, highlightedItemId]));
+    }, 90);
+
+    // clear any previous timeout and schedule highlight removal
+    if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+    highlightTimeoutRef.current = setTimeout(() => {
+      setHighlightedItemId(null);
+      highlightTimeoutRef.current = null;
+    }, 3500);
+
+    return () => {
+      clearTimeout(scrollTimer);
+    };
+  }, [highlightedItemId]);
 
   const formatPreviewDate = (value) => {
     if (!value) return 'Không thiết lập';
@@ -614,9 +655,9 @@ function TeacherLessons() {
     setSuccessMessage('');
 
     const lines = bulkRaw
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
 
     if (!lines.length) {
       setBulkError('Vui lòng nhập ít nhất một dòng dữ liệu.');
@@ -627,7 +668,10 @@ function TeacherLessons() {
 
     try {
       lines.forEach((line, lineIndex) => {
-        const segments = line.split(',').map((segment) => segment.trim()).filter((segment) => segment.length > 0);
+      // Prefer ~ as separator to allow commas inside sentences; fall back to comma if no ~ present
+      const useTilde = line.includes('~');
+      const rawSegments = useTilde ? line.split('~') : line.split(',');
+      const segments = rawSegments.map((segment) => segment.trim()).filter((segment) => segment.length > 0);
         if (segments.length < 2) {
           throw new Error(`Dòng ${lineIndex + 1}: cần tối thiểu câu hỏi và một đáp án.`);
         }
@@ -638,36 +682,47 @@ function TeacherLessons() {
           throw new Error(`Dòng ${lineIndex + 1}: thiếu đáp án.`);
         }
 
-        const choices = answerSegments.map((answer, idx) => {
-          const isUpper = isUpperCaseAnswer(answer);
-          const label = defaultChoiceLabels[idx] || String.fromCharCode(65 + idx);
-          const content = isUpper ? normalizeCorrectAnswer(answer) : answer;
-          return {
-            id: `${label}-${generateId()}`,
-            label,
-            content,
-            is_correct: isUpper,
-          };
-        });
+            // Build choices; support >4 answers. Label with A/B/C/... and fallback numeric labels if needed.
+            let foundUpper = false;
+            const choices = answerSegments.map((answer, idx) => {
+              const isUpper = isUpperCaseAnswer(answer);
+              if (isUpper) foundUpper = true;
+              const label = idx < 26 ? String.fromCharCode(65 + idx) : `${idx + 1}`;
+              const content = isUpper ? normalizeCorrectAnswer(answer) : answer;
+              return {
+                id: `choice-${Date.now()}-${Math.random().toString(16).slice(2)}-${idx}`,
+                label,
+                content,
+                is_correct: isUpper,
+              };
+            });
 
-        if (!choices.some((choice) => choice.is_correct)) {
-          throw new Error(`Dòng ${lineIndex + 1}: cần ít nhất một đáp án ghi HOA toàn bộ để xác định đáp án đúng.`);
-        }
+            // If user didn't mark any choice uppercase, default to first choice as correct (helps forgiving input)
+            if (!foundUpper && choices.length > 0) {
+              choices[0].is_correct = true;
+            }
 
-        importedItems.push({
-          id: `item-bulk-${generateId()}`,
-          stimulus_text: '',
-          question_text: question,
-          image_path: '',
-          audio_path: '',
-          choices,
-        });
+            importedItems.push({
+              id: `item-bulk-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+              stimulus_text: '',
+              question_text: question,
+              image_path: '',
+              audio_path: '',
+              choices,
+            });
       });
 
       setItems((prev) => [...prev, ...importedItems]);
       setBulkRaw('');
       setBulkError('');
       setSuccessMessage(`Đã thêm ${importedItems.length} câu hỏi từ nhập nhanh.`);
+
+      // If at least one item was imported, expand and mark the first one as highlighted
+      if (importedItems.length > 0) {
+        const firstNewId = importedItems[0].id;
+        // effect will scroll, expand and clear the highlight
+        setHighlightedItemId(firstNewId);
+      }
     } catch (importError) {
       setBulkError(importError.message);
     }
@@ -1049,13 +1104,26 @@ function TeacherLessons() {
               </div>
               <div className="card-body">
                 <p className="text-muted small mb-2">
-                  Cấu trúc: <code>Câu hỏi, Đáp án A, Đáp án B, ...</code>. Đáp án đúng viết HOA TOÀN BỘ. Sau khi phân tích bạn có thể đính kèm hình/audio cho từng câu ở phần xem trước bên dưới.
+                  Hướng dẫn định dạng nhanh (hiện tại):
                 </p>
-                <pre className="bulk-example mb-3">How old are you?, I'M 12 YEARS OLD, people call me Loc, fine, ok</pre>
+                <ul className="text-muted small mb-2" style={{ marginLeft: 18 }}>
+                  <li>Mỗi dòng là một câu hỏi; các trường phân tách bằng ký tự <code>~</code> (tilde) để tránh tách nhầm nếu câu/chữ có dấu phẩy.</li>
+                  <li>Cột 1 = Câu hỏi; các cột tiếp theo = đáp án (hệ thống chấp nhận bất kỳ số đáp án nào).</li>
+                  <li>Đánh dấu đáp án đúng bằng cách viết HOA TOÀN BỘ (ví dụ <code>YES</code> hoặc <code>I'M 12 YEARS OLD</code>).</li>
+                  <li>Nếu không có đáp án nào viết HOA toàn bộ, hệ thống sẽ mặc định chọn đáp án đầu tiên là đáp án đúng (để tránh lỗi nhập liệu).</li>
+                  <li>Hệ thống cũng hỗ trợ định dạng cũ dùng dấu phẩy <code>,</code> nếu không có <code>~</code> trong dòng — nhưng khuyến nghị dùng <code>~</code>.</li>
+                </ul>
+                <div className="bulk-example mb-3 small">
+                  <strong>Ví dụ hợp lệ</strong>
+                  <pre className="mb-1">How old are you? ~ I'M 12 YEARS OLD ~ people call me Loc ~ fine ~ ok</pre>
+                  <pre className="mb-1">What colors do you like? ~ RED ~ blue ~ green ~ yellow ~ purple</pre>
+                  <pre className="mb-1">Select the best ~ option one ~ option two ~ OPTION THREE</pre>
+                  <div className="text-muted small">Ghi chú: hệ thống sẽ gán nhãn A, B, C, ... cho các đáp án; nếu có nhiều hơn 26 đáp án, nhãn sẽ dùng số (27 → "27").</div>
+                </div>
                 <textarea
                   className="form-control mb-2"
                   rows={4}
-                  placeholder="Câu hỏi, Đáp án A, Đáp án B, Đáp án C, Đáp án D"
+                  placeholder="Câu hỏi ~ Đáp án A ~ Đáp án B ~ Đáp án C ~ Đáp án D"
                   value={bulkRaw}
                   onChange={(e) => setBulkRaw(e.target.value)}
                   readOnly={isEditingExisting}
@@ -1106,7 +1174,12 @@ function TeacherLessons() {
               items.map((item, idx) => {
                 const isExpanded = expandedItems.includes(item.id);
                 return (
-                  <div key={item.id} className="lesson-item card shadow-sm mb-3">
+                  <div
+                    key={item.id}
+                    id={`lesson-item-${item.id}`}
+                    className="lesson-item card shadow-sm mb-3"
+                    style={item.id === highlightedItemId ? { boxShadow: '0 0 0 6px rgba(99,102,241,0.12)', borderLeft: '4px solid #6366f1', transition: 'box-shadow 0.2s, border-left 0.2s' } : undefined}
+                  >
                     <div className="card-header d-flex justify-content-between align-items-center">
                       <span>Câu hỏi #{idx + 1}</span>
                       <div className="d-flex gap-2">

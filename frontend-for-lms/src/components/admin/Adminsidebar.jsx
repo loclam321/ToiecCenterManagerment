@@ -106,7 +106,24 @@ function AdminSidebar({
         : {};
 
     return (
-        <aside className={`admin-sidebar ${collapsed ? 'collapsed' : ''}`}>
+        <aside className={`admin-sidebar ${collapsed ? 'collapsed' : ''}`} aria-expanded={!collapsed}>
+
+            <div className="sidebar-header">
+                <div className="logo" aria-hidden>
+                    <i className="bi bi-easel2"></i>
+                    <span className="logo-text">Toiec LMS</span>
+                </div>
+                <button
+                    type="button"
+                    className="btn sidebar-toggle"
+                    onClick={() => typeof toggleSidebar === 'function' ? toggleSidebar(!collapsed) : null}
+                    aria-label={collapsed ? 'Mở sidebar' : 'Thu gọn sidebar'}
+                    title={collapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'}
+                    aria-pressed={!collapsed}
+                >
+                    <i className={collapsed ? 'bi bi-chevron-right' : 'bi bi-chevron-left'} aria-hidden="true" />
+                </button>
+            </div>
 
             <UserWrapper
                 className="user-section"

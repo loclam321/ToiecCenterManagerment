@@ -10,6 +10,14 @@
   top: 0;
   height: 100vh;
   width: 260px;
+
+  /* Ensure admin/student sidebars don't inherit global .logo padding/height
+     (some pages may use a generic .logo rule elsewhere). Make the sidebar
+     logo compact and aligned with the collapsed nav icons. */
+  .admin-sidebar .logo {
+    padding: 0;
+    height: auto;
+  }
   z-index: 100;  /* Cao hơn admin-main */
   transition: width 0.3s ease;
   background: var(--bg-primary);
@@ -22,36 +30,210 @@
   width: 70px;
 }
 
+/* When collapsed: hide text and shrink sections */
+.admin-sidebar .logo-text,
+.admin-sidebar .user-details,
+.admin-sidebar .nav-item span,
+.admin-sidebar .logout-btn span {
+  /* prepare these elements for smooth transition (no display:none) */
+  display: inline-block;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 220ms cubic-bezier(.2,.9,.2,1), transform 220ms cubic-bezier(.2,.9,.2,1), max-width 220ms cubic-bezier(.2,.9,.2,1);
+}
+
+.admin-sidebar.collapsed .logo-text,
+.admin-sidebar.collapsed .user-details,
+.admin-sidebar.collapsed .nav-item span,
+.admin-sidebar.collapsed .logout-btn span {
+  opacity: 0;
+  transform: translateX(-6px);
+  max-width: 0; /* allow shrinking horizontally */
+  pointer-events: none;
+}
+
+.admin-sidebar .user-avatar.large {
+  transition: width 220ms ease, height 220ms ease;
+}
+
+.admin-sidebar.collapsed .user-avatar.large {
+  width: 36px;
+  height: 36px;
+}
+
+.admin-sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.admin-sidebar.collapsed .sidebar-nav {
+  padding-top: 8px;
+}
+
+/* Collapsed icon buttons: more compact, circular, and visually polished */
+.admin-sidebar.collapsed .nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px; /* tighter gap */
+  padding: 8px 6px;
+}
+
+.admin-sidebar.collapsed .nav-menu li {
+  margin: 0; /* remove extra spacing */
+}
+
+.admin-sidebar .nav-item {
+  transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.admin-sidebar.collapsed .nav-item {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  padding: 6px;
+  margin: 0 auto;
+  color: var(--text-secondary);
+  background: transparent;
+}
+
+/* Make the header toggle visually match the collapsed nav icons */
+.admin-sidebar.collapsed .sidebar-toggle {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  padding: 6px;
+  margin-left: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-sidebar .sidebar-header {
+  /* keep header items vertically aligned with nav icons */
+  padding: 8px 10px;
+}
+
+.admin-sidebar.collapsed .nav-item i {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.admin-sidebar.collapsed .nav-item:hover {
+  background: rgba(99,102,241,0.06);
+  transform: translateY(-2px);
+  color: var(--primary-600);
+}
+
+.admin-sidebar.collapsed .nav-item.active {
+  background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(124,58,237,0.12));
+  box-shadow: 0 6px 18px rgba(99,102,241,0.09);
+  color: var(--primary-700);
+}
+
+/* center the user-section avatar when collapsed */
+.admin-sidebar.collapsed .user-section {
+  padding: 10px 0;
+  justify-content: center;
+}
+
+.admin-sidebar.collapsed .user-meta {
+  justify-content: center;
+}
+
+.admin-sidebar .user-avatar.large {
+  box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+}
+
+.admin-sidebar.collapsed .sidebar-footer {
+  padding: 10px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.admin-sidebar.collapsed .logout-btn {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 10px;
+}
+
 /* Header */
 .sidebar-header {
   display: flex;
   align-items: center;
-  padding: var(--spacing-lg) var(--spacing-md);
+  justify-content: space-between;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border-primary);
+  gap: 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  font-size: var(--text-xl);
-  font-weight: var(--font-bold);
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  padding: 0;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .logo i {
-  font-size: 1.75rem;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 20px;
+  color: var(--primary-600);
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
 }
 
 .logo-text {
   white-space: nowrap;
+  transition: opacity 220ms ease, transform 220ms ease, max-width 220ms ease;
+  max-width: 160px;
+  overflow: hidden;
+}
+
+.admin-sidebar.collapsed .logo-text {
+  opacity: 0;
+  transform: translateX(-6px);
+  max-width: 0;
+}
+
+.sidebar-toggle {
+  margin-left: 8px;
+  background: var(--bg-primary);
+  border: 1px solid rgba(16,24,40,0.04);
+  color: var(--text-secondary);
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(16,24,40,0.04);
+  transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.sidebar-toggle:hover {
+  transform: translateY(-2px);
+  background: rgba(99,102,241,0.06);
+  color: var(--primary-600);
+}
+
+.sidebar-toggle i {
+  font-size: 14px;
 }
 
 /* User Section */

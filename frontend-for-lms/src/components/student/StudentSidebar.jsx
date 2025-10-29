@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { getCurrentUser } from '../../services/authService';
 import '../admin/css/Adminsidebar.css';
 
-function StudentSidebar() {
+function StudentSidebar({ collapsed = false, toggleSidebar }) {
   const location = useLocation();
   const currentUser = getCurrentUser();
 
@@ -43,7 +43,25 @@ function StudentSidebar() {
   ];
 
   return (
-    <aside className="admin-sidebar">
+    <aside className={`admin-sidebar ${collapsed ? 'collapsed' : ''}`} aria-expanded={!collapsed}>
+
+      <div className="sidebar-header">
+        <div className="logo" aria-hidden>
+          <i className="bi bi-easel2"></i>
+          <span className="logo-text">Toiec LMS</span>
+        </div>
+        <button
+          type="button"
+          className="btn sidebar-toggle"
+          onClick={() => typeof toggleSidebar === 'function' ? toggleSidebar(!collapsed) : null}
+          aria-label={collapsed ? 'Mở sidebar' : 'Thu gọn sidebar'}
+          title={collapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'}
+          aria-pressed={!collapsed}
+        >
+          <i className={collapsed ? 'bi bi-chevron-right' : 'bi bi-chevron-left'} aria-hidden="true" />
+        </button>
+      </div>
+
       <Link
         to="/student/profile"
         className="user-section"
