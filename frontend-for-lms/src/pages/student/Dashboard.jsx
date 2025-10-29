@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { getCurrentUser, getToken } from "../../services/authService";
 
 export default function StudentDashboard() {
@@ -88,6 +88,79 @@ export default function StudentDashboard() {
     .filter((v) => v !== null && !Number.isNaN(v));
   const avgScore = bestScores.length ? Math.round((bestScores.reduce((a, b) => a + b, 0) / bestScores.length) * 100) / 100 : null;
 
+  // --- new: compute lesson completion stats and render a small SVG donut chart ---
+  // Chart logic: count tests within the student's classes.
+  // - totalTests: number of tests available in the classes the student is enrolled in
+  // - completedTests: number of those tests the student has attempted
+  const classIds = new Set(classes.map((c) => c.class_id));
+  const totalTests = Math.max(
+    classes.reduce((sum, cls) => sum + ((testsByClass[cls.class_id] || []).length), 0),
+    1
+  );
+  const completedTests = classes.reduce(
+    (sum, cls) => sum + ((testsByClass[cls.class_id] || []).filter((t) => t.has_attempted).length),
+    0
+  );
+  const completedPercent = Math.round((completedTests / totalTests) * 100);
+
+  const donutRadius = 40;
+  const donutCirc = 2 * Math.PI * donutRadius;
+
+  // --- lesson-derived stats (based on LessonList logic) ---
+  const completionFieldCandidates = ["is_completed", "completed", "user_completed", "is_done", "done"];
+  const detectedCompletionField = useMemo(() => {
+    if (!lessons || lessons.length === 0) return null;
+    const sample = lessons[0];
+    return completionFieldCandidates.find((f) => f in sample) || null;
+  }, [lessons]);
+
+  const lessonIsCompleted = (lesson) => {
+    if (detectedCompletionField) return Boolean(lesson[detectedCompletionField]);
+    const clsId = lesson.class?.class_id || lesson.class_id;
+    if (clsId && testsByClass[clsId]) {
+      const testsForClass = testsByClass[clsId];
+      return testsForClass.some((t) => (t.lesson_id === lesson.lesson_id || t.lesson_id === lesson.id) && t.has_attempted);
+    }
+    return false;
+  };
+
+  const {
+    totalLessons,
+    unlockedCount,
+    completedLessons,
+    toStudyCount,
+    upcomingNextWeekLessons,
+  } = useMemo(() => {
+    const total = lessons.length;
+    const unlocked = lessons.reduce((s, l) => s + (l.is_unlocked ? 1 : 0), 0);
+    const completed = lessons.reduce((s, l) => s + (lessonIsCompleted(l) ? 1 : 0), 0);
+    // toStudy: unlocked lessons that have questions and are not completed
+    const toStudy = lessons.filter((l) => l.is_unlocked && (l.question_count || 0) > 0 && !lessonIsCompleted(l)).length;
+
+    // next 7 days window
+    const today = new Date();
+    const start = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+    const end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + 7);
+    const upcoming = [];
+    for (const l of lessons) {
+      if (l.is_unlocked) continue;
+      if (!l.available_from) continue;
+      const d = new Date(l.available_from);
+      if (Number.isNaN(d.getTime())) continue;
+      const dUTC = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      if (dUTC >= start && dUTC <= end) upcoming.push(l);
+    }
+
+    return {
+      totalLessons: total,
+      unlockedCount: unlocked,
+      completedLessons: completed,
+      toStudyCount: toStudy,
+      upcomingNextWeekLessons: upcoming,
+    };
+  }, [lessons, testsByClass, detectedCompletionField]);
+
   return (
     <div className="student-dashboard container">
       <h3 className="mb-3">Tổng quan học tập</h3>
@@ -125,6 +198,63 @@ export default function StudentDashboard() {
             <h6>Điểm trung bình (%)</h6>
             <strong style={{ fontSize: 24 }}>{avgScore != null ? `${avgScore}%` : "—"}</strong>
             <div className="small text-muted">trên các bài đã đo được</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Visual summary: lessons done vs to-study (using LessonList rules) */}
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <div className="card p-3">
+            <h6>Bài học — tiến độ</h6>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              <div style={{ width: 110, textAlign: 'center' }}>
+                <div style={{ fontSize: 34, fontWeight: 700 }}>{completedLessons}</div>
+                <div className="small text-muted">Đã hoàn thành</div>
+              </div>
+
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 18, fontWeight: 600 }}>{toStudyCount} / {unlockedCount} bài cần làm (đã mở)</div>
+                <div className="small text-muted">{unlockedCount} / {totalLessons} bài học đã mở/tổng</div>
+                <div style={{ marginTop: 8 }}>
+                  <div><span className="badge bg-success me-2">{completedLessons}</span> Hoàn thành</div>
+                  <div style={{ marginTop: 6 }}><span className="badge bg-warning text-dark me-2">{toStudyCount}</span> Cần làm (đã mở)</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="small text-muted mt-2">
+              Số liệu dựa trên trạng thái mở khóa bài học và cờ hoàn thành (nếu có); nếu không có cờ, dùng kết quả bài kiểm tra liên kết để suy đoán.
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="card p-3">
+            <h6>Sắp mở (7 ngày tới)</h6>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              <div style={{ width: 110, textAlign: 'center' }}>
+                <div style={{ fontSize: 34, fontWeight: 700 }}>{upcomingNextWeekLessons.length}</div>
+                <div className="small text-muted">sắp mở</div>
+              </div>
+              <div style={{ flex: 1 }}>
+                {upcomingNextWeekLessons.length === 0 ? (
+                  <div className="text-muted">Không có bài nào sắp mở trong 7 ngày tới.</div>
+                ) : (
+                  <ul className="list-group list-group-flush">
+                    {upcomingNextWeekLessons.slice(0, 5).map((l) => (
+                      <li key={l.lesson_id || l.id} className="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                          <div className="fw-semibold small">{l.lesson_name}</div>
+                          <div className="text-muted small">Mở: {l.available_from?.slice(0,10) || '—'}</div>
+                        </div>
+                        <div className="small text-muted">{l.question_count || 0} câu</div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
