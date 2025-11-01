@@ -124,9 +124,8 @@ function TeacherTests() {
   const [form, setForm] = useState({
     test_name: '',
     test_description: '',
-    test_duration_min: '',
+    duration_min: '',
     max_attempts: 2,
-    time_limit_min: '',
     available_from: '',
     due_at: '',
   test_status: 'ACTIVE',
@@ -194,9 +193,8 @@ function TeacherTests() {
     setForm({
       test_name: '',
       test_description: '',
-      test_duration_min: '',
+      duration_min: '',
       max_attempts: 2,
-      time_limit_min: '',
       available_from: '',
       due_at: '',
   test_status: 'ACTIVE',
@@ -250,7 +248,9 @@ function TeacherTests() {
 
   const addItem = () => {
     const partId = defaultPartId || parts[0]?.part_id || '';
-    setItems((prev) => [...prev, buildEmptyItem(partId, prev.length + 1)]);
+    const newItem = buildEmptyItem(partId, items.length + 1);
+    setItems((prev) => [...prev, newItem]);
+    setHighlightedItemId(newItem.id);
   };
 
   const removeItem = (itemId) => {
@@ -426,7 +426,7 @@ function TeacherTests() {
   };
 
   const buildSubmitPayload = () => {
-    const { test_name, test_description, test_duration_min, max_attempts, time_limit_min, available_from, due_at, test_status } = form;
+    const { test_name, test_description, duration_min, max_attempts, available_from, due_at, test_status } = form;
     if (!test_name.trim()) {
       setError('Vui lòng nhập tên bài kiểm tra');
       return null;
@@ -438,6 +438,27 @@ function TeacherTests() {
     if (!items.length) {
       setError('Vui lòng thêm ít nhất một câu hỏi');
       return null;
+    }
+
+    // Validate duration (minutes) non-negative integer if provided
+    const durationVal = duration_min !== '' && duration_min !== null && duration_min !== undefined
+      ? Number(duration_min)
+      : null;
+    if (durationVal !== null && (!Number.isFinite(durationVal) || durationVal < 0)) {
+      setError('Thời lượng (phút) không hợp lệ');
+      return null;
+    }
+
+    // Validate date range if both provided
+    const isoAvailableFrom = toIsoOrNull(available_from);
+    const isoDueAt = toIsoOrNull(due_at);
+    if (isoAvailableFrom && isoDueAt) {
+      const fromDate = new Date(isoAvailableFrom);
+      const dueDate = new Date(isoDueAt);
+      if (!Number.isNaN(fromDate.getTime()) && !Number.isNaN(dueDate.getTime()) && dueDate < fromDate) {
+        setError('Thời gian đóng phải sau thời gian mở');
+        return null;
+      }
     }
 
     const processedItems = [];
@@ -475,11 +496,12 @@ function TeacherTests() {
       class_id: Number(selectedClassId),
       test_name: test_name.trim(),
       test_description: test_description.trim() || null,
-      test_duration_min: test_duration_min ? Number(test_duration_min) : null,
+      // Gộp: dùng cùng một giá trị cho cả thời lượng và giới hạn phút
+      test_duration_min: durationVal !== null ? durationVal : null,
       max_attempts: max_attempts ? Number(max_attempts) : 2,
-      time_limit_min: time_limit_min ? Number(time_limit_min) : null,
-      available_from: toIsoOrNull(available_from),
-      due_at: toIsoOrNull(due_at),
+      time_limit_min: durationVal !== null ? durationVal : null,
+      available_from: isoAvailableFrom,
+      due_at: isoDueAt,
       test_status,
       items: processedItems,
     };
@@ -524,9 +546,8 @@ function TeacherTests() {
         setForm({
           test_name: test.test_name || '',
           test_description: test.test_description || '',
-          test_duration_min: test.test_duration_min ?? '',
+          duration_min: (test.test_duration_min ?? test.time_limit_min ?? ''),
           max_attempts: test.max_attempts ?? 2,
-          time_limit_min: test.time_limit_min ?? '',
           available_from: normalizeDateTimeInput(test.available_from),
           due_at: normalizeDateTimeInput(test.due_at),
           test_status: test.test_status || 'ACTIVE',
@@ -581,6 +602,23 @@ function TeacherTests() {
     setPreviewItem(item);
     setPreviewOpen(true);
   };
+
+  // Highlight newly added item and auto-scroll, mirroring lessons UX
+  const [highlightedItemId, setHighlightedItemId] = useState(null);
+  useEffect(() => {
+    if (!highlightedItemId) return undefined;
+    const scrollTimer = setTimeout(() => {
+      const el = document.getElementById(`test-item-${highlightedItemId}`);
+      if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 90);
+    const clearTimer = setTimeout(() => setHighlightedItemId(null), 3500);
+    return () => {
+      clearTimeout(scrollTimer);
+      clearTimeout(clearTimer);
+    };
+  }, [highlightedItemId]);
 
   if (loading) {
     return <div className="teacher-tests card p-4 text-center">Đang tải dữ liệu...</div>;
@@ -655,9 +693,8 @@ function TeacherTests() {
                   className="form-select form-select-sm"
                   value={selectedClassId}
                   onChange={(e) => setSelectedClassId(e.target.value)}
-                  disabled={isEditingExisting}
                   required
-                  style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
+                  style={isEditingExisting ? { boxShadow: '0 0 0 4px rgba(16,185,129,0.06)', borderColor: '#10b981' } : undefined}
                 >
                   {(classes || []).map((cls) => (
                     <option key={cls.class_id} value={cls.class_id}>
@@ -679,12 +716,16 @@ function TeacherTests() {
                 />
               </div>
               <div className="col-md-3">
-                <label className="form-label fw-semibold small mb-1">Trạng thái <small style={{marginLeft:6, color:'#0f5132'}}>✏️</small></label>
+                <label className="form-label fw-semibold small mb-1">
+                  Trạng thái
+                  <span style={{marginLeft:6, color: isEditingExisting ? '#6c757d' : '#0f5132'}}>{isEditingExisting ? ' 🔒' : ' ✏️'}</span>
+                </label>
                 <select
                   className="form-select form-select-sm"
                   value={form.test_status}
                   onChange={(e) => updateFormField('test_status', e.target.value)}
-                  style={isEditingExisting ? { boxShadow: '0 0 0 4px rgba(16,185,129,0.06)', borderColor: '#10b981' } : undefined}
+                  disabled={isEditingExisting}
+                  style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
                 >
                   <option value="ACTIVE">Mở cho học sinh</option>
                   <option value="INACTIVE">Tạm khóa chỉnh sửa</option>
@@ -707,13 +748,13 @@ function TeacherTests() {
             </div>
             <div className="row g-3 mt-2">
               <div className="col-md-4">
-                <label className="form-label fw-semibold small mb-1">Thời lượng (phút)</label>
+                <label className="form-label fw-semibold small mb-1">Thời lượng/Giới hạn (phút)</label>
                 <input
                   type="number"
                   min="0"
                   className="form-control form-control-sm"
-                  value={form.test_duration_min}
-                  onChange={(e) => updateFormField('test_duration_min', e.target.value)}
+                  value={form.duration_min}
+                  onChange={(e) => updateFormField('duration_min', e.target.value)}
                   disabled={isEditingExisting}
                   style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
                 />
@@ -726,18 +767,6 @@ function TeacherTests() {
                   className="form-control form-control-sm"
                   value={form.max_attempts}
                   onChange={(e) => updateFormField('max_attempts', e.target.value)}
-                  disabled={isEditingExisting}
-                  style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
-                />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label fw-semibold small mb-1">Thời gian giới hạn (phút)</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="form-control form-control-sm"
-                  value={form.time_limit_min}
-                  onChange={(e) => updateFormField('time_limit_min', e.target.value)}
                   disabled={isEditingExisting}
                   style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
                 />
@@ -768,7 +797,141 @@ function TeacherTests() {
           </div>
 
           {/* Danh sách câu hỏi */}
-          
+          {items.length > 0 && (
+            <div className="question-editor-list mt-3">
+              {items.map((item, idx) => (
+                <div
+                  key={item.id}
+                  id={`test-item-${item.id}`}
+                  className="card mb-3 border-0 shadow-sm"
+                  style={item.id === highlightedItemId ? { borderLeft: '4px solid #6366f1', boxShadow: '0 0 0 6px rgba(99,102,241,0.12)' } : undefined}
+                >
+                  <div className="card-header bg-white d-flex justify-content-between align-items-center" style={{ border: 'none' }}>
+                    <div className="d-flex align-items-center gap-2">
+                      <span className="badge bg-secondary">Câu {idx + 1}</span>
+                      <div className="d-flex align-items-center gap-2">
+                        <label className="form-label fw-semibold small mb-0">Part</label>
+                        <select
+                          className="form-select form-select-sm"
+                          style={{ width: 140, ...(isEditingExisting ? { boxShadow: '0 0 0 4px rgba(16,185,129,0.06)', borderColor: '#10b981' } : {}) }}
+                          value={item.part_id || ''}
+                          onChange={(e) => updateItemField(item.id, 'part_id', e.target.value)}
+                        >
+                          {(parts || []).map((p) => (
+                            <option key={p.part_id} value={p.part_id}>{p.part_name || `Part ${p.part_id}`}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center gap-2">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => openPreviewItem(item)}
+                      >
+                        Xem nhanh
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => removeItem(item.id)}
+                        disabled={isEditingExisting}
+                      >
+                        Xóa câu
+                      </button>
+                    </div>
+                  </div>
+                  <div className="card-body" style={{ background: '#f8fafc' }}>
+                    <div className="row g-3 mb-3">
+                      <div className="col-md-6">
+                        <label className="form-label">Mô tả tình huống (stimulus)</label>
+                        <textarea
+                          className="form-control form-control-sm"
+                          rows={2}
+                          value={item.stimulus_text}
+                          onChange={(e) => updateItemField(item.id, 'stimulus_text', e.target.value)}
+                          disabled={isEditingExisting}
+                          style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa' } : undefined}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label">Nội dung câu hỏi</label>
+                        <textarea
+                          className="form-control form-control-sm"
+                          rows={2}
+                          value={item.question_text}
+                          onChange={(e) => updateItemField(item.id, 'question_text', e.target.value)}
+                          disabled={isEditingExisting}
+                          style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa' } : undefined}
+                        />
+                      </div>
+                    </div>
+                    {renderMediaInputs(item)}
+                    <div className="mt-3">
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <label className="form-label fw-semibold small mb-0">Đáp án</label>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() => addChoice(item.id)}
+                          disabled={isEditingExisting}
+                        >
+                          + Thêm đáp án
+                        </button>
+                      </div>
+                      <div className="choice-grid">
+                        {(item.choices || []).map((choice) => (
+                          <div key={choice.id} className={`choice-card ${choice.is_correct ? 'correct' : ''}`}>
+                            <div className="choice-header d-flex justify-content-between mb-2">
+                              <div className="form-check">
+                                <input
+                                  className="form-check-input"
+                                  type="radio"
+                                  name={`correct-${item.id}`}
+                                  checked={choice.is_correct}
+                                  onChange={() => toggleCorrectChoice(item.id, choice.id)}
+                                  disabled={isEditingExisting}
+                                />
+                                <label className="form-check-label">Đáp án đúng</label>
+                              </div>
+                              <button
+                                type="button"
+                                className="btn btn-link text-danger p-0"
+                                onClick={() => removeChoice(item.id, choice.id)}
+                                disabled={isEditingExisting || (item.choices || []).length <= 2}
+                              >
+                                Xóa
+                              </button>
+                            </div>
+                            <div className="mb-2">
+                              <label className="form-label small">Nhãn</label>
+                              <input
+                                type="text"
+                                className="form-control form-control-sm"
+                                value={choice.label}
+                                onChange={(e) => updateChoiceField(item.id, choice.id, 'label', e.target.value.toUpperCase().slice(0, 2))}
+                                disabled={isEditingExisting}
+                              />
+                            </div>
+                            <div>
+                              <label className="form-label small">Nội dung</label>
+                              <textarea
+                                className="form-control form-control-sm"
+                                rows={2}
+                                value={choice.content}
+                                onChange={(e) => updateChoiceField(item.id, choice.id, 'content', e.target.value)}
+                                disabled={isEditingExisting}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Header và nút thêm câu hỏi chuyển xuống dưới */}
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4 mb-3">

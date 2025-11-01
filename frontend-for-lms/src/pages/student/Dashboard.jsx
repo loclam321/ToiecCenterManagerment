@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { getCurrentUser, getToken } from "../../services/authService";
+import "./css/StudentDashboard.css";
 
 export default function StudentDashboard() {
   const [loading, setLoading] = useState(false);
@@ -92,7 +94,6 @@ export default function StudentDashboard() {
   // Chart logic: count tests within the student's classes.
   // - totalTests: number of tests available in the classes the student is enrolled in
   // - completedTests: number of those tests the student has attempted
-  const classIds = new Set(classes.map((c) => c.class_id));
   const totalTests = Math.max(
     classes.reduce((sum, cls) => sum + ((testsByClass[cls.class_id] || []).length), 0),
     1
@@ -105,6 +106,56 @@ export default function StudentDashboard() {
 
   const donutRadius = 40;
   const donutCirc = 2 * Math.PI * donutRadius;
+
+  // Find the nearest upcoming test within next 24 hours across student's classes
+  const nextUpcomingTest = useMemo(() => {
+    const now = Date.now();
+    const in24h = now + 24 * 60 * 60 * 1000;
+
+    const dateKeys = [
+      "open_at",
+      "available_from",
+      "available_at",
+      "start_at",
+      "start_time",
+      "open_time",
+      "start_date",
+      "open_date",
+      "scheduled_at",
+    ];
+
+    const parseDate = (v) => {
+      if (!v) return null;
+      const d = new Date(v);
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+
+    const getOpenAt = (t) => {
+      for (const k of dateKeys) {
+        if (t[k]) {
+          const d = parseDate(t[k]);
+          if (d) return d;
+        }
+      }
+      return null;
+    };
+
+    const candidates = [];
+    for (const cls of classes) {
+      const list = testsByClass[cls.class_id] || [];
+      for (const t of list) {
+        const openAt = getOpenAt(t);
+        if (!openAt) continue;
+        const ts = openAt.getTime();
+        if (ts > now && ts <= in24h) {
+          candidates.push({ test: t, cls, openAt });
+        }
+      }
+    }
+    if (candidates.length === 0) return null;
+    candidates.sort((a, b) => a.openAt - b.openAt);
+    return candidates[0];
+  }, [classes, testsByClass]);
 
   // --- lesson-derived stats (based on LessonList logic) ---
   const completionFieldCandidates = ["is_completed", "completed", "user_completed", "is_done", "done"];
@@ -161,6 +212,12 @@ export default function StudentDashboard() {
     };
   }, [lessons, testsByClass, detectedCompletionField]);
 
+  // Fraction of lessons opened vs assigned (đã mở / đã giao)
+  const lessonFraction = useMemo(
+    () => (totalLessons > 0 ? unlockedCount / Math.max(totalLessons, 1) : 0),
+    [unlockedCount, totalLessons]
+  );
+
   return (
     <div className="student-dashboard container">
       <h3 className="mb-3">Tổng quan học tập</h3>
@@ -173,28 +230,35 @@ export default function StudentDashboard() {
 
       <div className="row g-3 mb-3">
         <div className="col-md-3">
-          <div className="card p-3">
+          <div className="card p-3 h-100 summary-card">
             <h6>Buổi học hôm nay</h6>
             <strong style={{ fontSize: 24 }}>{todaysLessons.length}</strong>
             <div className="small text-muted">bài học mở/đã lên lịch hôm nay</div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card p-3">
+          <div className="card p-3 h-100 summary-card">
             <h6>Buổi sắp tới</h6>
             <strong style={{ fontSize: 24 }}>{upcomingLessons.length}</strong>
             <div className="small text-muted">bài học có ngày trong tương lai</div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card p-3">
+          <div className="card p-3 h-100 summary-card">
             <h6>Bài kiểm tra đã làm</h6>
             <strong style={{ fontSize: 24 }}>{testsTakenCount}</strong>
             <div className="small text-muted">tổng số test đã nộp</div>
+            {/* mini progress bar for tests attempted vs total */}
+            <div className="summary-progress" aria-label={`Tiến độ làm bài kiểm tra: ${completedPercent}%`}>
+              <div style={{ height: 8, width: '100%', background: '#eef2ff', borderRadius: 6, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${completedPercent}%`, background: '#6366f1', transition: 'width 0.3s ease' }} />
+              </div>
+              <div className="small text-muted mt-1">{completedTests} / {totalTests} ({completedPercent}%)</div>
+            </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card p-3">
+          <div className="card p-3 h-100 summary-card">
             <h6>Điểm trung bình (%)</h6>
             <strong style={{ fontSize: 24 }}>{avgScore != null ? `${avgScore}%` : "—"}</strong>
             <div className="small text-muted">trên các bài đã đo được</div>
@@ -208,23 +272,41 @@ export default function StudentDashboard() {
           <div className="card p-3">
             <h6>Bài học — tiến độ</h6>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-              <div style={{ width: 110, textAlign: 'center' }}>
-                <div style={{ fontSize: 34, fontWeight: 700 }}>{completedLessons}</div>
-                <div className="small text-muted">Đã hoàn thành</div>
+              {/* Donut chart for lessons opened vs assigned */}
+              <div style={{ width: 120, height: 120, position: 'relative' }} aria-label={`Tỷ lệ bài đã mở: ${Math.round(lessonFraction * 100)}%`}>
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r={donutRadius} stroke="#eef2ff" strokeWidth="12" fill="none" />
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r={donutRadius}
+                    stroke="#10b981"
+                    strokeWidth="12"
+                    fill="none"
+                    strokeDasharray={donutCirc}
+                    strokeDashoffset={donutCirc * (1 - Math.min(Math.max(lessonFraction, 0), 1))}
+                    strokeLinecap="round"
+                    transform="rotate(-90 60 60)"
+                  />
+                </svg>
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                  <div style={{ fontSize: 18, fontWeight: 700 }}>{Math.round(lessonFraction * 100)}%</div>
+                  <div className="small text-muted">đã mở</div>
+                </div>
               </div>
 
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 18, fontWeight: 600 }}>{toStudyCount} / {unlockedCount} bài cần làm (đã mở)</div>
-                <div className="small text-muted">{unlockedCount} / {totalLessons} bài học đã mở/tổng</div>
+                <div style={{ fontSize: 18, fontWeight: 600 }}>{unlockedCount} / {totalLessons} bài học đã mở</div>
+                <div className="small text-muted">Tổng đã giao: {totalLessons}</div>
                 <div style={{ marginTop: 8 }}>
-                  <div><span className="badge bg-success me-2">{completedLessons}</span> Hoàn thành</div>
-                  <div style={{ marginTop: 6 }}><span className="badge bg-warning text-dark me-2">{toStudyCount}</span> Cần làm (đã mở)</div>
+                  <div><span className="badge bg-success me-2">{unlockedCount}</span> Đã mở</div>
+                  <div style={{ marginTop: 6 }}><span className="badge bg-secondary text-dark me-2">{Math.max(totalLessons - unlockedCount, 0)}</span> Chưa mở</div>
                 </div>
               </div>
             </div>
 
             <div className="small text-muted mt-2">
-              Số liệu dựa trên trạng thái mở khóa bài học và cờ hoàn thành (nếu có); nếu không có cờ, dùng kết quả bài kiểm tra liên kết để suy đoán.
+              Số liệu hiển thị dựa trên số bài đã giao (tổng) và số bài đã mở cho học viên; không tính trạng thái hoàn thành.
             </div>
           </div>
         </div>
@@ -265,7 +347,23 @@ export default function StudentDashboard() {
         <div className="row">
           <div className="col-lg-6 mb-3">
             <div className="card p-3">
-              <h5>Danh sách bài học hôm nay</h5>
+              <h5>Thông báo về bài kiểm tra</h5>
+              {nextUpcomingTest ? (
+                <div className="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+                  <div>
+                    <div className="fw-semibold">Bài kiểm tra sắp có trong 24 giờ</div>
+                    <div className="small text-muted">
+                      “{nextUpcomingTest.test.test_name}” • {nextUpcomingTest.cls.class_name}<br />Mở: {nextUpcomingTest.openAt.toLocaleString('vi-VN', { hour12: false })}
+                    </div>
+                  </div>
+                  <Link
+                    className="btn btn-primary btn-sm"
+                    to="/student/tests"
+                  >
+                    Đi đến bài kiểm tra
+                  </Link>
+                </div>
+              ) : null}
               {todaysLessons.length === 0 ? (
                 <div className="text-muted">Hôm nay bạn không có bài học mới.</div>
               ) : (
@@ -312,7 +410,13 @@ export default function StudentDashboard() {
                               </div>
                               <div className="text-end small">
                                 {t.has_attempted ? (
-                                  <div><span className="badge bg-success">{t.student_percentage ?? t.student_score_10 ? `${t.student_percentage}%` : "—"}</span></div>
+                                  <div>
+                                    <span className="badge bg-success">
+                                      {t.student_percentage != null
+                                        ? `${t.student_percentage}%`
+                                        : (t.student_score_10 != null ? t.student_score_10 : "—")}
+                                    </span>
+                                  </div>
                                 ) : (
                                   <div className="text-muted">Chưa làm</div>
                                 )}

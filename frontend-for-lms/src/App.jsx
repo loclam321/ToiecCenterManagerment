@@ -18,6 +18,8 @@ import FacilityPage from './pages/facility/facility';
 
 import TeacherProfileEditor from './components/layout/TeacherProfileEditor';
 import StudentDashboard from './pages/student/Dashboard';
+import StudentTests from './pages/student/Tests';
+import TestRunner from './pages/student/TestRunner';
 
 // Giữ HomePage content trong App nhưng chỉ hiển thị nó ở route "/"
 function HomeContent() {
@@ -454,6 +456,8 @@ function App() {
           <Route path="/facility" element={<FacilityPage />} />
           <Route path="/teacher-profile" element={<TeacherProfileEditor />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
+          <Route path="/student/tests" element={<StudentTests />} />
+          <Route path="/student/tests/:testId" element={<TestRunner />} />
           {/* Thêm các routes khác ở đây */}
         </Routes>
       </main>

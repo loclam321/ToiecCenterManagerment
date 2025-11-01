@@ -261,6 +261,24 @@ export const mapTeacherToApi = (teacherData) => {
 };
 
 /**
+ * Chuẩn hoá trạng thái giáo viên từ API về các giá trị UI: active | inactive | retired | unknown
+ */
+const normalizeStatus = (value) => {
+  if (value === null || value === undefined) return 'unknown';
+  const s = String(value).trim().toLowerCase();
+  const map = {
+    // active variants
+    a: 'active', act: 'active', active: 'active', '1': 'active', true: 'active', 'true': 'active',
+    // inactive variants (including on leave/suspended)
+    i: 'inactive', inact: 'inactive', inactive: 'inactive', '0': 'inactive', false: 'inactive', 'false': 'inactive',
+    idle: 'inactive', leave: 'inactive', 'on_leave': 'inactive', suspended: 'inactive', pause: 'inactive', paused: 'inactive',
+    // retired variants
+    r: 'retired', retire: 'retired', retired: 'retired'
+  };
+  return map.hasOwnProperty(s) ? map[s] : 'unknown';
+};
+
+/**
  * Map dữ liệu từ API sang định dạng frontend 
  * @param {Object} apiTeacher - Dữ liệu giáo viên từ API response
  */
@@ -291,6 +309,8 @@ export function mapTeacherFromApi(api) {
   // avatar path from backend is already normalized by teacher_model._avatar_web_path()
   const avatarPath = api.tch_avtlink ?? null;
 
+  const status = normalizeStatus(api.tch_status);
+
   return {
     // Frontend-friendly fields used by components
     id,
@@ -303,8 +323,8 @@ export function mapTeacherFromApi(api) {
     tch_avtlink: api.tch_avtlink ?? null,
     // normalized gender for UI
     gender,
-    // status if backend provides it
-    status: api.tch_status ?? 'active',
+  // normalized status for UI
+  status,
     // contact fields
     user_email: api.user_email ?? '',
     user_telephone: api.user_telephone ?? '',

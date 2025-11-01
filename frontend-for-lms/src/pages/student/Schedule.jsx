@@ -27,26 +27,37 @@ const TIME_SLOTS = (() => {
 // ✨ Optimized: Cache para parseTimeToMinutes
 const TIME_CACHE = new Map();
 
+// FIX: Timezone-safe date formatting - luôn dùng local date components
 const formatDateISO = (date) => {
-  const copy = new Date(date);
-  copy.setHours(0, 0, 0, 0);
-  return copy.toISOString().split('T')[0];
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
+// FIX: Timezone-safe week start calculation
 const getWeekStart = (referenceDate) => {
   const date = new Date(referenceDate);
   const currentDay = date.getDay();
   const diff = currentDay === 0 ? -6 : 1 - currentDay;
-  date.setDate(date.getDate() + diff);
-  date.setHours(0, 0, 0, 0);
-  return date;
+  // Tạo date object mới từ components để tránh lỗi timezone
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate() + diff;
+  return new Date(year, month, day, 0, 0, 0, 0);
 };
 
+// FIX: Timezone-safe week days builder
 const buildWeekDays = (startDate) => {
   const days = [];
   for (let i = 0; i < 7; i += 1) {
-    const next = new Date(startDate);
-    next.setDate(startDate.getDate() + i);
+    // Tạo date từ components thay vì clone + modify
+    const year = startDate.getFullYear();
+    const month = startDate.getMonth();
+    const day = startDate.getDate() + i;
+    const next = new Date(year, month, day, 0, 0, 0, 0);
+    
     days.push({
       label: next.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' }),
       iso: formatDateISO(next),
@@ -106,6 +117,16 @@ export default function StudentSchedule() {
   const [loading, setLoading] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
+  // Live clock to react to system time changes (updates every 60s)
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  const todayIso = useMemo(() => formatDateISO(now), [now]);
+  const nowMinutes = useMemo(() => now.getHours() * 60 + now.getMinutes(), [now]);
 
   // ✨ Optimized: Use constant instead of building every time
   const timeSlots = TIME_SLOTS;
@@ -248,6 +269,29 @@ export default function StudentSchedule() {
     }
   }, [mergedTracker]);
 
+  // Compute status client-side using local system clock (timezone-safe)
+  const computeLocalStatus = useCallback((session) => {
+    try {
+      const dateStr = session?.schedule_date;
+      if (!dateStr) return 'upcoming';
+
+      if (dateStr < todayIso) return 'completed';
+      if (dateStr > todayIso) return 'upcoming';
+
+      // Same-day: check time window
+      const startStr = session?.schedule_startime;
+      const endStr = session?.schedule_endtime;
+      const start = parseTimeToMinutes(startStr ?? '00:00');
+      const end = parseTimeToMinutes(endStr ?? '23:59');
+
+      if (end <= nowMinutes) return 'completed';
+      if (start > nowMinutes) return 'upcoming';
+      return 'today';
+    } catch {
+      return session?.status || 'upcoming';
+    }
+  }, [nowMinutes, todayIso]);
+
   return (
     <div className="student-schedule-page">
       <div className="schedule-header">
@@ -309,7 +353,7 @@ export default function StudentSchedule() {
             <tr>
               <th className="time-column">Thời gian</th>
               {weekDays.map((day) => (
-                <th key={day.iso} className={`day-column ${day.iso === formatDateISO(new Date()) ? 'today' : ''}`}>
+                <th key={day.iso} className={`day-column ${day.iso === todayIso ? 'today' : ''}`}>
                   <div className="day-label">{day.label}</div>
                 </th>
               ))}
@@ -341,8 +385,8 @@ export default function StudentSchedule() {
                   const roomName = session.room?.room_name || `Phòng ${session.room?.room_id || ''}`;
                   const teacherName = session.teacher?.user_name || 'Chưa cập nhật';
                   
-                  // ✨ Get session status from backend or calculate
-                  const status = session.status || 'upcoming';
+                  // ✨ Always compute status client-side so system clock changes reflect immediately
+                  const status = computeLocalStatus(session);
                   const statusClass = `session-${status}`; // CSS classes: session-completed, session-today, session-upcoming
 
                   return (

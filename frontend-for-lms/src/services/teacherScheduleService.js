@@ -12,30 +12,34 @@ const getAuthHeaders = () => {
 };
 
 // Helper to compute session status similar to backend student schedule logic
+// FIX: Sử dụng ISO date string comparison để tránh lỗi timezone
 const computeStatus = (schedule) => {
   try {
-    const today = new Date();
-    const dateStr = schedule.schedule_date;
+    const dateStr = schedule.schedule_date; // Backend trả về ISO: "YYYY-MM-DD"
     const endStr = schedule.schedule_endtime;
     if (!dateStr) return 'upcoming';
 
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const sessionDate = new Date(y, (m || 1) - 1, d || 1);
+    // Lấy ngày hiện tại theo local timezone (dạng "YYYY-MM-DD")
+    const now = new Date();
+    const todayStr = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0')
+    ].join('-');
 
-    // Compare only by date for past
-    const sessionDateOnly = new Date(sessionDate);
-    sessionDateOnly.setHours(0, 0, 0, 0);
-    const todayOnly = new Date(today);
-    todayOnly.setHours(0, 0, 0, 0);
-
-    if (sessionDateOnly < todayOnly) {
+    // So sánh string trực tiếp (timezone-safe)
+    if (dateStr < todayStr) {
       return 'completed';
     }
-    if (sessionDateOnly.getTime() === todayOnly.getTime()) {
+    if (dateStr === todayStr) {
       if (!endStr) return 'today';
-      const [hh = 0, mm = 0, ss = 0] = String(endStr).split(':').map(Number);
-      const endDt = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, ss || 0);
-      return today > endDt ? 'completed' : 'today';
+      // So sánh thời gian kết thúc với giờ hiện tại
+      const nowTime = [
+        String(now.getHours()).padStart(2, '0'),
+        String(now.getMinutes()).padStart(2, '0'),
+        String(now.getSeconds()).padStart(2, '0')
+      ].join(':');
+      return endStr <= nowTime ? 'completed' : 'today';
     }
     return 'upcoming';
   } catch {

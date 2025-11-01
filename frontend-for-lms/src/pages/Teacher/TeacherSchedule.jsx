@@ -25,26 +25,37 @@ const TIME_SLOTS = (() => {
 
 const TIME_CACHE = new Map();
 
+// FIX: Timezone-safe date formatting - luôn dùng local date components
 const formatDateISO = (date) => {
-  const copy = new Date(date);
-  copy.setHours(0, 0, 0, 0);
-  return copy.toISOString().split('T')[0];
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
+// FIX: Timezone-safe week start calculation
 const getWeekStart = (referenceDate) => {
   const date = new Date(referenceDate);
   const currentDay = date.getDay();
   const diff = currentDay === 0 ? -6 : 1 - currentDay;
-  date.setDate(date.getDate() + diff);
-  date.setHours(0, 0, 0, 0);
-  return date;
+  // Tạo date object mới từ components để tránh lỗi timezone
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate() + diff;
+  return new Date(year, month, day, 0, 0, 0, 0);
 };
 
+// FIX: Timezone-safe week days builder
 const buildWeekDays = (startDate) => {
   const days = [];
   for (let i = 0; i < 7; i += 1) {
-    const next = new Date(startDate);
-    next.setDate(startDate.getDate() + i);
+    // Tạo date từ components thay vì clone + modify
+    const year = startDate.getFullYear();
+    const month = startDate.getMonth();
+    const day = startDate.getDate() + i;
+    const next = new Date(year, month, day, 0, 0, 0, 0);
+    
     days.push({
       label: next.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' }),
       iso: formatDateISO(next),

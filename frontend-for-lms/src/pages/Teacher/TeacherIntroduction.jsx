@@ -154,16 +154,28 @@ const TeacherIntroduction = () => {
         return Math.floor((today - hire) / (365.25 * 24 * 60 * 60 * 1000));
     };
 
+    // Chuẩn hoá và hiển thị badge trạng thái ổn định, kể cả khi API trả về giá trị lạ
     const getStatusBadge = (status) => {
-        switch (status) {
+        const s = (status ?? '').toString().trim().toLowerCase();
+        const normalized = (
+            s === 'a' || s === 'act' || s === 'active' || s === '1' || s === 'true'
+        ) ? 'active'
+          : (
+            s === 'i' || s === 'inact' || s === 'inactive' || s === '0' || s === 'false' ||
+            s === 'idle' || s === 'leave' || s === 'on_leave' || s === 'suspended' || s === 'pause' || s === 'paused'
+          ) ? 'inactive'
+          : (s === 'r' || s === 'retire' || s === 'retired') ? 'retired'
+          : 'unknown';
+
+        switch (normalized) {
             case 'active':
-                return { text: 'Đang hoạt động', class: 'status-active' };
+                return { text: 'Đang hoạt động', class: 'status-active', hint: 'Giáo viên đang công tác' };
             case 'inactive':
-                return { text: 'Tạm nghỉ', class: 'status-inactive' };
+                return { text: 'Tạm nghỉ', class: 'status-inactive', hint: 'Tạm nghỉ / tạm dừng / đang rảnh' };
             case 'retired':
-                return { text: 'Đã nghỉ hưu', class: 'status-retired' };
+                return { text: 'Đã nghỉ hưu', class: 'status-retired', hint: 'Đã nghỉ công tác' };
             default:
-                return { text: 'Chưa xác định', class: 'status-unknown' };
+                return { text: 'Chưa xác định', class: 'status-unknown', hint: 'Trạng thái chưa rõ — vui lòng cập nhật hồ sơ' };
         }
     };
 
@@ -251,9 +263,14 @@ const TeacherIntroduction = () => {
                                                 </div>
 
                                                 {/* Status badge */}
-                                                <div className={`status-badge ${getStatusBadge(teacher.status).class}`}>
-                                                    {getStatusBadge(teacher.status).text}
-                                                </div>
+                                                {(() => {
+                                                    const badge = getStatusBadge(teacher.status);
+                                                    return (
+                                                        <div className={`status-badge ${badge.class}`} title={badge.hint} aria-label={`Trạng thái: ${badge.text}`}>
+                                                            {badge.text}
+                                                        </div>
+                                                    );
+                                                })()}
 
                                                 {/* Bottom band with name/title */}
                                                 <div className="teacher-card-bottom">

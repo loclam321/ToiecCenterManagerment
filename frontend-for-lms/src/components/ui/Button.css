@@ -1,0 +1,40 @@
+/* App-wide reusable button styles (scoped to .btn-app to avoid clashing with Bootstrap .btn) */
+.btn-app {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 14px;
+  line-height: 1.2;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-app:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* sizes */
+.btn-sm { padding: 8px 12px; font-size: 0.9rem; border-radius: 8px; min-height: 36px; }
+.btn-md { padding: 10px 14px; font-size: 0.95rem; border-radius: 10px; min-height: 40px; }
+.btn-lg { padding: 12px 18px; font-size: 1.05rem; border-radius: 12px; min-height: 46px; }
+
+/* variants */
+.btn-primary { background: #6366f1; color: #fff; }
+.btn-primary:hover { background: #5558ee; }
+.btn-primary:active { background: #4c51e7; }
+.btn-primary:focus-visible { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35); }
+
+.btn-secondary { background: #ffffff; color: #111827; border-color: #e5e7eb; }
+.btn-secondary:hover { background: #fafafa; }
+.btn-secondary:active { background: #f3f4f6; }
+.btn-secondary:focus-visible { box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08); }
+
+.btn-ghost { background: transparent; color: #4b5563; }
+.btn-ghost:hover { background: #f3f4f6; }
+.btn-ghost:active { background: #e5e7eb; }
+.btn-ghost:focus-visible { box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.2); }

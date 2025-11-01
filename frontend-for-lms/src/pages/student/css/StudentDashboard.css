@@ -1,0 +1,38 @@
+/* Unified button styling within the student dashboard scope */
+.student-dashboard .btn,
+.student-dashboard .btn-sm,
+.student-dashboard .btn-lg {
+  /* Normalize Bootstrap button size variables */
+  --bs-btn-padding-y: 0.5rem;
+  --bs-btn-padding-x: 0.75rem;
+  --bs-btn-font-size: 0.95rem;
+  --bs-btn-border-radius: 8px;
+
+  /* Keep a uniform height/line height */
+  line-height: 1.2;
+  min-height: 38px;
+}
+
+/* Uniform card height/spacing for the 4 summary cards */
+.student-dashboard .summary-card {
+  min-height: 170px; /* keep cards visually equal even when one has extra content (e.g., progress bar) */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.student-dashboard .summary-progress {
+  margin-top: 8px;
+}
+
+/* Optional: consistent gap for icon + text buttons */
+.student-dashboard .btn > i + span,
+.student-dashboard .btn > svg + span {
+  margin-left: 6px;
+}
+
+/* Optional: consistent outline thickness for focus */
+.student-dashboard .btn:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.5);
+  outline-offset: 2px;
+}
