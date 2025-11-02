@@ -329,9 +329,9 @@ function TeacherSchedule() {
                           </div>
                         </div>
                         <div className={`session-status-badge status-${status}`}>
-                          {status === 'completed' && '✓ Đã học'}
-                          {status === 'today' && '● lịch sắp tới'}
-                          {status === 'upcoming' && '○ lịch học'}
+                          {status === 'completed' && '✓ Đã dạy'}
+                          {status === 'today' && '● lịch dạy tới'}
+                          {status === 'upcoming' && '○ lịch dạy'}
                         </div>
                       </div>
                     </td>

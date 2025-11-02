@@ -164,7 +164,7 @@ const TeacherIntroduction = () => {
             s === 'i' || s === 'inact' || s === 'inactive' || s === '0' || s === 'false' ||
             s === 'idle' || s === 'leave' || s === 'on_leave' || s === 'suspended' || s === 'pause' || s === 'paused'
           ) ? 'inactive'
-          : (s === 'r' || s === 'retire' || s === 'retired') ? 'retired'
+                    : (s === 'r' || s === 'retire' || s === 'retired') ? 'retired'
           : 'unknown';
 
         switch (normalized) {
@@ -173,7 +173,7 @@ const TeacherIntroduction = () => {
             case 'inactive':
                 return { text: 'Tạm nghỉ', class: 'status-inactive', hint: 'Tạm nghỉ / tạm dừng / đang rảnh' };
             case 'retired':
-                return { text: 'Đã nghỉ hưu', class: 'status-retired', hint: 'Đã nghỉ công tác' };
+                                return { text: 'Đã nghỉ', class: 'status-retired', hint: 'Đã nghỉ công tác' };
             default:
                 return { text: 'Chưa xác định', class: 'status-unknown', hint: 'Trạng thái chưa rõ — vui lòng cập nhật hồ sơ' };
         }

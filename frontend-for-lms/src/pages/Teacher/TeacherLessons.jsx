@@ -615,6 +615,7 @@ function TeacherLessons() {
   const handleFileUpload = async (mediaType, file, itemId = null) => {
     if (!file) return;
     setError('');
+    const targetKey = { mediaType, itemId };
     try {
       setUploadingTarget(targetKey);
       const result = await uploadTeacherMedia(mediaType, file);

@@ -746,8 +746,8 @@ function TeacherTests() {
                 />
               </div>
             </div>
-            <div className="row g-3 mt-2">
-              <div className="col-md-4">
+            <div className="row g-2 mt-2">
+              <div className="col-3">
                 <label className="form-label fw-semibold small mb-1">Thời lượng/Giới hạn (phút)</label>
                 <input
                   type="number"
@@ -759,7 +759,7 @@ function TeacherTests() {
                   style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
                 />
               </div>
-              <div className="col-md-4">
+              <div className="col-3">
                 <label className="form-label fw-semibold small mb-1">Giới hạn lượt làm</label>
                 <input
                   type="number"
@@ -771,9 +771,7 @@ function TeacherTests() {
                   style={isEditingExisting ? { opacity: 0.7, background: '#f8f9fa', cursor: 'not-allowed' } : undefined}
                 />
               </div>
-            </div>
-            <div className="row g-3 mt-2">
-              <div className="col-md-4">
+              <div className="col-3">
                 <label className="form-label fw-semibold small mb-1">Mở từ (YYYY-MM-DD HH:MM)</label>
                 <input
                   type="datetime-local"
@@ -783,7 +781,7 @@ function TeacherTests() {
                   style={isEditingExisting ? { boxShadow: '0 0 0 4px rgba(16,185,129,0.06)', borderColor: '#10b981' } : undefined}
                 />
               </div>
-              <div className="col-md-4">
+              <div className="col-3">
                 <label className="form-label fw-semibold small mb-1">Đóng lúc (YYYY-MM-DD HH:MM)</label>
                 <input
                   type="datetime-local"
@@ -996,40 +994,40 @@ function TeacherTests() {
                         </div>
                       </div>
                       <div className="w-100 mb-2" style={{ borderBottom: '1px solid #ececec' }}></div>
-                      <div className="d-flex flex-wrap justify-content-center gap-1 mt-2 w-100">
+                      <div className="d-flex flex-nowrap gap-1 mt-2 w-100">
                         <button
                           type="button"
-                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1 px-2 fw-semibold"
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center justify-content-center gap-1 px-1 fw-semibold flex-fill"
                           onClick={() => openDetail(test.test_id, 'view')}
                           disabled={submitting}
-                          style={{ color: '#8e24aa' }}
+                          style={{ color: '#8e24aa', fontSize: '0.75rem' }}
                         >
                           <span aria-hidden="true">👁️</span> Xem
                         </button>
                         <button
                           type="button"
-                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1 px-2 fw-semibold"
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center justify-content-center gap-1 px-1 fw-semibold flex-fill"
                           onClick={() => openDetail(test.test_id, 'edit')}
                           disabled={submitting}
-                          style={{ color: '#fb8c00' }}
+                          style={{ color: '#fb8c00', fontSize: '0.75rem' }}
                         >
                           <span aria-hidden="true">✏️</span> Sửa
                         </button>
                         <button
                           type="button"
-                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1 px-2 fw-semibold"
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center justify-content-center gap-1 px-1 fw-semibold flex-fill"
                           onClick={() => openScoreboard(test.test_id)}
                           disabled={submitting}
-                          style={{ color: '#388e3c' }}
+                          style={{ color: '#388e3c', fontSize: '0.75rem' }}
                         >
-                          <span aria-hidden="true">📊</span> Bảng điểm
+                          <span aria-hidden="true">📊</span> Điểm
                         </button>
                         <button
                           type="button"
-                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1 px-2 fw-semibold"
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center justify-content-center gap-1 px-1 fw-semibold flex-fill"
                           onClick={() => handleDelete(test.test_id)}
                           disabled={submitting}
-                          style={{ color: '#e53935' }}
+                          style={{ color: '#e53935', fontSize: '0.75rem' }}
                         >
                           <span aria-hidden="true">🗑️</span> Xóa
                         </button>

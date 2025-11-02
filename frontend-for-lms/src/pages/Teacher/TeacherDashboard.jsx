@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom';
 import './css/TeacherDashboard.css';
 import { fetchTeacherClasses } from '../../services/teacherClassService';
 import { fetchTeacherTestHistory, fetchTeacherTestScoreboard } from '../../services/teacherTestService';
+import axios from 'axios';
+import { getToken, getCurrentUser } from '../../services/authService';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
 // Helper: parse date (YYYY-MM-DD) and time (HH:MM) into Date
 const toDateTime = (dStr, tStr) => {
@@ -21,11 +25,30 @@ const toDateTime = (dStr, tStr) => {
   }
 };
 
+// Compute schedule status - simple logic matching TeacherSchedule.jsx
+const computeScheduleStatus = (schedule) => {
+  if (!schedule.schedule_date) return 'upcoming';
+  
+  const schedDate = schedule.schedule_date; // YYYY-MM-DD
+  const now = new Date();
+  const todayStr = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0')
+  ].join('-');
+  
+  // Simple date string comparison (timezone-safe)
+  if (schedDate < todayStr) return 'completed';
+  if (schedDate === todayStr) return 'today';
+  return 'upcoming';
+};
+
 function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [classes, setClasses] = useState([]);
   const [classTests, setClassTests] = useState({}); // { [class_id]: { tests: [], attempts: number, avgBestScore10?: number } }
+  const [upcomingSchedules, setUpcomingSchedules] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,7 +61,52 @@ function TeacherDashboard() {
         if (cancelled) return;
         setClasses(cls || []);
 
-        // 2) For each class, load tests history summary
+        // 2) Load teacher's schedules directly from schedules API
+        const token = getToken();
+        const currentUser = getCurrentUser();
+        const teacherId = currentUser?.user_id;
+        
+        if (teacherId) {
+          try {
+            const schedResp = await axios.get(
+              `${API_BASE_URL}/api/schedules/by-teacher/${teacherId}`,
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(token ? { Authorization: `Bearer ${token}` } : {})
+                }
+              }
+            );
+            const schedules = schedResp.data?.data || [];
+            
+            // Compute status for each schedule and filter today + upcoming
+            const withStatus = schedules.map(s => ({
+              ...s,
+              computedStatus: s.status || computeScheduleStatus(s)
+            }));
+            
+            // Filter: only "today" and "upcoming" (exclude "completed")
+            const upcoming = withStatus
+              .filter(s => s.computedStatus === 'today' || s.computedStatus === 'upcoming')
+              .sort((a, b) => {
+                const dtA = toDateTime(a.schedule_date, a.schedule_startime);
+                const dtB = toDateTime(b.schedule_date, b.schedule_startime);
+                if (!dtA && !dtB) return 0;
+                if (!dtA) return 1;
+                if (!dtB) return -1;
+                return dtA - dtB;
+              })
+              .slice(0, 6);
+            
+            if (!cancelled) setUpcomingSchedules(upcoming);
+          } catch (e) {
+            console.error('Error loading teacher schedules:', e);
+            // Set empty array on error so UI shows "Không có buổi dạy"
+            if (!cancelled) setUpcomingSchedules([]);
+          }
+        }
+
+        // 3) For each class, load tests history summary
         const histories = await Promise.all(
           (cls || []).map(async (c) => {
             try {
@@ -57,7 +125,7 @@ function TeacherDashboard() {
           baseMap[class_id] = { tests, attempts };
         });
 
-        // 3) For accuracy, compute per-class average student score (10-point) from the latest test scoreboard
+        // 4) For accuracy, compute per-class average student score (10-point) from the latest test scoreboard
         const latestTests = histories
           .map(({ class_id, tests }) => ({ class_id, latestTestId: (tests && tests.length > 0) ? tests[0].test_id : null }))
           .filter((x) => !!x.latestTestId);
@@ -99,41 +167,10 @@ function TeacherDashboard() {
   const summary = useMemo(() => {
     const totalClasses = classes.length;
     const activeStudents = classes.reduce((sum, c) => sum + (c.student_count || 0), 0);
-    const upcomingSessions = classes.reduce((count, c) => {
-      const ns = c.next_session;
-      if (!ns) return count;
-      const dt = toDateTime(ns.date, ns.start_time);
-      if (!dt) return count;
-      return dt >= new Date() ? count + 1 : count;
-    }, 0);
+    const upcomingSessions = upcomingSchedules.length;
     const pendingAssignments = Object.values(classTests).reduce((sum, v) => sum + (v.attempts || 0), 0);
     return { totalClasses, activeStudents, upcomingSessions, pendingAssignments };
-  }, [classes, classTests]);
-
-  // Upcoming sessions list (sorted)
-  const upcomingSessionsList = useMemo(() => {
-    const now = new Date();
-    const rows = classes
-      .map((c) => {
-        const ns = c.next_session;
-        if (!ns) return null;
-        const dt = toDateTime(ns.date, ns.start_time);
-        if (!dt || dt < now) return null;
-        return {
-          classId: c.class_id,
-          className: c.class_name,
-          course: c?.course?.course_name || c?.course_name || 'Lớp học',
-          startTime: ns.start_time || '',
-          date: ns.date || '',
-          room: ns.room_name || '',
-          dt,
-        };
-      })
-      .filter(Boolean)
-      .sort((a, b) => a.dt - b.dt)
-      .slice(0, 6); // limit list
-    return rows;
-  }, [classes]);
+  }, [classes, classTests, upcomingSchedules]);
 
   // Per-class test stats
   const perClassStats = useMemo(() => {
@@ -217,29 +254,56 @@ function TeacherDashboard() {
         <div className="col-lg-7">
           <div className="widget-card">
             <div className="card-header">
-              <h3>Lịch dạy sắp tới</h3>
+              <h3>Lịch dạy trong tuần</h3>
               <Link className="btn btn-sm btn-outline-primary" to="/teachers/schedule">Xem đầy đủ</Link>
             </div>
             <ul className="schedule-list">
               {loading && <li className="p-3 text-muted">Đang tải...</li>}
-              {!loading && upcomingSessionsList.length === 0 && (
+              {!loading && upcomingSchedules.length === 0 && (
                 <li className="p-3 text-muted">Không có buổi dạy sắp tới</li>
               )}
-              {!loading && upcomingSessionsList.map((session) => (
-                <li key={`${session.classId}-${session.date}-${session.startTime}`} className="schedule-item">
-                  <div className="session-meta">
-                    <div className="session-time">
-                      <span className="time">{session.startTime}</span>
-                      <span className="date">{new Date(session.dt).toLocaleDateString('vi-VN')}</span>
+              {!loading && upcomingSchedules.map((schedule) => {
+                const dt = toDateTime(schedule.schedule_date, schedule.schedule_startime);
+                const status = schedule.computedStatus;
+                const isToday = status === 'today';
+                
+                return (
+                  <li key={schedule.schedule_id} className="schedule-item">
+                    <div className="session-meta">
+                      <div className="session-time">
+                        <span className="time">
+                          {schedule.schedule_startime ? schedule.schedule_startime.substring(0, 5) : '—'}
+                          {' - '}
+                          {schedule.schedule_endtime ? schedule.schedule_endtime.substring(0, 5) : '—'}
+                        </span>
+                        <span className="date">
+                          {dt ? dt.toLocaleDateString('vi-VN') : schedule.schedule_date}
+                        </span>
+                      </div>
+                      <div className="session-info">
+                        <h4>
+                          {schedule.class_name || `Lớp #${schedule.class_id}`}
+                          {isToday && (
+                            <span className="badge bg-warning text-dark ms-2" style={{ fontSize: '0.7rem' }}>
+                              ● Lịch dạy tới
+                            </span>
+                          )}
+                          {status === 'upcoming' && (
+                            <span className="badge bg-secondary ms-2" style={{ fontSize: '0.7rem' }}>
+                              ○ Lịch dạy
+                            </span>
+                          )}
+                        </h4>
+                        <p>
+                          {schedule.room_name || 'Chưa có phòng'}
+                          {schedule.teacher_name && ` • ${schedule.teacher_name}`}
+                        </p>
+                      </div>
                     </div>
-                    <div className="session-info">
-                      <h4>{session.course}</h4>
-                      <p>#{session.classId} • {session.room || '—'}</p>
-                    </div>
-                  </div>
-                  <i className="bi bi-chevron-right"></i>
-                </li>
-              ))}
+                    <i className="bi bi-chevron-right"></i>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>
